@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC   -shared  -o addLib.cpython-37m-x86_64-linux-gnu.so CMakeFiles/addLib.dir/test.cpp.o -flto 

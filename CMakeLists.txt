@@ -1,7 +1,29 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(testPybinb CXX CUDA)
+project(PdeSolver LANGUAGES CUDA CXX)
 
-add_subdirectory(pybind11)
+set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CUDA_STANDARD 17)
 
-pybind11_add_module(app test.cpp)
+set(SRC ${CMAKE_SOURCE_DIR}/src)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SRC}/modulePython)
+
+find_package(CUDA)
+find_package(PythonLibs 3.7 REQUIRED)
+find_package(pybind11)
+
+include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(${CUDA_INCLUDE_DIRS})
+include_directories(${SRC})
+include_directories(${SRC}/include)
+
+file(GLOB_RECURSE SRC_FILES "${SRC}/*.cpp" "${SRC}/*.cu")
+
+cuda_add_library(dna SHARED ${SRC_FILES})
+
+set_target_properties(dna PROPERTIES PREFIX "")
+set_target_properties(dna PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
+
+target_link_libraries(dna ${PYTHON_LIBRARIES})
+target_link_libraries(dna cudart cusolver cusparse)
+target_link_libraries(dna ${CUDA_LIBRARIES})

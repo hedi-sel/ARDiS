@@ -1,1 +1,0 @@
-/usr/bin/nvcc    -Xcompiler=-fPIC -Wno-deprecated-gpu-targets -shared -dlink CMakeFiles/app.dir/test.cu.o -o CMakeFiles/app.dir/cmake_device_link.o 
