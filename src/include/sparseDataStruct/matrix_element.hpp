@@ -1,18 +1,27 @@
 #pragma once
 
-#include "constants.h"
+#include <cstdio>
+#include <cuda_runtime.h>
 
-class MatrixElement
-{
-public:
-    const int i;
-    const int j;
-    const T val;
-    MatrixElement(int i, int j, const T &val) : i(i), j(j), val(val){};
-    ~MatrixElement(){};
+#include "constants.hpp"
+#include "matrix_sparse.hpp"
 
-    void Print() const
-    {
-        printf("%i, %i: %f\n", i, j, val);
-    }
+class MatrixElement {
+  public:
+    const MatrixSparse *matrix;
+    int k;
+    int i = 0;
+    int j = 0;
+    T *val;
+
+    __host__ __device__ MatrixElement(int k, const MatrixSparse *matrix);
+    __host__ __device__ MatrixElement(const MatrixSparse *matrix);
+    // __host__ __device__ MatrixElement() : matrix(nullptr) {}
+
+    __host__ __device__ bool HasNext();
+    __host__ __device__ void Next();
+
+    __host__ __device__ void Print() const;
+
+    __host__ __device__ void updateIandJ();
 };
