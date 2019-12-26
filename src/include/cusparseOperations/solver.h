@@ -10,6 +10,8 @@ void solveLinEq(cusolverSpHandle_t &handle, MatrixSparse &d_mat,
                 const VectorDense &b, VectorDense &x) {
     int *singular = new int[0];
     d_mat.MakeDescriptor();
-    d_mat.OperationCuSolver((void *)cusolverSpDcsrlsvqr, handle, b.vals, x.vals,
-                            singular);
+    d_mat.OperationCuSolver(
+        (void *)cusolverSpDcsrlsvchol, // cusolverSpDcsrlsvchol
+                                       // cusolverSpDcsrlsvchol
+        handle, b.vals, x.vals, singular);
 }

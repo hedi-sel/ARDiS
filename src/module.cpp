@@ -12,4 +12,7 @@ PYBIND11_MODULE(dna, m) {
           "Reorder matrix rows and convert to CSR data format");
     m.def("PrintMatrix", &PrintMatrix, py::arg("printGpuVersion") = true,
           "Print the matrix as it is in GPU memory");
+
+    //     py::class_<MatrixSparse>(m, "MatrixSparse").def("go",
+    //     &MatrixSparse::);
 }

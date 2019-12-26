@@ -26,7 +26,7 @@ __host__ MatrixSparse *ReadFromFile(const std::string filepath,
         }
     }
 
-    matrix = new MatrixSparse(i, j, n_elts, CSR);
+    matrix = new MatrixSparse(i, j, n_elts, COO);
 
     for (int k = 0; k < n_elts; k++) {
         while (std::getline(myfile, line)) {

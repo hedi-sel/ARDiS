@@ -80,9 +80,6 @@ __host__ __device__ void MatrixSparse::AddElement(int k, int i, int j,
     }
 }
 
-// __host__ __device__ MatrixElement MatrixSparse::Start() const { return
-// Get(0); }
-
 // Get the value at index k of the sparse matrix
 __host__ __device__ const T &MatrixSparse::Get(int k) const { return vals[k]; }
 
@@ -100,27 +97,27 @@ __host__ void MatrixSparse::ToCompressedDataType(MatrixType toType,
     } else {
         assert(IsConvertibleTo(toType));
     }
-    int *toOrderArray = (toType == CSR) ? rowPtr : colPtr;
     int newSize = (toType == CSR) ? i_size + 1 : j_size + 1;
     int *newArray;
     if (isDevice) {
         gpuErrchk(cudaMalloc(&newArray, newSize * sizeof(int)));
         gpuErrchk(cudaDeviceSynchronize());
-        convertArray<<<1, 1>>>(toOrderArray, n_elements, newArray, newSize);
-        toOrderArray = newArray;
-        type = toType;
+        convertArray<<<1, 1>>>((toType == CSR) ? rowPtr : colPtr, n_elements,
+                               newArray, newSize);
         gpuErrchk(cudaDeviceSynchronize());
-        gpuErrchk(cudaMemcpy(_device, this, sizeof(MatrixSparse),
-                             cudaMemcpyHostToDevice));
-        cudaFree(toOrderArray);
     } else {
         newArray = new int[newSize];
-        convertArrayBody(toOrderArray, n_elements, newArray, newSize);
-        toOrderArray = newArray;
-        type = toType;
-        assert(newArray[newSize - 1] == n_elements);
-        delete[] toOrderArray;
+        convertArrayBody((toType == CSR) ? rowPtr : colPtr, n_elements,
+                         newArray, newSize);
     }
+    if (toType == CSR)
+        rowPtr = newArray;
+    else
+        colPtr = newArray;
+    type = toType;
+    if (isDevice)
+        gpuErrchk(cudaMemcpy(_device, this, sizeof(MatrixSparse),
+                             cudaMemcpyHostToDevice));
 }
 
 __host__ bool MatrixSparse::IsConvertibleTo(MatrixType toType) const {
@@ -183,7 +180,7 @@ __host__ void MatrixSparse::OperationCuSolver(void *function,
                                               cusolverSpHandle_t &handle, T *b,
                                               T *xOut, int *singularOut) {
     cusolverErrchk(((FuncSolv)function)(handle, i_size, n_elements, descr, vals,
-                                        rowPtr, colPtr, b, 0.0, 0, xOut,
+                                        rowPtr, colPtr, b, 0.001, 0, xOut,
                                         singularOut));
     // TODO : SymOptimization
 }

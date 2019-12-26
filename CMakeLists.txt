@@ -7,6 +7,7 @@ set (CMAKE_CUDA_STANDARD 14)
 
 set(SRC ${CMAKE_SOURCE_DIR}/src)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SRC}/modulePython)
+set(BOOST_ROOT $ENV{BOOST_ROOT})
 # set(CMAKE_CUDA_FLAGS "-dc")
 
 find_package(CUDA)
@@ -15,8 +16,10 @@ find_package(pybind11)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
+include_directories(${BOOST_ROOT})
 include_directories(${SRC})
 include_directories(${SRC}/include)
+link_directories(${BOOST_ROOT}/stage/lib)
 
 file(GLOB_RECURSE SRC_FILES "${SRC}/*.cpp" "${SRC}/*.cu")
 
@@ -28,6 +31,6 @@ set_target_properties(dna PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 target_link_libraries(dna ${PYTHON_LIBRARIES})
 target_link_libraries(dna cudart cusolver cusparse)
-target_link_libraries(dna ${CUDA_LIBRARIES})
+target_link_libraries(dna boost_timer)
 
 # set(CMAKE_VERBOSE_MAKEFILE true)
