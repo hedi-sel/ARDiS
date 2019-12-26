@@ -11,44 +11,52 @@
 #include "sparseDataStruct/read_mtx_file.h"
 #include "sparseDataStruct/vector_dense.hpp"
 
-__global__ void testkernel() { printf("%i \n", 1); }
+MatrixSparse *matrix;
+MatrixSparse *d_mat;
 
-py::array_t<double> launch() {
-    VectorDense a(10, false);
-    for (int i = 0; i < 10; i++)
-        a.vals[i] = i + 10;
+cusparseHandle_t cusparseHandle = NULL;
+cusolverSpHandle_t cusolverHandle = NULL;
 
-    MatrixSparse matrix = ReadFromFile("matrix/test.mtx");
-
-    MatrixSparse d_mat(matrix, true);
-
-    cusparseHandle_t cusparseHandle = NULL;
+void Initialization() {
     cusparseErrchk(cusparseCreate(&cusparseHandle));
-
-    cusolverSpHandle_t cusolverHandle = NULL;
     cusolverErrchk(cusolverSpCreate(&cusolverHandle));
+}
 
-    // RowOrdering(cusparseHandle, d_mat);
-    // d_mat.ToCompressedDataType(CSR);
+void LoadMatrixFromFile(char *path, bool sendToGPU) {
+    Initialization();
+    matrix = ReadFromFile(path);
+    if (sendToGPU)
+        SendMatrixToGpuMemory();
+}
 
-    VectorDense b(d_mat.i_size, true);
-    T *ar = new T[b.n];
-    for (int i = 0; i < b.n; i++)
-        ar[i] = 1.0;
-    gpuErrchk(cudaMemcpy(b.vals, ar, sizeof(T) * b.n, cudaMemcpyHostToDevice));
-    b.Print();
-    d_mat.Print();
+py::array_t<double> SolveLinEq(py::array_t<double> bVec) {
+    assert(bVec.size() == d_mat->i_size);
+    VectorDense b(d_mat->i_size, true);
+    gpuErrchk(cudaMemcpy(b.vals, bVec.data(), sizeof(T) * b.n,
+                         cudaMemcpyHostToDevice));
 
-    solveLinEq(cusolverHandle, d_mat, b);
+    VectorDense x(d_mat->i_size, true);
 
-    // startTestSolve();
-
-    MatrixSparse result_mat(d_mat, true);
-    // result_mat.Get(3).Print();
+    solveLinEq(cusolverHandle, *d_mat, b, x);
+    VectorDense result(x, true);
 
     if (cusparseHandle)
         cusparseDestroy(cusparseHandle);
     if (cusolverHandle)
         cusolverSpDestroy(cusolverHandle);
-    return py::array_t({2, 5}, a.vals);
+    return py::array_t(result.n, result.vals);
+}
+
+void SendMatrixToGpuMemory() { d_mat = new MatrixSparse(*matrix, true); }
+
+void ConvertMatrixToCSR() {
+    RowOrdering(cusparseHandle, *d_mat);
+    d_mat->ToCompressedDataType(CSR);
+}
+
+void PrintMatrix(bool printGpuVersion) {
+    if (printGpuVersion)
+        d_mat->Print();
+    else
+        matrix->Print();
 }

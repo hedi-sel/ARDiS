@@ -1,2 +1,6 @@
 import modulePython.dna as dna
-print(dna.launch())
+
+dna.LoadMatrixFromFile("matrix/test.mtx", True)
+dna.PrintMatrix()
+
+print(dna.SolveLinEq([1, 1, 1, 1, 1]))

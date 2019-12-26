@@ -44,7 +44,11 @@ __host__ void MatrixSparse::MemAlloc() {
     } else {
         vals = new T[n_elements];
         rowPtr = new int[rowPtrSize];
+        for (int i = 0; i < rowPtrSize; i++)
+            rowPtr[i] = 0;
         colPtr = new int[colPtrSize];
+        for (int i = 0; i < colPtrSize; i++)
+            colPtr[i] = 0;
     }
 }
 

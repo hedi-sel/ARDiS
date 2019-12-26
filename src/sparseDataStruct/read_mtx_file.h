@@ -6,7 +6,8 @@
 
 #include "sparseDataStruct/matrix_sparse.hpp"
 
-__host__ const MatrixSparse ReadFromFile(const std::string filepath) {
+__host__ MatrixSparse *ReadFromFile(const std::string filepath,
+                                    MatrixSparse *matrix = nullptr) {
     int i, j;
     int n_elts = 0;
     T val;
@@ -25,7 +26,7 @@ __host__ const MatrixSparse ReadFromFile(const std::string filepath) {
         }
     }
 
-    MatrixSparse matrix(i, j, n_elts, CSR);
+    matrix = new MatrixSparse(i, j, n_elts, CSR);
 
     for (int k = 0; k < n_elts; k++) {
         while (std::getline(myfile, line)) {
@@ -36,14 +37,14 @@ __host__ const MatrixSparse ReadFromFile(const std::string filepath) {
                 else {
                     i--;
                     j--;
-                    assert(i >= 0 && i < matrix.i_size && j >= 0 &&
-                           j < matrix.j_size);
-                    matrix.AddElement(k, i, j, val);
+                    assert(i >= 0 && i < matrix->i_size && j >= 0 &&
+                           j < matrix->j_size);
+                    matrix->AddElement(k, i, j, val);
                     break;
                 }
             }
         }
     }
     myfile.close();
-    return std::move(matrix);
+    return matrix;
 }

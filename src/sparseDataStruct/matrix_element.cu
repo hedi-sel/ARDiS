@@ -15,6 +15,7 @@ __host__ __device__ bool MatrixElement::HasNext() {
 
 __host__ __device__ void MatrixElement::Next() {
     k++;
+    val = &val[1];
     updateIandJ();
 }
 

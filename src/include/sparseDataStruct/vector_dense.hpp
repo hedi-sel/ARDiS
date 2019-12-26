@@ -18,7 +18,9 @@ class VectorDense {
     __host__ VectorDense(int, bool = false);
     __host__ VectorDense(const VectorDense &, bool copyToOtherMem = false);
 
-    __host__ void Print();
+    __host__ __device__ void Print();
+
+    __host__ ~VectorDense();
 
   private:
     __host__ void MemAlloc();
