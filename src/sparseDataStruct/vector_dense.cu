@@ -27,7 +27,7 @@ __host__ void VectorDense::MemAlloc() {
 }
 
 __host__ __device__ void VectorDense::Print() {
-    printf("Vector values: ");
+    printf("[ ");
 #ifndef __CUDA_ARCH__
     if (isDevice) {
         printVector<<<1, 1>>>(_device);

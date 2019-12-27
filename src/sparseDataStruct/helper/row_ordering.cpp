@@ -7,15 +7,21 @@
 #include "cudaHelper/cusparse_error_check.h"
 #include "sparseDataStruct/matrix_sparse.hpp"
 
-void RowOrdering(cusparseHandle_t &handle, MatrixSparse &d_mat) {
+cusparseHandle_t cusparseHandle = NULL;
+
+void RowOrdering(MatrixSparse &d_mat) {
+    assert(d_mat.isDevice);
+    if (cusparseHandle == NULL) {
+        cusparseErrchk(cusparseCreate(&cusparseHandle));
+    }
     int *d_P = NULL;
     double *d_cooVals_sorted = NULL;
     size_t pBufferSizeInBytes = 0;
     void *pBuffer = NULL;
 
     /* step 1: ?? */
-    d_mat.OperationCuSparse((void *)cusparseXcoosort_bufferSizeExt, handle,
-                            false, &pBufferSizeInBytes);
+    d_mat.OperationCuSparse((void *)cusparseXcoosort_bufferSizeExt,
+                            cusparseHandle, false, &pBufferSizeInBytes);
 
     /* step 2: allocate buffer */
     gpuErrchk(cudaMalloc(&d_P, sizeof(int) * d_mat.n_elements));
@@ -25,15 +31,15 @@ void RowOrdering(cusparseHandle_t &handle, MatrixSparse &d_mat) {
     gpuErrchk(cudaDeviceSynchronize());
 
     /* step 3: setup permutation vector P to identity */
-    cusparseErrchk(
-        cusparseCreateIdentityPermutation(handle, d_mat.n_elements, d_P));
+    cusparseErrchk(cusparseCreateIdentityPermutation(cusparseHandle,
+                                                     d_mat.n_elements, d_P));
 
     /* step 4: sort COO format by Row */
-    d_mat.OperationCuSparse((void *)cusparseXcoosortByRow, handle, false, d_P,
-                            pBuffer);
+    d_mat.OperationCuSparse((void *)cusparseXcoosortByRow, cusparseHandle,
+                            false, d_P, pBuffer);
 
     // /* step 5: gather sorted cooVals */
-    cusparseErrchk(cusparseDgthr(handle, d_mat.n_elements, d_mat.vals,
+    cusparseErrchk(cusparseDgthr(cusparseHandle, d_mat.n_elements, d_mat.vals,
                                  d_cooVals_sorted, d_P,
                                  CUSPARSE_INDEX_BASE_ZERO));
     cudaDeviceSynchronize();
@@ -48,6 +54,9 @@ void RowOrdering(cusparseHandle_t &handle, MatrixSparse &d_mat) {
         cudaFree(pBuffer);
     if (freeMe)
         cudaFree(freeMe);
+    if (cusparseHandle)
+        cusparseDestroy(cusparseHandle);
+    cusparseHandle = NULL;
 
     cudaDeviceSynchronize();
 }

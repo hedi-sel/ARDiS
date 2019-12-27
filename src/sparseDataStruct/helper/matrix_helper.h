@@ -31,8 +31,8 @@ __global__ void checkOrdered(int *array, int size, bool *_isOK) {
 
 __device__ __host__ inline void printMatrixBody(const MatrixSparse *matrix) {
     MatrixElement elm(matrix);
-    printf("Matrix :\n%i %i %i format=", matrix->i_size, matrix->j_size,
-           matrix->n_elements);
+    printf("Matrix :\n%i %i %i isDev=%i format=", matrix->i_size, matrix->j_size,
+           matrix->n_elements, matrix->isDevice);
     switch (matrix->type) {
     case COO:
         printf("COO\n");

@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import *
+import modulePython.dna as dna
 
 
 def ReadLine(line):
@@ -20,8 +21,24 @@ def LoadMatrixFromFile(path):
     i = -1
     while (i == -1):
         i, j, k = ReadLine(lines.pop(0))
-    mat = D = lil_matrix((i, j))
+    mat = lil_matrix((i, j))
     for line in lines:
         values = ReadLine(line)
         mat[values[0]-1, values[1]-1] = values[2]
     return mat
+
+
+# def LoadMatrixFromFileToGPU(path):
+#     f = open(path, "r")
+#     lines = f.readlines()
+#     i = -1
+#     while (i == -1):
+#         i, j, k = ReadLine(lines.pop(0))
+
+#     M = dna.MatrixSparse(i, j, k, dna.COO, False)
+#     k = 0
+#     for line in lines:
+#         values = ReadLine(line)
+#         M.AddElement(k, values[0] - 1, values[1] - 1, values[2])
+#         k += 1
+#     return M

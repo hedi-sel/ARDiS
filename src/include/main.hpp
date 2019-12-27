@@ -1,11 +1,7 @@
 #include "pybind11_include.hpp"
 
-py::array_t<double> SolveLinEq(py::array_t<double>);
+#include "sparseDataStruct/matrix_sparse.hpp"
 
-void LoadMatrixFromFile(char *path, bool sendToGPU = true);
+py::array_t<double> SolveLinEq(MatrixSparse &d_mat, py::array_t<double> &bVec);
 
-void SendMatrixToGpuMemory();
-
-void ConvertMatrixToCSR();
-
-void PrintMatrix(bool printGpuVersion = true);
+__host__ MatrixSparse ReadFromFile(const std::string filepath);

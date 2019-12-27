@@ -1,8 +1,9 @@
 #include <assert.h>
 
 #include "cudaHelper/cuda_error_check.h"
-#include "cudaHelper/cusolverSP_error_check copy.h"
+#include "cudaHelper/cusolverSP_error_check.h"
 #include "cudaHelper/cusparse_error_check.h"
+#include "cusparseOperations/row_ordering.hpp"
 #include "sparseDataStruct/helper/matrix_helper.h"
 #include <sparseDataStruct/matrix_element.hpp>
 #include <sparseDataStruct/matrix_sparse.hpp>
@@ -142,6 +143,17 @@ __host__ bool MatrixSparse::IsConvertibleTo(MatrixType toType) const {
     return isOK;
 }
 
+__host__ void MatrixSparse::ConvertMatrixToCSR() {
+    if (type == CSR)
+        throw("Error! Already CSR type \n");
+    if (type == CSC)
+        throw("Error! Already CSC type \n");
+    if (!IsConvertibleTo(CSR)) {
+        RowOrdering(*this);
+    }
+    ToCompressedDataType(CSR);
+}
+
 __host__ void MatrixSparse::MakeDescriptor() {
     if (descr == NULL) {
         cusparseErrchk(cusparseCreateMatDescr(&descr));
@@ -180,7 +192,7 @@ __host__ void MatrixSparse::OperationCuSolver(void *function,
                                               cusolverSpHandle_t &handle, T *b,
                                               T *xOut, int *singularOut) {
     cusolverErrchk(((FuncSolv)function)(handle, i_size, n_elements, descr, vals,
-                                        rowPtr, colPtr, b, 0.001, 0, xOut,
+                                        rowPtr, colPtr, b, 0.0, 0, xOut,
                                         singularOut));
     // TODO : SymOptimization
 }

@@ -12,9 +12,9 @@ enum MatrixType { COO, CSR, CSC };
 
 class MatrixSparse {
   public:
-    const int n_elements;
-    const int i_size;
-    const int j_size;
+    int n_elements;
+    int i_size;
+    int j_size;
 
     MatrixType type;
     const bool isDevice;
@@ -51,11 +51,12 @@ class MatrixSparse {
                                        bool orderBeforhand = false);
     __host__ bool IsConvertibleTo(MatrixType) const;
 
+    __host__ void ConvertMatrixToCSR();
+
     __host__ void MakeDescriptor();
     __host__ void OperationCuSparse(void *function, cusparseHandle_t &,
                                     bool addValues = false, void * = NULL,
                                     void * = NULL);
-
     __host__ void OperationCuSolver(void *function, cusolverSpHandle_t &,
                                     T *b = NULL, T *xOut = NULL,
                                     int *singularOut = NULL);
