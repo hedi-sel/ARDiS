@@ -21,18 +21,22 @@ __global__ void convertArray(int *toOrderArray, int n_elements, int *newArray,
     convertArrayBody(toOrderArray, n_elements, newArray, newSize);
 }
 
-__global__ void checkOrdered(int *array, int size, bool *_isOK) {
+__device__ __host__ void checkOrderedBody(int *array, int size, bool *_isOK) {
     bool isOK = true;
     for (int k = 1; k < size && isOK; k++) {
         isOK = isOK && array[k] >= array[k - 1];
     }
     *_isOK = isOK;
+};
+
+__global__ void checkOrdered(int *array, int size, bool *_isOK) {
+    checkOrderedBody(array, size, _isOK);
 }
 
-__device__ __host__ inline void printMatrixBody(const MatrixSparse *matrix) {
-    MatrixElement elm(matrix);
-    printf("Matrix :\n%i %i %i isDev=%i format=", matrix->i_size, matrix->j_size,
-           matrix->n_elements, matrix->isDevice);
+__device__ __host__ inline void printMatrixBody(const MatrixSparse *matrix,
+                                                int printCount = 0) {
+    printf("Matrix :\n%i %i %i isDev=%i format=", matrix->i_size,
+           matrix->j_size, matrix->n_elements, matrix->isDevice);
     switch (matrix->type) {
     case COO:
         printf("COO\n");
@@ -46,9 +50,28 @@ __device__ __host__ inline void printMatrixBody(const MatrixSparse *matrix) {
     }
     for (MatrixElement elm(matrix); elm.HasNext(); elm.Next()) {
         elm.Print();
+        if (printCount > 0 && elm.k >= printCount)
+            return;
     }
 }
 
 __global__ void printMatrix(const MatrixSparse *matrix) {
     printMatrixBody(matrix);
+}
+
+__device__ __host__ void IsSymetricBody(const MatrixSparse *matrix,
+                                        bool *_return) {
+    *_return = true;
+    for (MatrixElement elm(matrix); elm.HasNext(); elm.Next()) {
+        if (elm.i != elm.j && matrix->Lookup(elm.j, elm.i) != *elm.val) {
+            printf("%i %i %f %f\n", elm.i, elm.j, *elm.val, 0.1);
+            *_return = false;
+            return;
+        }
+    }
+    return;
+}
+
+__global__ void IsSymetricKernel(const MatrixSparse *matrix, bool *_return) {
+    IsSymetricBody(matrix, _return);
 }

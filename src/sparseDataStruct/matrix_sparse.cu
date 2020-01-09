@@ -53,11 +53,13 @@ __host__ void MatrixSparse::MemAlloc() {
     }
 }
 
-__host__ void MatrixSparse::Print() const {
+__host__ __device__ void MatrixSparse::Print() const {
+#ifndef __CUDA_ARCH__
     if (isDevice) {
         printMatrix<<<1, 1>>>(_device);
         cudaDeviceSynchronize();
     } else
+#endif
         printMatrixBody(this);
 }
 
@@ -83,6 +85,19 @@ __host__ __device__ void MatrixSparse::AddElement(int k, int i, int j,
 
 // Get the value at index k of the sparse matrix
 __host__ __device__ const T &MatrixSparse::Get(int k) const { return vals[k]; }
+__host__ __device__ const T &MatrixSparse::GetLine(int i) const {
+    if (type != CSR) {
+        printf("Error! Doesn't work with other type than CSR");
+    }
+    return vals[rowPtr[i]];
+}
+
+__host__ __device__ T MatrixSparse::Lookup(int i, int j) const {
+    for (MatrixElement elm(this); elm.HasNext(); elm.Next())
+        if (elm.i == i && elm.j == j)
+            return *elm.val;
+    return 0;
+}
 
 __host__ void MatrixSparse::ToCompressedDataType(MatrixType toType,
                                                  bool orderBeforhand) {
@@ -102,23 +117,28 @@ __host__ void MatrixSparse::ToCompressedDataType(MatrixType toType,
     int *newArray;
     if (isDevice) {
         gpuErrchk(cudaMalloc(&newArray, newSize * sizeof(int)));
-        gpuErrchk(cudaDeviceSynchronize());
         convertArray<<<1, 1>>>((toType == CSR) ? rowPtr : colPtr, n_elements,
                                newArray, newSize);
-        gpuErrchk(cudaDeviceSynchronize());
+        cudaFree((toType == CSR) ? rowPtr : colPtr);
     } else {
         newArray = new int[newSize];
         convertArrayBody((toType == CSR) ? rowPtr : colPtr, n_elements,
                          newArray, newSize);
+        if (toType == CSR)
+            delete[] rowPtr;
+        else
+            delete[] colPtr;
     }
     if (toType == CSR)
         rowPtr = newArray;
     else
         colPtr = newArray;
     type = toType;
-    if (isDevice)
+    if (isDevice) {
         gpuErrchk(cudaMemcpy(_device, this, sizeof(MatrixSparse),
                              cudaMemcpyHostToDevice));
+        gpuErrchk(cudaDeviceSynchronize());
+    }
 }
 
 __host__ bool MatrixSparse::IsConvertibleTo(MatrixType toType) const {
@@ -135,10 +155,10 @@ __host__ bool MatrixSparse::IsConvertibleTo(MatrixType toType) const {
         checkOrdered<<<1, 1>>>(analyzedArray, n_elements, _isOK);
         gpuErrchk(
             cudaMemcpy(&isOK, _isOK, sizeof(bool), cudaMemcpyDeviceToHost));
+        gpuErrchk(cudaFree(_isOK));
+        gpuErrchk(cudaDeviceSynchronize());
     } else {
-        for (int k = 1; k < n_elements && isOK; k++) {
-            isOK = isOK && analyzedArray[k] >= analyzedArray[k - 1];
-        }
+        checkOrderedBody(analyzedArray, n_elements, &isOK);
     }
     return isOK;
 }
@@ -151,7 +171,9 @@ __host__ void MatrixSparse::ConvertMatrixToCSR() {
     if (!IsConvertibleTo(CSR)) {
         RowOrdering(*this);
     }
+    assert(IsConvertibleTo(CSR));
     ToCompressedDataType(CSR);
+    assert(type == CSR);
 }
 
 __host__ void MatrixSparse::MakeDescriptor() {
@@ -162,6 +184,23 @@ __host__ void MatrixSparse::MakeDescriptor() {
     } else {
         printf("Matrix already has a descriptor!");
     }
+}
+
+__host__ bool MatrixSparse::IsSymetric() {
+    bool *_return = new bool;
+    if (isDevice) {
+        bool *_returnGpu;
+        gpuErrchk(cudaMalloc(&_returnGpu, sizeof(bool)));
+        IsSymetricKernel<<<1, 1>>>(_device, _returnGpu);
+        cudaDeviceSynchronize();
+        gpuErrchk(cudaMemcpy(_return, _returnGpu, sizeof(bool),
+                             cudaMemcpyDeviceToHost));
+        gpuErrchk(cudaFree(_returnGpu));
+        gpuErrchk(cudaDeviceSynchronize());
+    } else {
+        IsSymetricBody(this, _return);
+    }
+    return *_return;
 }
 
 typedef cusparseStatus_t (*FuncSpar)(...);

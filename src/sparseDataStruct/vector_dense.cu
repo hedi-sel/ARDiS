@@ -38,9 +38,10 @@ __host__ __device__ void VectorDense::Print() {
 }
 
 __host__ VectorDense::~VectorDense() {
-    if (isDevice)
+    if (isDevice) {
         cudaFree(vals);
-    else {
+        cudaFree(_device);
+    } else {
         delete[] vals;
     }
 }

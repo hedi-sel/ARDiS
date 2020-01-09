@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.sparse import *
+from enum import Enum
+
 import modulePython.dna as dna
 
 
@@ -15,7 +17,12 @@ def ReadLine(line):
     return values
 
 
-def LoadMatrixFromFile(path):
+class Readtype(Enum):
+    Normal = 0
+    Symetric = 1
+
+
+def LoadMatrixFromFile(path, readtype=Readtype.Normal):
     f = open(path, "r")
     lines = f.readlines()
     i = -1
@@ -24,7 +31,9 @@ def LoadMatrixFromFile(path):
     mat = lil_matrix((i, j))
     for line in lines:
         values = ReadLine(line)
-        mat[values[0]-1, values[1]-1] = values[2]
+        mat[values[0] - 1, values[1] - 1] = values[2]
+        if (readtype == Readtype.Symetric):
+            mat[values[1] - 1, values[0] - 1] = values[2]
     return mat
 
 

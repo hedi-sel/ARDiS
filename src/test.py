@@ -1,44 +1,31 @@
 import modulePython.dna as dna
-import modulePython.read_mtx as read_mtx
+from modulePython.read_mtx import *
 
 import numpy as np
 from scipy.sparse import *
 import scipy.sparse.linalg as spLnal
 import time
 
-# matrixPath = "matrix/small.mtx"
-matrixPath = "matrix/494_bus.mtx"
-# matrixPath = "matrix/1138_bus.mtx"
-# matrixPath = "matrix/NonLinearDiff9801.mtx"
-# matrixPath = "matrix/Baumann112211.mtx"
+# matrixPath = "matrixTest/small.mtx"
+# matrixPath = "matrixTest/testNULL.mtx"
+
+# matrixPath = "matrixSymDefPos/362_5,786_plat362.mtx"
+# matrixPath = "matrixSymDefPos/1,224_56,126_bcsstk27.mtx"
+# matrixPath = "matrixSymDefPos/10,605_144,579_ted_B_unscaled.mtx"
+# matrixPath = "matrixSymDefPos/102,158_406,858_thermomech_TC.mtx"
+matrixPath = "matrixSymDefPos/1,228,045_8,580,313_thermal2.mtx"
+
 
 # Load Matrix into device memory, and convert it to compressed data type
 start = time.time()
 M = dna.ReadFromFile(matrixPath)
 Mgpu = dna.MatrixSparse(M, True)
 Mgpu.ConvertMatrixToCSR()
+b = np.array([1] * M.j_size, dtype=float)
+
 loadGpuTime = time.time() - start
-
-# Load Matrix on python
 start = time.time()
-A = read_mtx.LoadMatrixFromFile(matrixPath).tocsr()
-loadCpuTime = time.time() - start
-
-# Solve Linear Equation and check results
-b = np.array([1] * A.shape[0], dtype=float)
-
-start = time.time()
-xGpu = dna.SolveLinEq(Mgpu, b)
+dna.Test(Mgpu, b)
 solveGpuTime = time.time() - start
-print((A.dot(xGpu)))
-
-start = time.time()
-xCpu = spLnal.spsolve(A, b)
-solveCpuTime = time.time() - start
-# print(A.dot(xCpu))
-
-print("Load Gpu time:", loadGpuTime)
-print("Solve Gpu Time :", solveGpuTime)
-print()
-print("Load Cpu time:", loadCpuTime)
-print("Solve Cpu Time :", solveCpuTime)
+print("GPU Load time:", loadGpuTime)
+print("GPU Run Time :", solveGpuTime)

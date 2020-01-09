@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.cu": "cpp",
+        "*.h": "cpp",
         "iostream": "cpp",
         "cstdio": "cpp",
         "array": "cpp",
@@ -58,11 +59,31 @@
         "map": "cpp",
         "set": "cpp",
         "thread": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "csetjmp": "cpp",
+        "csignal": "cpp",
+        "*.ipp": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "strstream": "cpp",
+        "bitset": "cpp",
+        "cfenv": "cpp",
+        "codecvt": "cpp",
+        "condition_variable": "cpp",
+        "filesystem": "cpp",
+        "regex": "cpp",
+        "rope": "cpp",
+        "slist": "cpp",
+        "future": "cpp",
+        "iomanip": "cpp",
+        "mutex": "cpp",
+        "shared_mutex": "cpp",
+        "*.cuh": "cpp"
     },
     "C_Cpp.default.includePath": [
         "~/Libraries/pybind11/include",
         "${workspaceFolder}/src/include"
     ],
-    "C_Cpp.clang_format_fallbackStyle": "{IndentWidth: 4}"
+    "C_Cpp.clang_format_fallbackStyle": "{IndentWidth: 4}",
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"
 }

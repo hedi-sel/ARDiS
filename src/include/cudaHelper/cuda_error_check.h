@@ -9,8 +9,8 @@
 inline void gpuAssert(cudaError_t code, const char *file, int line,
                       bool abort = true) {
     if (code != cudaSuccess) {
-        std::cout << "GPUassert: Error " << code << " at " << file << " "
-                  << line << "\n";
+        std::cout << "GPUassert: Error " << cudaGetErrorName(code) << " at "
+                  << file << "(" << line << ")\n";
         if (abort)
             exit(code);
     }
