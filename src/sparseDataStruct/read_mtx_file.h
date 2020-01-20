@@ -13,6 +13,7 @@ __host__ MatrixSparse ReadFromFile(const std::string filepath/* ,
                                    Readtype readtype = Normal */) {
     int i, j;
     int n_elts = 0;
+    int n_lines = 0;
     T val;
 
     std::string line;
@@ -21,18 +22,19 @@ __host__ MatrixSparse ReadFromFile(const std::string filepath/* ,
     if (!myfile.is_open()) {
         printf("File could not be opened");
     }
-    while (n_elts == 0 && std::getline(myfile, line)) {
+    while (n_lines == 0 && std::getline(myfile, line)) {
         if (line[0] != '%') {
             std::istringstream iss(line);
-            if (!(iss >> i >> j >> n_elts))
+            if (!(iss >> i >> j >> n_lines))
                 std::cerr << "Error line\n";
         }
     }
 
-    MatrixSparse matrix(i, j, (readtype == Normal) ? n_elts : n_elts * 2 - i,
-                        COO);
+    n_elts = (readtype == Normal) ? n_lines : n_lines * 2 - i;
 
-    for (int k = 0; k < n_elts; k++) {
+    MatrixSparse matrix(i, j, n_elts, COO);
+
+    for (int k = 0; k < n_lines; k++) {
         do {
             std::getline(myfile, line);
         } while (line[0] == '%');
@@ -44,14 +46,15 @@ __host__ MatrixSparse ReadFromFile(const std::string filepath/* ,
             i--;
             j--;
             assert(i >= 0 && i < matrix.i_size && j >= 0 && j < matrix.j_size);
-            matrix.AddElement(k, i, j, val);
-            if (i != j)
-                matrix.AddElement(k, j, i, val);
+            matrix.AddElement(i, j, val);
+            if (i != j) {
+                matrix.AddElement(j, i, val);
+            }
         }
     }
     assert(!std::getline(myfile,
-                         line)); // We check that there is no more lines left to
-                                 // be read after the matrix is complete
+                         line)); // We check that there is no more lines left
+                                 // to be read after the matrix is complete
     myfile.close();
     return matrix;
 }

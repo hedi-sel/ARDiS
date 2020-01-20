@@ -24,21 +24,21 @@ void RowOrdering(MatrixSparse &d_mat) {
                             cusparseHandle, false, &pBufferSizeInBytes);
 
     /* step 2: allocate buffer */
-    gpuErrchk(cudaMalloc(&d_P, sizeof(int) * d_mat.n_elements));
-    gpuErrchk(cudaMalloc(&d_cooVals_sorted, sizeof(double) * d_mat.n_elements));
+    gpuErrchk(cudaMalloc(&d_P, sizeof(int) * d_mat.nnz));
+    gpuErrchk(cudaMalloc(&d_cooVals_sorted, sizeof(double) * d_mat.nnz));
     gpuErrchk(cudaMalloc(&pBuffer, sizeof(char) * pBufferSizeInBytes));
     gpuErrchk(cudaDeviceSynchronize());
 
     /* step 3: setup permutation vector P to identity */
     cusparseErrchk(cusparseCreateIdentityPermutation(cusparseHandle,
-                                                     d_mat.n_elements, d_P));
+                                                     d_mat.nnz, d_P));
 
     /* step 4: sort COO format by Row */
     d_mat.OperationCuSparse((void *)cusparseXcoosortByRow, cusparseHandle,
                             false, d_P, pBuffer);
 
     // /* step 5: gather sorted cooVals */
-    cusparseErrchk(cusparseDgthr(cusparseHandle, d_mat.n_elements, d_mat.vals,
+    cusparseErrchk(cusparseDgthr(cusparseHandle, d_mat.nnz, d_mat.vals,
                                  d_cooVals_sorted, d_P,
                                  CUSPARSE_INDEX_BASE_ZERO));
 

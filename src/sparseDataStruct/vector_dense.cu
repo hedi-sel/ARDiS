@@ -30,11 +30,11 @@ __host__ __device__ void VectorDense::Print() {
     printf("[ ");
 #ifndef __CUDA_ARCH__
     if (isDevice) {
-        printVector<<<1, 1>>>(_device);
+        printVector<<<1, 1>>>(*_device);
         cudaDeviceSynchronize();
     } else
 #endif
-        printVectorBody(this);
+        printVectorBody(*this);
 }
 
 __host__ VectorDense::~VectorDense() {

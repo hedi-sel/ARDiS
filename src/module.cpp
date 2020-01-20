@@ -5,7 +5,8 @@
 
 PYBIND11_MODULE(dna, m) {
     m.doc() = "Sparse Linear Equation solving API"; // optional module docstring
-    m.def("SolveLinEq", &SolveLinEq, "SolveLinEq linear system resolution");
+    m.def("SolveCholesky", &SolveCholesky);
+    m.def("SolveConjugateGradient", &SolveConjugateGradient);
     m.def("ReadFromFile", &ReadFromFile);
     m.def("Test", &Test);
 
@@ -21,7 +22,7 @@ PYBIND11_MODULE(dna, m) {
         .def("AddElement", &MatrixSparse::AddElement)
         .def("ConvertMatrixToCSR", &MatrixSparse::ConvertMatrixToCSR)
         .def("Print", &MatrixSparse::Print)
-        .def_readwrite("n_elements", &MatrixSparse::n_elements)
+        .def_readwrite("nnz", &MatrixSparse::nnz)
         .def_readwrite("i_size", &MatrixSparse::i_size)
         .def_readwrite("j_size", &MatrixSparse::j_size)
         .def_readwrite("type", &MatrixSparse::type)

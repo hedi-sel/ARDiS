@@ -78,11 +78,13 @@
         "iomanip": "cpp",
         "mutex": "cpp",
         "shared_mutex": "cpp",
-        "*.cuh": "cpp"
+        "*.cuh": "cpp",
+        "any": "cpp",
+        "scoped_allocator": "cpp"
     },
     "C_Cpp.default.includePath": [
         "~/Libraries/pybind11/include",
-        "${workspaceFolder}/src/include"
+        "${workspaceFolder}/src/"
     ],
     "C_Cpp.clang_format_fallbackStyle": "{IndentWidth: 4}",
     "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"

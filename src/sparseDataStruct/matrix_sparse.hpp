@@ -12,9 +12,11 @@ enum MatrixType { COO, CSR, CSC };
 
 class MatrixSparse {
   public:
-    int n_elements;
+    int nnz;
     int i_size;
     int j_size;
+
+    int loaded_elements = 0;
 
     MatrixType type;
     const bool isDevice;
@@ -25,16 +27,15 @@ class MatrixSparse {
     int *colPtr;
     MatrixSparse *_device;
 
-    __host__ MatrixSparse(int i_size, int j_size, int n_elements,
+    __host__ MatrixSparse(int i_size, int j_size, int nnz,
                           MatrixType = CSR, bool isDevice = false);
     __host__ MatrixSparse(const MatrixSparse &, bool copyToOtherMem = false);
     __host__ ~MatrixSparse();
 
-    __host__ __device__ void Print() const;
+    __host__ __device__ void Print(int printCount = 5) const;
 
     // Add an element at index k
-    __host__ __device__ void AddElement(const int k, const int i, const int j,
-                                        const T);
+    __host__ __device__ void AddElement(int i, int j, T);
 
     // __host__ __device__ MatrixElement Start() const;
 

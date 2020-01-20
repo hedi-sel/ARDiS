@@ -12,7 +12,7 @@ void VectorSum(VectorDense &a, VectorDense &b, T &alpha, VectorDense &c,
                bool synchronize = true);
 void VectorSum(VectorDense &a, VectorDense &b, VectorDense &c,
                bool synchronize = true);
-void MatrixSum(MatrixSparse &a, MatrixSparse &b, T &alpha, MatrixSparse &c,
+void MatrixSum(MatrixSparse &a, MatrixSparse &b, T &alpha, MatrixSparse *c,
                bool synchronize = true);
-void MatrixSum(MatrixSparse &a, MatrixSparse &b, MatrixSparse &c,
+void MatrixSum(MatrixSparse &a, MatrixSparse &b, MatrixSparse *c,
                bool synchronize = true);

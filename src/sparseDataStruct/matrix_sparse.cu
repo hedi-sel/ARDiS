@@ -8,34 +8,36 @@
 #include <sparseDataStruct/matrix_element.hpp>
 #include <sparseDataStruct/matrix_sparse.hpp>
 
-__host__ MatrixSparse::MatrixSparse(int i_size, int j_size, int n_elements,
+__host__ MatrixSparse::MatrixSparse(int i_size, int j_size, int nnz,
                                     MatrixType type, bool isDevice)
-    : n_elements(n_elements), i_size(i_size), j_size(j_size),
+    : nnz(nnz), i_size(i_size), j_size(j_size),
       isDevice(isDevice), type(type) {
     MemAlloc();
 }
 
 __host__ MatrixSparse::MatrixSparse(const MatrixSparse &m, bool copyToOtherMem)
-    : MatrixSparse(m.i_size, m.j_size, m.n_elements, m.type,
+    : MatrixSparse(m.i_size, m.j_size, m.nnz, m.type,
                    m.isDevice ^ copyToOtherMem) {
+    loaded_elements = m.loaded_elements;
+    assert(m.loaded_elements == m.nnz);
     cudaMemcpyKind memCpy =
         (m.isDevice)
             ? (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
             : (isDevice) ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost;
-    gpuErrchk(cudaMemcpy(vals, m.vals, sizeof(T) * n_elements, memCpy));
+    gpuErrchk(cudaMemcpy(vals, m.vals, sizeof(T) * nnz, memCpy));
     gpuErrchk(cudaMemcpy(
         colPtr, m.colPtr,
-        sizeof(int) * ((type == CSC) ? j_size + 1 : n_elements), memCpy));
+        sizeof(int) * ((type == CSC) ? j_size + 1 : nnz), memCpy));
     gpuErrchk(cudaMemcpy(
         rowPtr, m.rowPtr,
-        sizeof(int) * ((type == CSR) ? i_size + 1 : n_elements), memCpy));
+        sizeof(int) * ((type == CSR) ? i_size + 1 : nnz), memCpy));
 }
 
 __host__ void MatrixSparse::MemAlloc() {
-    int rowPtrSize = (type == CSR) ? i_size + 1 : n_elements;
-    int colPtrSize = (type == CSC) ? j_size + 1 : n_elements;
+    int rowPtrSize = (type == CSR) ? i_size + 1 : nnz;
+    int colPtrSize = (type == CSC) ? j_size + 1 : nnz;
     if (isDevice) {
-        gpuErrchk(cudaMalloc(&vals, n_elements * sizeof(T)));
+        gpuErrchk(cudaMalloc(&vals, nnz * sizeof(T)));
         gpuErrchk(cudaMalloc(&rowPtr, rowPtrSize * sizeof(int)));
         gpuErrchk(cudaMalloc(&colPtr, colPtrSize * sizeof(int)));
 
@@ -43,7 +45,7 @@ __host__ void MatrixSparse::MemAlloc() {
         gpuErrchk(cudaMemcpy(_device, this, sizeof(MatrixSparse),
                              cudaMemcpyHostToDevice));
     } else {
-        vals = new T[n_elements];
+        vals = new T[nnz];
         rowPtr = new int[rowPtrSize];
         for (int i = 0; i < rowPtrSize; i++)
             rowPtr[i] = 0;
@@ -53,34 +55,38 @@ __host__ void MatrixSparse::MemAlloc() {
     }
 }
 
-__host__ __device__ void MatrixSparse::Print() const {
+__host__ __device__ void MatrixSparse::Print(int printCount) const {
 #ifndef __CUDA_ARCH__
     if (isDevice) {
-        printMatrix<<<1, 1>>>(_device);
+        printMatrix<<<1, 1>>>(_device, printCount);
         cudaDeviceSynchronize();
     } else
 #endif
-        printMatrixBody(this);
+        printMatrixBody(this, printCount);
 }
 
-__host__ __device__ void MatrixSparse::AddElement(int k, int i, int j,
-                                                  const T val) {
+__host__ __device__ void MatrixSparse::AddElement(int i, int j, T val) {
     assert(!isDevice);
-    vals[k] = val;
+    if (loaded_elements >= nnz) {
+        printf("Error! The Sparse Matrix exceeded its moemory allocation!\n");
+        return;
+    }
+    vals[loaded_elements] = val;
     if (type == CSC) {
         if (colPtr[j + 1] == 0)
             colPtr[j + 1] = colPtr[j];
         colPtr[j + 1]++;
     } else {
-        colPtr[k] = j;
+        colPtr[loaded_elements] = j;
     }
     if (type == CSR) {
         if (rowPtr[i + 1] == 0)
             rowPtr[i + 1] = rowPtr[i];
         rowPtr[i + 1]++;
     } else {
-        rowPtr[k] = i;
+        rowPtr[loaded_elements] = i;
     }
+    loaded_elements++;
 }
 
 // Get the value at index k of the sparse matrix
@@ -117,12 +123,12 @@ __host__ void MatrixSparse::ToCompressedDataType(MatrixType toType,
     int *newArray;
     if (isDevice) {
         gpuErrchk(cudaMalloc(&newArray, newSize * sizeof(int)));
-        convertArray<<<1, 1>>>((toType == CSR) ? rowPtr : colPtr, n_elements,
+        convertArray<<<1, 1>>>((toType == CSR) ? rowPtr : colPtr, nnz,
                                newArray, newSize);
         cudaFree((toType == CSR) ? rowPtr : colPtr);
     } else {
         newArray = new int[newSize];
-        convertArrayBody((toType == CSR) ? rowPtr : colPtr, n_elements,
+        convertArrayBody((toType == CSR) ? rowPtr : colPtr, nnz,
                          newArray, newSize);
         if (toType == CSR)
             delete[] rowPtr;
@@ -152,13 +158,13 @@ __host__ bool MatrixSparse::IsConvertibleTo(MatrixType toType) const {
     if (isDevice) {
         bool *_isOK;
         gpuErrchk(cudaMalloc(&_isOK, sizeof(bool)));
-        checkOrdered<<<1, 1>>>(analyzedArray, n_elements, _isOK);
+        checkOrdered<<<1, 1>>>(analyzedArray, nnz, _isOK);
         gpuErrchk(
             cudaMemcpy(&isOK, _isOK, sizeof(bool), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaFree(_isOK));
         gpuErrchk(cudaDeviceSynchronize());
     } else {
-        checkOrderedBody(analyzedArray, n_elements, &isOK);
+        checkOrderedBody(analyzedArray, nnz, &isOK);
     }
     return isOK;
 }
@@ -213,13 +219,13 @@ __host__ void MatrixSparse::OperationCuSparse(void *function,
     } else {
         if (pointer1)
             if (pointer2) {
-                cusparseErrchk(((FuncSpar)function)(handle, i_size, j_size,
-                                                    n_elements, rowPtr, colPtr,
-                                                    pointer1, pointer2));
+                cusparseErrchk(((FuncSpar)function)(
+                    handle, i_size, j_size, loaded_elements, rowPtr, colPtr,
+                    pointer1, pointer2));
             } else {
                 cusparseErrchk(((FuncSpar)function)(handle, i_size, j_size,
-                                                    n_elements, rowPtr, colPtr,
-                                                    pointer1));
+                                                    loaded_elements, rowPtr,
+                                                    colPtr, pointer1));
             }
         else
             printf("This function is not complete");
@@ -230,8 +236,8 @@ typedef cusolverStatus_t (*FuncSolv)(...);
 __host__ void MatrixSparse::OperationCuSolver(void *function,
                                               cusolverSpHandle_t &handle, T *b,
                                               T *xOut, int *singularOut) {
-    cusolverErrchk(((FuncSolv)function)(handle, i_size, n_elements, descr, vals,
-                                        rowPtr, colPtr, b, 0.0, 0, xOut,
+    cusolverErrchk(((FuncSolv)function)(handle, i_size, loaded_elements, descr,
+                                        vals, rowPtr, colPtr, b, 0.0, 0, xOut,
                                         singularOut));
     // TODO : SymOptimization
 }

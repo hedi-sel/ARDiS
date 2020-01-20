@@ -18,11 +18,26 @@
 using boost::timer::cpu_timer;
 py::array_t<double> Test(MatrixSparse &d_stiff, MatrixSparse &d_damp,
                          py::array_t<double> &x) {
-    return new (py::array_t(0, 0));
+    VectorDense d_x(x.size(), true);
+    gpuErrchk(cudaMemcpy(d_x.vals, x.data(), sizeof(T) * d_x.n,
+                         cudaMemcpyHostToDevice));
+    VectorDense d_y(d_stiff.i_size, true);
+    Dot(d_stiff, d_x, d_y);
+
+    MatrixSparse *sum;
+    MatrixSum(d_stiff, d_stiff, sum);
+
+    // d_stiff.Print();
+    // sum->Print();
+
+    d_y.Print();
+    VectorDense result(d_y, true);
+    return py::array_t(result.n, result.vals);
 }
 
 py::array_t<double> SolveConjugateGradient(MatrixSparse &d_mat,
-                                           py::array_t<double> &x) {
+                                           py::array_t<double> &x,
+                                           bool printError) {
     assert(x.size() == d_mat.j_size);
     VectorDense d_x(x.size(), true);
     gpuErrchk(cudaMemcpy(d_x.vals, x.data(), sizeof(T) * d_x.n,
@@ -32,14 +47,15 @@ py::array_t<double> SolveConjugateGradient(MatrixSparse &d_mat,
     cudaDeviceSynchronize();
     VectorDense result(d_y, true);
 
-    VectorDense vec(d_x.n, true);
-    Dot(d_mat, d_y, vec, true);
-    HDData<T> m1(-1);
-    VectorSum(d_x, vec, m1(true), vec, true);
-    Dot(vec, vec, m1(true), true);
-    m1.SetHost();
-    printf("Norme de la difference: %f\n", m1());
-
+    if (printError) {
+        VectorDense vec(d_x.n, true);
+        Dot(d_mat, d_y, vec, true);
+        HDData<T> m1(-1);
+        VectorSum(d_x, vec, m1(true), vec, true);
+        Dot(vec, vec, m1(true), true);
+        m1.SetHost();
+        printf("Norme de la difference: %f\n", m1());
+    }
     return py::array_t(result.n, result.vals);
 }
 
@@ -53,10 +69,7 @@ py::array_t<double> SolveCholesky(MatrixSparse &d_mat,
                          cudaMemcpyHostToDevice));
     VectorDense x(d_mat.i_size, true);
 
-    cpu_timer timer;
     solveLinEqBody(d_mat, b, x);
-    double run_time = static_cast<double>(timer.elapsed().wall) * 1.0e-9;
-    // std::cout << " -Real GPU Runtime: " << run_time << "s\n";
 
     VectorDense result(x, true);
     return py::array_t(result.n, result.vals);

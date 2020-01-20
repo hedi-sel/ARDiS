@@ -12,7 +12,7 @@ def ReadLine(line):
     for str in line.split(" "):
         if "." in str or "e" in str:
             values.append(float(str))
-        else:
+        elif len(str) > 0:
             values.append(int(str))
     return values
 
@@ -31,9 +31,12 @@ def LoadMatrixFromFile(path, readtype=Readtype.Normal):
     mat = lil_matrix((i, j))
     for line in lines:
         values = ReadLine(line)
-        mat[values[0] - 1, values[1] - 1] = values[2]
-        if (readtype == Readtype.Symetric):
-            mat[values[1] - 1, values[0] - 1] = values[2]
+        if len(values) == 3:
+            mat[values[0] - 1, values[1] - 1] = values[2]
+            if (readtype == Readtype.Symetric and values[1] != values[0]):
+                mat[values[1] - 1, values[0] - 1] = values[2]
+        else:
+            print(line)
     return mat
 
 
