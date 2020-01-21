@@ -8,14 +8,14 @@
 
 class MatrixElement {
   public:
-    const MatrixSparse *matrix;
+    const D_SparseMatrix *matrix;
     int k;
     int i = 0;
     int j = 0;
     T *val;
 
-    __host__ __device__ MatrixElement(int k, const MatrixSparse *matrix);
-    __host__ __device__ MatrixElement(const MatrixSparse *matrix);
+    __host__ __device__ MatrixElement(int k, const D_SparseMatrix *matrix);
+    __host__ __device__ MatrixElement(const D_SparseMatrix *matrix);
     // __host__ __device__ MatrixElement() : matrix(nullptr) {}
 
     __host__ __device__ bool HasNext();

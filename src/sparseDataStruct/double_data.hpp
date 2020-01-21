@@ -9,9 +9,7 @@ template <typename DataType> class HDData {
     DataType _host;
     DataType *_device;
     HDData() { cudaMalloc(&_device, sizeof(DataType)); };
-    HDData(DataType &data, bool itsDevice = false) : HDData() {
-        Set(data, itsDevice);
-    }
+    HDData(DataType &data, bool itsDevice) : HDData() { Set(data, itsDevice); }
     HDData(DataType data) : HDData() { Set(data, false); }
     DataType &operator()(bool device = false) {
         if (device)

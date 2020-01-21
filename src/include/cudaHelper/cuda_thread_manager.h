@@ -17,7 +17,7 @@ struct dim3Pair {
 
 dim3Pair Make1DThreadBlock(int computeSize,
                            int blockSize = BLOCK_SIZE * BLOCK_SIZE) {
-    dim3Pair threadblock(BLOCK_SIZE * BLOCK_SIZE, 1);
+    dim3Pair threadblock(1, BLOCK_SIZE * BLOCK_SIZE);
     if (threadblock.thread.x < computeSize) {
         threadblock.block.x = int((computeSize - 1) / threadblock.thread.x) + 1;
     } else {

@@ -4,15 +4,16 @@
 #include "sparseDataStruct/matrix_sparse.hpp"
 #include "sparseDataStruct/vector_dense.hpp"
 
-void Dot(MatrixSparse &d_mat, VectorDense &x, VectorDense &y,
+void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &y,
          bool synchronize = true);
-void Dot(VectorDense &x, VectorDense &y, double &result,
-         bool synchronize = true);
-void VectorSum(VectorDense &a, VectorDense &b, T &alpha, VectorDense &c,
+void Dot(D_Array &x, D_Array &y, T &result, bool synchronize = true);
+
+// Computes C = A + alpha*B
+void VectorSum(D_Array &a, D_Array &b, T &alpha, D_Array &c,
                bool synchronize = true);
-void VectorSum(VectorDense &a, VectorDense &b, VectorDense &c,
-               bool synchronize = true);
-void MatrixSum(MatrixSparse &a, MatrixSparse &b, T &alpha, MatrixSparse *c,
-               bool synchronize = true);
-void MatrixSum(MatrixSparse &a, MatrixSparse &b, MatrixSparse *c,
-               bool synchronize = true);
+// Computes C = A + B
+void VectorSum(D_Array &a, D_Array &b, D_Array &c, bool synchronize = true);
+
+void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
+               D_SparseMatrix &c);
+void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, D_SparseMatrix &c);

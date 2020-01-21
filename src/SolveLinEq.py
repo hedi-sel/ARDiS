@@ -18,7 +18,7 @@ matrixPath = "matrixSymDefPos/1,224_56,126_bcsstk27.mtx"
 # Load Matrix into device memory, and convert it to compressed data type
 start = time.time()
 M = dna.ReadFromFile(matrixPath)
-Mgpu = dna.MatrixSparse(M, True)
+Mgpu = dna.D_SparseMatrix(M, True)
 Mgpu.ConvertMatrixToCSR()
 loadGpuTime = time.time() - start
 print("Load Gpu Time:", loadGpuTime)

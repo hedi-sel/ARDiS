@@ -1,3 +1,5 @@
+#pragma once
+
 #include "cuda_runtime.h"
 
 #include "constants.hpp"
@@ -6,4 +8,6 @@
 #include "sparseDataStruct/matrix_sparse.hpp"
 #include "sparseDataStruct/vector_dense.hpp"
 
-void CGSolve(MatrixSparse &d_mat, VectorDense &b, VectorDense &y, T epsilon);
+void CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &y, T epsilon);
+void CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &y, T epsilon,
+             D_SparseMatrix &precond);

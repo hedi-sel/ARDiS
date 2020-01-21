@@ -10,7 +10,7 @@
 
 enum MatrixType { COO, CSR, CSC };
 
-class MatrixSparse {
+class D_SparseMatrix {
   public:
     int nnz;
     int i_size;
@@ -25,17 +25,21 @@ class MatrixSparse {
     T *vals;
     int *rowPtr;
     int *colPtr;
-    MatrixSparse *_device;
+    D_SparseMatrix *_device;
 
-    __host__ MatrixSparse(int i_size, int j_size, int nnz,
-                          MatrixType = CSR, bool isDevice = false);
-    __host__ MatrixSparse(const MatrixSparse &, bool copyToOtherMem = false);
-    __host__ ~MatrixSparse();
+    __host__ D_SparseMatrix();
+    __host__ D_SparseMatrix(int i_size, int j_size, int nnz = 0,
+                            MatrixType = COO, bool isDevice = true);
+    __host__ D_SparseMatrix(const D_SparseMatrix &,
+                            bool copyToOtherMem = false);
+    __host__ ~D_SparseMatrix();
 
     __host__ __device__ void Print(int printCount = 5) const;
 
+    __host__ void SetNNZ(int);
+
     // Add an element at index k
-    __host__ __device__ void AddElement(int i, int j, T);
+    __host__ __device__ void AddElement(int i, int j, T &);
 
     // __host__ __device__ MatrixElement Start() const;
 
@@ -49,8 +53,7 @@ class MatrixSparse {
     __host__ __device__ T Lookup(int i, int j) const;
 
     // Turn the matrix to CSC or CSR type
-    __host__ void ToCompressedDataType(MatrixType = COO,
-                                       bool orderBeforhand = false);
+    __host__ void ToCompressedDataType(MatrixType = COO);
     __host__ bool IsConvertibleTo(MatrixType) const;
 
     __host__ void ConvertMatrixToCSR();

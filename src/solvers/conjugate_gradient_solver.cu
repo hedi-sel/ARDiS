@@ -1,12 +1,17 @@
 #include "conjugate_gradient_solver.hpp"
 #include "constants.hpp"
 
-void CGSolve(MatrixSparse &d_mat, VectorDense &b, VectorDense &x, T epsilon) {
-    VectorDense r(b.n, true);
-    cudaMemcpy(r.vals, b.vals, sizeof(T) * b.n, cudaMemcpyDeviceToDevice);
-    VectorDense p(b.n, true);
-    cudaMemcpy(p.vals, b.vals, sizeof(T) * b.n, cudaMemcpyDeviceToDevice);
-    VectorDense q(b.n, true);
+D_SparseMatrix identity(0, 0);
+
+void CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon) {
+    CGSolve(d_mat, b, x, epsilon, identity);
+}
+
+void CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
+             D_SparseMatrix &precond) {
+    D_Array r(b);
+    D_Array p(b);
+    D_Array q(b.n, true);
     HDData<T> value;
 
     HDData<T> alpha(0.0);
@@ -14,9 +19,12 @@ void CGSolve(MatrixSparse &d_mat, VectorDense &b, VectorDense &x, T epsilon) {
     HDData<T> beta(0.0);
 
     HDData<T> diff(0.0);
-    Dot(r, p, diff(true), false);
+    Dot(r, p, diff(true), true);
     diff.SetHost();
+
+    int n_iter = 0;
     do {
+        n_iter++;
         Dot(d_mat, p, q, true);
 
         Dot(q, p, value(true), true);
@@ -39,5 +47,8 @@ void CGSolve(MatrixSparse &d_mat, VectorDense &b, VectorDense &x, T epsilon) {
         Dot(r, p, diff(true), true);
 
         diff.SetHost();
-    } while (diff() > epsilon);
+
+        printf("Prelim result %i : %f\n", n_iter, diff());
+    } while (diff() > epsilon * epsilon && n_iter < 1000);
+    printf("N Iterations = %i : %f\n", n_iter, diff());
 }

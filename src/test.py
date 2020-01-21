@@ -6,34 +6,48 @@ from scipy.sparse import *
 import scipy.sparse.linalg as spLnal
 import time
 
-dampingPath = "matrixTest/damping.mtx"
-stiffnessPath = "matrixTest/stiffness.mtx"
+dampingPath = "matrixFEM/damping(1).mtx"
+stiffnessPath = "matrixFEM/stiffness(1).mtx"
 
-dampingPath = "matrixTest/small.mtx"
-stiffnessPath = "matrixTest/small.mtx"
+dampingPath = "matrixFEM/damping.mtx"
+stiffnessPath = "matrixFEM/stiffness.mtx"
 
-D = dna.ReadFromFile(dampingPath)
-d_D = dna.MatrixSparse(D, True)
-d_D.ConvertMatrixToCSR()
-print("Dampness matrix loaded ...")
+# dampingPath = "matrixTest/small.mtx"
+# stiffnessPath = "matrixTest/small1.mtx"
 
 S = dna.ReadFromFile(stiffnessPath)
-d_S = dna.MatrixSparse(S, True)
+d_S = dna.D_SparseMatrix(S, True)
+# d_S = dna.D_SparseMatrix(S.i_size, S.j_size)
+
 d_S.ConvertMatrixToCSR()
 print("Stiffness matrix loaded ...")
 
-u = np.array([1] * d_S.j_size, dtype=float)
+D = dna.ReadFromFile(dampingPath)
+d_D = dna.D_SparseMatrix(D, True)
+d_D.ConvertMatrixToCSR()
+print("Dampness matrix loaded ...")
 
-A = LoadMatrixFromFile(stiffnessPath, Readtype.Symetric).tocsr()
-print("Test matrix loaded on CPU ...")
+
+U = np.random.rand(d_S.j_size)
+tau = 0.01
+epsilon = 1e-2
+
+d_U = dna.D_Array(len(U))
+d_U.Fill(U)
+
+###
+# M = D-tau*S
+###
+start = time.time()
+M = dna.D_SparseMatrix()
+dna.MatrixSum(d_D, d_S, -tau, M)
+d_DU = dna.D_Array(len(U))
+solve1Time = time.time() - start
 
 start = time.time()
-V1 = dna.Test(d_S, d_D, u)
-V2 = A.dot(u)
-
-print("Norm diff = ", np.linalg.norm(V1 - V2))
-
-solveGpuTime = time.time() - start
+V1 = dna.SolveConjugateGradient(M, d_D.Dot(d_U), epsilon)
+solve2Time = time.time() - start
 
 
-print("GPU Run Time :", solveGpuTime)
+print("Run Time 1:", solve1Time)
+print("Run Time 2:", solve2Time)

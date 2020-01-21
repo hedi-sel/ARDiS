@@ -9,7 +9,7 @@
 
 #include "cudaHelper/cuda_thread_manager.h"
 
-__global__ void DotK(MatrixSparse &d_mat, VectorDense &x, VectorDense &y) {
+__global__ void DotK(D_SparseMatrix &d_mat, D_Array &x, D_Array &y) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= d_mat.i_size)
         return;
@@ -21,13 +21,15 @@ __global__ void DotK(MatrixSparse &d_mat, VectorDense &x, VectorDense &y) {
     } while (it.i == i && it.HasNext());
 }
 
-void Dot(MatrixSparse &d_mat, VectorDense &x, VectorDense &result,
-         bool synchronize) {
+void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &result, bool synchronize) {
     assert(d_mat.isDevice && x.isDevice && result.isDevice);
+    if (&x == &result) {
+        printf("Error: X and Result vectors should not be the same instance");
+        return;
+    }
     dim3Pair threadblock = Make1DThreadBlock(d_mat.i_size);
     DotK<<<threadblock.block, threadblock.thread>>>(*d_mat._device, *x._device,
                                                     *result._device);
-
     if (synchronize)
         cudaDeviceSynchronize();
     else
@@ -42,7 +44,7 @@ __global__ void AllocateBuffer(int size) {
     buffer = new T[size];
 }
 
-__global__ void DotK(VectorDense &x, VectorDense &y) {
+__global__ void DotK(D_Array &x, D_Array &y) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= x.n)
         return;
@@ -80,7 +82,7 @@ __global__ void SumBlocks(T &result, int nValues) {
         result = buffer[i];
 }
 
-void Dot(VectorDense &x, VectorDense &y, double &result, bool synchronize) {
+void Dot(D_Array &x, D_Array &y, T &result, bool synchronize) {
     assert(x.isDevice && y.isDevice);
     assert(x.n == y.n);
     dim3Pair threadblock = Make1DThreadBlock(x.n);
@@ -104,16 +106,14 @@ void Dot(VectorDense &x, VectorDense &y, double &result, bool synchronize) {
         return;
 }
 
-__global__ void VectorSumK(VectorDense &a, VectorDense &b, T &alpha,
-                           VectorDense &c) {
+__global__ void VectorSumK(D_Array &a, D_Array &b, T &alpha, D_Array &c) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= a.n)
         return;
     c.vals[i] = a.vals[i] + b.vals[i] * alpha;
 };
 
-void VectorSum(VectorDense &a, VectorDense &b, T &alpha, VectorDense &c,
-               bool synchronize) {
+void VectorSum(D_Array &a, D_Array &b, T &alpha, D_Array &c, bool synchronize) {
     assert(a.isDevice && b.isDevice);
     assert(a.n == b.n);
     dim3Pair threadblock = Make1DThreadBlock(a.n);
@@ -123,8 +123,7 @@ void VectorSum(VectorDense &a, VectorDense &b, T &alpha, VectorDense &c,
         cudaDeviceSynchronize();
 }
 
-void VectorSum(VectorDense &a, VectorDense &b, VectorDense &c,
-               bool synchronize) {
+void VectorSum(D_Array &a, D_Array &b, D_Array &c, bool synchronize) {
     HDData<T> alpha(1.0);
     VectorSum(a, b, alpha(true), c, synchronize);
 }
@@ -141,7 +140,7 @@ __device__ inline bool IsSupEqu(MatrixElement &it_a, MatrixElement &it_b) {
     return (it_a.i == it_b.i && it_a.j >= it_b.j) || it_a.i > it_b.i;
 };
 
-__global__ void SumNNZK(MatrixSparse &a, MatrixSparse &b, int &nnz) {
+__global__ void SumNNZK(D_SparseMatrix &a, D_SparseMatrix &b, int &nnz) {
     MatrixElement it_a(&a);
     MatrixElement it_b(&b);
     nnz = 0;
@@ -163,22 +162,24 @@ __global__ void SumNNZK(MatrixSparse &a, MatrixSparse &b, int &nnz) {
     }
 }
 
-__global__ void AllocateSumK(MatrixSparse &a, MatrixSparse &b, T &alpha,
-                             MatrixSparse &c) {
+__global__ void AllocateSumK(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
+                             D_SparseMatrix &c) {
     // int i = threadIdx.x + blockIdx.x * blockDim.x;
     // if (i >= a.i_size)
     //     return;
     MatrixElement it_a(&a);
     MatrixElement it_b(&b);
-    c.AddElement(0, 0, 0.0);
+    T v = 0.0;
+    c.AddElement(0, 0, v);
     MatrixElement it_c(&c);
 
     while (it_a.HasNext() || it_b.HasNext()) {
         if (IsSupEqu(it_a, it_b)) {
+            T bVal = alpha * it_b.val[0];
             if (IsEqu(it_b, it_c))
-                it_c.val[0] += it_b.val[0];
+                it_c.val[0] += bVal;
             else {
-                c.AddElement(it_b.i, it_b.j, it_b.val[0]);
+                c.AddElement(it_b.i, it_b.j, bVal);
                 it_c.Next();
             }
             it_b.Next();
@@ -186,7 +187,7 @@ __global__ void AllocateSumK(MatrixSparse &a, MatrixSparse &b, T &alpha,
         if (IsSupEqu(it_b, it_a)) {
             if (IsEqu(it_a, it_c))
                 it_c.val[0] += it_a.val[0];
-            else {
+            else if (it_a.HasNext()) {
                 c.AddElement(it_a.i, it_a.j, it_a.val[0]);
                 it_c.Next();
             }
@@ -195,26 +196,27 @@ __global__ void AllocateSumK(MatrixSparse &a, MatrixSparse &b, T &alpha,
     }
 }
 
-void MatrixSum(MatrixSparse &a, MatrixSparse &b, T &alpha, MatrixSparse *c,
-               bool synchronize) {
+void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
+               D_SparseMatrix &c) {
     // This method is only impleted in the specific case of CSR matrices
     assert(a.type == CSR && b.type == CSR);
     assert(a.i_size == b.i_size && a.j_size == b.j_size);
-    HDData<int> nnz(0);
+    c.i_size = 1 * a.i_size;
+    c.j_size = 1 * a.j_size;
+    HDData<int> nnz;
     SumNNZK<<<1, 1>>>(*a._device, *b._device, nnz(true));
     cudaDeviceSynchronize();
     nnz.SetHost();
-    c = new MatrixSparse(a.i_size, a.j_size, nnz(), COO, true);
+    c.SetNNZ(nnz());
     // dim3Pair threadblock = Make1DThreadBlock(a.i_size);
-    AllocateSumK<<<1, 1>>>(*a._device, *b._device, alpha, *c->_device);
+    AllocateSumK<<<1, 1>>>(*a._device, *b._device, alpha, *c._device);
     cudaDeviceSynchronize();
-    assert(c->IsConvertibleTo(CSR));
-    c->ConvertMatrixToCSR();
+    assert(c.IsConvertibleTo(CSR));
+    c.ConvertMatrixToCSR();
     return;
 }
 
-void MatrixSum(MatrixSparse &a, MatrixSparse &b, MatrixSparse *c,
-               bool synchronize) {
-    HDData<T> alpha(1.0);
-    MatrixSum(a, b, alpha(true), c, synchronize);
+void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, D_SparseMatrix &c) {
+    HDData<T> d_alpha(1.0);
+    MatrixSum(a, b, d_alpha(true), c);
 }

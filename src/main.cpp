@@ -16,61 +16,59 @@
 #include "sparseDataStruct/vector_dense.hpp"
 
 using boost::timer::cpu_timer;
-py::array_t<double> Test(MatrixSparse &d_stiff, MatrixSparse &d_damp,
-                         py::array_t<double> &x) {
-    VectorDense d_x(x.size(), true);
-    gpuErrchk(cudaMemcpy(d_x.vals, x.data(), sizeof(T) * d_x.n,
-                         cudaMemcpyHostToDevice));
-    VectorDense d_y(d_stiff.i_size, true);
-    Dot(d_stiff, d_x, d_y);
 
-    MatrixSparse *sum;
-    MatrixSum(d_stiff, d_stiff, sum);
+D_Array Test(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, T tau,
+             D_Array &d_u, T epsilon) {
+    D_Array d_b(d_u.n, true);
+    Dot(d_damp, d_u, d_b);
+    D_Array d_x(d_u.n, true);
 
-    // d_stiff.Print();
-    // sum->Print();
+    D_SparseMatrix M(d_stiff.i_size, d_stiff.j_size, 0, COO, true);
+    HDData<T> d_tau(-tau);
+    MatrixSum(d_damp, d_stiff, d_tau(true), M);
 
-    d_y.Print();
-    VectorDense result(d_y, true);
-    return py::array_t(result.n, result.vals);
+    CGSolve(M, d_b, d_x, epsilon);
+
+#ifndef NDEBUG
+    D_Array d_y(d_stiff.i_size, true);
+    Dot(M, d_x, d_y);
+    alpha() = -1;
+    alpha.SetDevice();
+    VectorSum(d_y, d_b, alpha(true), d_x);
+    HDData<T> norm;
+    Dot(d_x, d_x, norm(true));
+    norm.SetHost();
+
+    printf("Norm of difference: %f\n", norm());
+#endif
+    return std::move(d_x);
 }
 
-py::array_t<double> SolveConjugateGradient(MatrixSparse &d_mat,
-                                           py::array_t<double> &x,
-                                           bool printError) {
-    assert(x.size() == d_mat.j_size);
-    VectorDense d_x(x.size(), true);
-    gpuErrchk(cudaMemcpy(d_x.vals, x.data(), sizeof(T) * d_x.n,
-                         cudaMemcpyHostToDevice));
-    VectorDense d_y(d_mat.i_size, true);
-    CGSolve(d_mat, d_x, d_y, 0.01);
-    cudaDeviceSynchronize();
-    VectorDense result(d_y, true);
+D_Array SolveConjugateGradient(D_SparseMatrix &d_mat, D_Array &d_x, T epsilon) {
+    D_Array d_y(d_mat.i_size, true);
+    CGSolve(d_mat, d_x, d_y, epsilon);
 
-    if (printError) {
-        VectorDense vec(d_x.n, true);
-        Dot(d_mat, d_y, vec, true);
-        HDData<T> m1(-1);
-        VectorSum(d_x, vec, m1(true), vec, true);
-        Dot(vec, vec, m1(true), true);
-        m1.SetHost();
-        printf("Norme de la difference: %f\n", m1());
-    }
-    return py::array_t(result.n, result.vals);
+#ifndef NDEBUG
+    D_Array vec(d_x.n, true);
+    Dot(d_mat, d_y, vec, true);
+    HDData<T> m1(-1);
+    VectorSum(d_x, vec, m1(true), vec, true);
+    Dot(vec, vec, m1(true), true);
+    m1.SetHost();
+    printf("Norme de la difference: %f\n", m1());
+#endif
+    return std::move(d_y);
 }
 
-py::array_t<double> SolveCholesky(MatrixSparse &d_mat,
-                                  py::array_t<double> &bVec) {
+D_Array SolveCholesky(D_SparseMatrix &d_mat, py::array_t<double> &bVec) {
     assert(bVec.size() == d_mat.i_size);
     assert(d_mat.isDevice);
 
-    VectorDense b(bVec.size(), true);
+    D_Array b(bVec.size(), true);
     gpuErrchk(cudaMemcpy(b.vals, bVec.data(), sizeof(T) * b.n,
                          cudaMemcpyHostToDevice));
-    VectorDense x(d_mat.i_size, true);
-
+    D_Array x(d_mat.i_size, true);
     solveLinEqBody(d_mat, b, x);
 
-    VectorDense result(x, true);
-    return py::array_t(result.n, result.vals);
+    return std::move(x);
 }

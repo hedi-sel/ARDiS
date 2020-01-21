@@ -47,7 +47,7 @@ def LoadMatrixFromFile(path, readtype=Readtype.Normal):
 #     while (i == -1):
 #         i, j, k = ReadLine(lines.pop(0))
 
-#     M = dna.MatrixSparse(i, j, k, dna.COO, False)
+#     M = dna.D_SparseMatrix(i, j, k, dna.COO, False)
 #     k = 0
 #     for line in lines:
 #         values = ReadLine(line)

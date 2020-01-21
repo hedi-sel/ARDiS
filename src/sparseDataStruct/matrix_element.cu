@@ -2,11 +2,11 @@
 #include <sparseDataStruct/matrix_sparse.hpp>
 
 __host__ __device__ MatrixElement::MatrixElement(int k,
-                                                 const MatrixSparse *matrix)
+                                                 const D_SparseMatrix *matrix)
     : k(k), matrix(matrix), val(&matrix->vals[k]) {
     updateIandJ();
 }
-__host__ __device__ MatrixElement::MatrixElement(const MatrixSparse *matrix)
+__host__ __device__ MatrixElement::MatrixElement(const D_SparseMatrix *matrix)
     : MatrixElement(0, matrix) {}
 
 __host__ __device__ bool MatrixElement::HasNext() {

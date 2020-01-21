@@ -9,7 +9,7 @@
 enum Readtype { Normal, Symetric };
 
 Readtype readtype = Symetric;
-__host__ MatrixSparse ReadFromFile(const std::string filepath/* ,
+__host__ D_SparseMatrix ReadFromFile(const std::string filepath/* ,
                                    Readtype readtype = Normal */) {
     int i, j;
     int n_elts = 0;
@@ -32,7 +32,7 @@ __host__ MatrixSparse ReadFromFile(const std::string filepath/* ,
 
     n_elts = (readtype == Normal) ? n_lines : n_lines * 2 - i;
 
-    MatrixSparse matrix(i, j, n_elts, COO);
+    D_SparseMatrix matrix(i, j, n_elts, COO, false);
 
     for (int k = 0; k < n_lines; k++) {
         do {
