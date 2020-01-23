@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-#include "sparseDataStruct/matrix_sparse.hpp"
+#include "dataStructures/sparse_matrix.hpp"
 
 enum Readtype { Normal, Symetric };
 
@@ -45,7 +45,7 @@ __host__ D_SparseMatrix ReadFromFile(const std::string filepath/* ,
         else {
             i--;
             j--;
-            assert(i >= 0 && i < matrix.i_size && j >= 0 && j < matrix.j_size);
+            assert(i >= 0 && i < matrix.rows && j >= 0 && j < matrix.cols);
             matrix.AddElement(i, j, val);
             if (i != j) {
                 matrix.AddElement(j, i, val);

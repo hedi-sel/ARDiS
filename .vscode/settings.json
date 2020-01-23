@@ -80,11 +80,17 @@
         "shared_mutex": "cpp",
         "*.cuh": "cpp",
         "any": "cpp",
-        "scoped_allocator": "cpp"
+        "scoped_allocator": "cpp",
+        "cassert": "cpp",
+        "cerrno": "cpp",
+        "cfloat": "cpp",
+        "climits": "cpp"
     },
     "C_Cpp.default.includePath": [
         "~/Libraries/pybind11/include",
-        "${workspaceFolder}/src/"
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/src/include",
+        "/usr/local/cuda-10.2/include"
     ],
     "C_Cpp.clang_format_fallbackStyle": "{IndentWidth: 4}",
     "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"

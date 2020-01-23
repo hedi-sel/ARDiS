@@ -1,6 +1,7 @@
 #include "cuda_runtime.h"
-#include "sparseDataStruct/matrix_element.hpp"
-#include "sparseDataStruct/matrix_sparse.hpp"
+#include "dataStructures/matrix_element.hpp"
+#include "dataStructures/sparse_matrix.hpp"
+#include "dataStructures/array.hpp"
 
 __device__ __host__ void convertArrayBody(D_SparseMatrix *matrix,
                                           int *toOrderArray, int *newArray,
@@ -35,8 +36,8 @@ __global__ void checkOrdered(int *array, int size, bool *_isOK) {
 
 __device__ __host__ inline void printMatrixBody(const D_SparseMatrix *matrix,
                                                 int printCount = 0) {
-    printf("Matrix :\n%i %i %i isDev=%i format=", matrix->i_size,
-           matrix->j_size, matrix->loaded_elements, matrix->isDevice);
+    printf("Matrix :\n%i %i %i isDev=%i format=", matrix->rows, matrix->cols,
+           matrix->loaded_elements, matrix->isDevice);
     switch (matrix->type) {
     case COO:
         printf("COO\n");
@@ -104,4 +105,16 @@ __device__ __host__ void AddElementBody(D_SparseMatrix *m, int i, int j,
 
 __global__ void AddElementK(D_SparseMatrix *m, int i, int j, T &val) {
     AddElementBody(m, i, j, val);
+}
+
+__global__ void GetDataWidthK(D_SparseMatrix &d_mat, D_Array &width) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= d_mat.rows)
+        return;
+    MatrixElement it(d_mat.rowPtr[i], &d_mat);
+    width.vals[i] = 0;
+    do {
+        width.vals[i] += 1;
+        it.Next();
+    } while (it.i == i && it.HasNext());
 }

@@ -1,13 +1,11 @@
-#include <pybind11/functional.h>
-#include <pybind11/pybind11.h>
-
+#include "pybind11_include.hpp"
 #include <assert.h>
 
-#include "cusparseOperations/dot_sparse.hpp"
-#include "main.hpp"
-#include "sparseDataStruct/double_data.hpp"
-#include "sparseDataStruct/matrix_sparse.hpp"
-#include "sparseDataStruct/vector_dense.hpp"
+#include "dataStructures/array.hpp"
+#include "dataStructures/hd_data.hpp"
+#include "dataStructures/sparse_matrix.hpp"
+#include "main.h"
+#include "matrixOperations/basic_operations.hpp"
 
 PYBIND11_MODULE(dna, m) {
     py::enum_<MatrixType>(m, "MatrixType")
@@ -27,46 +25,49 @@ PYBIND11_MODULE(dna, m) {
         .def("Print", &D_SparseMatrix::Print, py::arg("printCount") = 5)
         .def("Dot",
              [](D_SparseMatrix &mat, D_Array &x) {
-                 D_Array y(mat.i_size);
+                 D_Array y(mat.rows);
                  Dot(mat, x, y);
                  return std::move(y);
              },
              py::return_value_policy::move)
         .def_readonly("nnz", &D_SparseMatrix::nnz)
-        .def_readonly("i_size", &D_SparseMatrix::i_size)
-        .def_readonly("j_size", &D_SparseMatrix::j_size)
+        .def_readonly("rows", &D_SparseMatrix::rows)
+        .def_readonly("cols", &D_SparseMatrix::cols)
         .def_readonly("type", &D_SparseMatrix::type)
         .def_readonly("isDevice", &D_SparseMatrix::isDevice);
 
     py::class_<D_Array>(m, "D_Array")
         .def(py::init<int>())
         .def(py::init<const D_Array &>())
-        .def("Print", &D_Array::Print)
+        .def("Print", &D_Array::Print, py::arg("printCount") = 5)
         .def("Fill",
-             [](D_Array &v, py::array_t<T> &x) {
-                 assert(x.size() == v.n);
-                 gpuErrchk(cudaMemcpy(v.vals, x.data(), sizeof(T) * x.size(),
+             [](D_Array &This, py::array_t<T> &x) {
+                 assert(x.size() == This.n);
+                 gpuErrchk(cudaMemcpy(This.vals, x.data(), sizeof(T) * x.size(),
                                       cudaMemcpyHostToDevice));
              })
-        .def("Dot", [](D_Array &a, D_Array &b) {
+        .def("Dot", [](D_Array &This, D_Array &b) {
             HDData<T> res;
-            Dot(a, b, res(true));
+            Dot(This, b, res(true));
             return res();
         });
 
     m.doc() = "Sparse Linear Equation solving API"; // optional module docstring
-    m.def("SolveCholesky", &SolveCholesky, py::return_value_policy::move);
+    m.def("SolveCholesky", &SolveCholesky,
+          py::return_value_policy::take_ownership);
     m.def("SolveConjugateGradient", &SolveConjugateGradient,
-          py::return_value_policy::move);
-    m.def("ReadFromFile", &ReadFromFile, py::return_value_policy::move);
-    m.def("Test", &Test);
+          py::return_value_policy::take_ownership);
+    m.def("ReadFromFile", &ReadFromFile,
+          py::return_value_policy::take_ownership);
+    m.def("DiffusionTest", &DiffusionTest,
+          py::return_value_policy::take_ownership);
 
     m.def("GetNumpyVector",
           [](D_Array &v) {
               D_Array x(v, true);
               return std::move(py::array_t(x.n, x.vals));
           },
-          py::return_value_policy::move);
+          py::return_value_policy::take_ownership);
     m.def("MatrixSum", [](D_SparseMatrix &a, D_SparseMatrix &b,
                           D_SparseMatrix &c) { MatrixSum(a, b, c); });
     m.def("MatrixSum",
@@ -81,12 +82,12 @@ PYBIND11_MODULE(dna, m) {
               VectorSum(a, b, d_alpha(true), c);
               return std::move(c);
           },
-          py::return_value_policy::move);
+          py::return_value_policy::take_ownership);
     m.def("VectorSum",
           [](D_Array &a, D_Array &b) {
               D_Array c(a.n);
               VectorSum(a, b, c);
               return std::move(c);
           },
-          py::return_value_policy::move);
-}
+          py::return_value_policy::take_ownership);
+} // namespace PYBIND11_MODULE(dna,m)

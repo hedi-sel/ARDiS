@@ -1,5 +1,5 @@
-#include <sparseDataStruct/matrix_element.hpp>
-#include <sparseDataStruct/matrix_sparse.hpp>
+#include <dataStructures/matrix_element.hpp>
+#include <dataStructures/sparse_matrix.hpp>
 
 __host__ __device__ MatrixElement::MatrixElement(int k,
                                                  const D_SparseMatrix *matrix)
@@ -13,16 +13,19 @@ __host__ __device__ bool MatrixElement::HasNext() {
     return k < this->matrix->loaded_elements;
 }
 
-__host__ __device__ void MatrixElement::Next() {
-    k++;
-    if (k >= this->matrix->loaded_elements) {
-        val = 0;
-        i = matrix->i_size;
-        j = matrix->j_size;
-    } else {
-        val = &val[1];
-        updateIandJ();
-    }
+__host__ __device__ void MatrixElement::Next() { Jump(1); }
+__host__ __device__ void MatrixElement::Jump(int hop) {
+    k += hop;
+    if (hop != 0)
+        if (k >= this->matrix->loaded_elements) {
+            k = this->matrix->loaded_elements;
+            val = 0;
+            i = matrix->rows;
+            j = matrix->cols;
+        } else {
+            val = &val[hop];
+            updateIandJ();
+        }
 }
 
 __host__ __device__ void MatrixElement::Print() const {

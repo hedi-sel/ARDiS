@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 
 #include "constants.hpp"
-#include "matrix_sparse.hpp"
+#include "sparse_matrix.hpp"
 
 class MatrixElement {
   public:
@@ -20,6 +20,7 @@ class MatrixElement {
 
     __host__ __device__ bool HasNext();
     __host__ __device__ void Next();
+    __host__ __device__ void Jump(int hop);
 
     __host__ __device__ void Print() const;
 
