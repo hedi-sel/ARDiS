@@ -41,7 +41,7 @@ __host__ __device__ void D_Array::Print(int printCount) {
 #ifndef __CUDA_ARCH__
     if (isDevice) {
         printVector<<<1, 1>>>(*_device, printCount);
-        cudaDeviceSynchronize();
+        gpuErrchk(cudaDeviceSynchronize());
     } else
 #endif
         printVectorBody(*this, printCount);

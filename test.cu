@@ -18,9 +18,9 @@ int main() {
 
     kernel<<<1, 16>>>(func_gpu2);
 
-    cudaDeviceSynchronize();
+    gpuErrchk(cudaDeviceSynchronize());
 
     // kernel<<<1, 32>>>(func_gpu2);
 
-    cudaDeviceSynchronize();
+    gpuErrchk(cudaDeviceSynchronize());
 }

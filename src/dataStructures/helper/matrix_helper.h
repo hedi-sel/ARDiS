@@ -1,7 +1,7 @@
 #include "cuda_runtime.h"
+#include "dataStructures/array.hpp"
 #include "dataStructures/matrix_element.hpp"
 #include "dataStructures/sparse_matrix.hpp"
-#include "dataStructures/array.hpp"
 
 __device__ __host__ void convertArrayBody(D_SparseMatrix *matrix,
                                           int *toOrderArray, int *newArray,
@@ -36,8 +36,8 @@ __global__ void checkOrdered(int *array, int size, bool *_isOK) {
 
 __device__ __host__ inline void printMatrixBody(const D_SparseMatrix *matrix,
                                                 int printCount = 0) {
-    printf("Matrix :\n%i %i %i isDev=%i format=", matrix->rows, matrix->cols,
-           matrix->loaded_elements, matrix->isDevice);
+    printf("Matrix :\n%i %i %i/%i isDev=%i format=", matrix->rows, matrix->cols,
+           matrix->loaded_elements, matrix->nnz, matrix->isDevice);
     switch (matrix->type) {
     case COO:
         printf("COO\n");
@@ -82,7 +82,9 @@ __global__ void IsSymetricKernel(const D_SparseMatrix *matrix, bool *_return) {
 __device__ __host__ void AddElementBody(D_SparseMatrix *m, int i, int j,
                                         T &val) {
     if (m->loaded_elements >= m->nnz) {
-        printf("Error! The Sparse Matrix exceeded its moemory allocation!\n");
+        printf("Error! The Sparse Matrix exceeded its memory allocation! At: "
+               "i=%i j=%i val=%f\n",
+               i, j, val);
         return;
     }
     m->vals[m->loaded_elements] = val;

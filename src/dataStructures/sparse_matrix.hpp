@@ -41,7 +41,7 @@ class D_SparseMatrix {
     __host__ void SetNNZ(int);
 
     // Add an element at index k
-    __host__ __device__ void AddElement(int i, int j, T &);
+    __host__ __device__ void AddElement(int i, int j, T);
 
     // __host__ __device__ MatrixElement Start() const;
 

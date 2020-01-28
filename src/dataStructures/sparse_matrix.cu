@@ -79,7 +79,7 @@ __host__ __device__ void D_SparseMatrix::Print(int printCount) const {
 #ifndef __CUDA_ARCH__
     if (isDevice) {
         printMatrix<<<1, 1>>>(_device, printCount);
-        cudaDeviceSynchronize();
+        gpuErrchk(cudaDeviceSynchronize());
     } else
 #endif
         printMatrixBody(this, printCount);
@@ -91,11 +91,11 @@ __host__ void D_SparseMatrix::SetNNZ(int nnz) {
     MemAlloc();
 }
 
-__host__ __device__ void D_SparseMatrix::AddElement(int i, int j, T &val) {
+__host__ __device__ void D_SparseMatrix::AddElement(int i, int j, T val) {
 #ifndef __CUDA_ARCH__
     if (isDevice) {
         AddElementK<<<1, 1>>>(_device, i, j, val);
-        cudaDeviceSynchronize();
+        gpuErrchk(cudaDeviceSynchronize());
     } else
 #endif
         AddElementBody(this, i, j, val);
@@ -218,7 +218,7 @@ __host__ bool D_SparseMatrix::IsSymetric() {
         bool *_returnGpu;
         gpuErrchk(cudaMalloc(&_returnGpu, sizeof(bool)));
         IsSymetricKernel<<<1, 1>>>(_device, _returnGpu);
-        cudaDeviceSynchronize();
+        gpuErrchk(cudaDeviceSynchronize());
         gpuErrchk(cudaMemcpy(_return, _returnGpu, sizeof(bool),
                              cudaMemcpyDeviceToHost));
         gpuErrchk(cudaFree(_returnGpu));

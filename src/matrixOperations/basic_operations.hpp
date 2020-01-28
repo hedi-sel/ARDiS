@@ -27,4 +27,7 @@ void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
                D_SparseMatrix &c);
 void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, D_SparseMatrix &c);
 
+void ScalarMult(D_SparseMatrix &a, T &alpha);
+void ScalarMult(D_Array &a, T &alpha);
+
 void PrintDotProfiler();

@@ -14,12 +14,12 @@ __global__ void ReductionK(D_Array &A, int nValues, int shift, OpType op) {
         return;
     for (int exp = 0; (1 << exp) < blockDim.x; exp++) {
         if (threadIdx.x % (2 << exp) == 0 &&
-            threadIdx.x + (1 << exp) < blockDim.x) {
-            A.vals[i] = op(A.vals[i], A.vals[i + shift * (1 << exp)]);
+            threadIdx.x + (1 << exp) < blockDim.x &&
+            i + (1 << exp) <= nValues) {
+            A.vals[shift * i] =
+                op(A.vals[shift * i], A.vals[shift * (i + (1 << exp))]);
         }
         __syncthreads();
-        // if (i == 0)
-        //     A.Print();
     }
 };
 
@@ -31,10 +31,9 @@ template <typename OpType> T ReductionOperation(D_Array &A, OpType op) {
         threadblock = Make1DThreadBlock(nValues);
         ReductionK<<<threadblock.block.x, threadblock.thread.x>>>(
             *A._device, nValues, shift, op);
+        gpuErrchk(cudaDeviceSynchronize());
         nValues = int((nValues - 1) / threadblock.thread.x) + 1;
         shift *= threadblock.thread.x;
     } while (nValues > 1);
-    // A.Print();
     return 0;
 }
-// ReductionOperation<>;

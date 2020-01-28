@@ -28,15 +28,19 @@ void checkSolve(D_SparseMatrix &M, D_Array &d_b, D_Array &d_x) {
     printf("Norme de la difference: %f\n", m1());
 }
 
+D_SparseMatrix Test(D_SparseMatrix &d_m1, D_SparseMatrix &d_m2) {
+    D_SparseMatrix d_sum;
+    MatrixSum(d_m1, d_m2, d_sum);
+    return std::move(d_sum);
+}
+
 D_Array SolveConjugateGradient(D_SparseMatrix &d_mat, D_Array &d_x, T epsilon) {
-    D_SparseMatrix mat(d_mat);
-    D_Array d_y(d_x.n);
-    CGSolve(mat, d_x, d_y, epsilon);
-
+    D_Array d_y(d_x);
+    CGSolve(d_mat, d_x, d_y, epsilon);
 #ifndef NDEBUG
-    checkSolve(mat, d_x, d_y);
+    checkSolve(d_mat, d_x, d_y);
 #endif
-
+    PrintDotProfiler();
     return d_y;
 }
 
@@ -47,10 +51,7 @@ D_Array DiffusionTest(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, T tau,
     D_SparseMatrix M(d_stiff.rows, d_stiff.cols, 0, COO, true);
     HDData<T> m(-tau);
     MatrixSum(d_damp, d_stiff, m(true), M);
-
     auto d_x = SolveConjugateGradient(M, d_b, epsilon);
-    PrintDotProfiler();
-
     return d_x;
 }
 

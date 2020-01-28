@@ -5,11 +5,12 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "basic_operations.hpp"
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/matrix_element.hpp"
-#include "basic_operations.hpp"
 #include "hediHelper/cuda/cuda_error_check.h"
 #include "hediHelper/cuda/cuda_reduction_operation.h"
+#include "hediHelper/cuda/cuda_reduction_operation.hpp"
 #include "hediHelper/cuda/cuda_thread_manager.hpp"
 
 ChronoProfiler profDot;
@@ -67,14 +68,14 @@ void Dot(D_Array &x, D_Array &y, T &result, bool synchronize) {
     else
         buffer.n = x.n;
 
-    auto d_sum = [] __device__(const T &a, const T &b) { return a + b; };
     DotK<<<threadblock.block, threadblock.thread>>>(*x._device, *y._device,
                                                     *buffer._device);
+    auto d_sum = [] __device__(const T &a, const T &b) { return a + b; };
     ReductionOperation<typeof(d_sum)>(buffer, d_sum);
     cudaMemcpy(&result, buffer.vals, sizeof(T), cudaMemcpyDeviceToDevice);
-    if (synchronize)
-        cudaDeviceSynchronize();
-    else
+    if (synchronize) {
+        gpuErrchk(cudaDeviceSynchronize());
+    } else
         return;
 }
 
@@ -92,7 +93,7 @@ void VectorSum(D_Array &a, D_Array &b, T &alpha, D_Array &c, bool synchronize) {
     VectorSumK<<<threadblock.block, threadblock.thread>>>(
         *a._device, *b._device, alpha, *c._device);
     if (synchronize)
-        cudaDeviceSynchronize();
+        gpuErrchk(cudaDeviceSynchronize());
 }
 
 void VectorSum(D_Array &a, D_Array &b, D_Array &c, bool synchronize) {
@@ -112,60 +113,68 @@ __device__ inline bool IsSupEqu(MatrixElement &it_a, MatrixElement &it_b) {
     return (it_a.i == it_b.i && it_a.j >= it_b.j) || it_a.i > it_b.i;
 };
 
-__global__ void SumNNZK(D_SparseMatrix &a, D_SparseMatrix &b, int &nnz) {
-    MatrixElement it_a(&a);
-    MatrixElement it_b(&b);
-    nnz = 0;
-    while (it_a.HasNext() || it_b.HasNext()) {
+__global__ void SumNNZK(D_SparseMatrix &a, D_SparseMatrix &b, int *nnz) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= a.rows)
+        return;
+    if (i == 0)
+        nnz[0] = 0;
+    MatrixElement it_a(a.rowPtr[i], &a);
+    MatrixElement it_b(b.rowPtr[i], &b);
+    nnz[i + 1] = 0;
+    while (it_a.i == i || it_b.i == i) {
         if (IsEqu(it_a, it_b)) {
             it_a.Next();
             it_b.Next();
-            nnz++;
+            nnz[i + 1] += 1;
         } else if (IsSup(it_a, it_b)) {
             it_b.Next();
-            nnz++;
+            nnz[i + 1] += 1;
         } else if (IsSup(it_b, it_a)) {
             it_a.Next();
-            nnz++;
+            nnz[i + 1] += 1;
         } else {
             printf("Error! Nobody was iterated in SumNNZK function.\n");
             return;
         }
     }
+    return;
 }
 
-__global__ void AllocateSumK(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
-                             D_SparseMatrix &c) {
-    // int i = threadIdx.x + blockIdx.x * blockDim.x;
-    // if (i >= a.rows)
-    //     return;
-    MatrixElement it_a(&a);
-    MatrixElement it_b(&b);
-    T v = 0.0;
-    c.AddElement(0, 0, v);
-    MatrixElement it_c(&c);
+__global__ void SetValuesK(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
+                           D_SparseMatrix &c) {
 
-    while (it_a.HasNext() || it_b.HasNext()) {
-        if (IsSupEqu(it_a, it_b)) {
-            T bVal = alpha * it_b.val[0];
-            if (IsEqu(it_b, it_c))
-                it_c.val[0] += bVal;
-            else {
-                c.AddElement(it_b.i, it_b.j, bVal);
-                it_c.Next();
-            }
-            it_b.Next();
-        }
-        if (IsSupEqu(it_b, it_a)) {
-            if (IsEqu(it_a, it_c))
-                it_c.val[0] += it_a.val[0];
-            else if (it_a.HasNext()) {
-                c.AddElement(it_a.i, it_a.j, it_a.val[0]);
-                it_c.Next();
-            }
-            it_a.Next();
-        }
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= c.rows)
+        return;
+    MatrixElement it_a(a.rowPtr[i], &a);
+    MatrixElement it_b(b.rowPtr[i], &b);
+    int k = c.rowPtr[i];
+    if (k >= c.nnz) {
+        printf("GROOOOOS Probleme %i at %i\n", k, i);
+        return;
     }
+    while (it_a.i == i || it_b.i == i) {
+        if (IsEqu(it_a, it_b)) {
+            c.colPtr[k] = it_a.j;
+            c.vals[k] = it_a.val[0] + alpha * it_b.val[0];
+            it_a.Next();
+            it_b.Next();
+        } else if (IsSup(it_a, it_b)) {
+            c.colPtr[k] = it_b.j;
+            c.vals[k] = alpha * it_b.val[0];
+            it_b.Next();
+        } else if (IsSup(it_b, it_a)) {
+            c.colPtr[k] = it_a.j;
+            c.vals[k] = it_a.val[0];
+            it_a.Next();
+        } else {
+            printf("Error! Nobody was iterated in SumNNZK function.\n");
+            return;
+        }
+        k++;
+    }
+    return;
 }
 
 void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
@@ -175,20 +184,49 @@ void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
     assert(a.rows == b.rows && a.cols == b.cols);
     c.rows = 1 * a.rows;
     c.cols = 1 * a.cols;
-    HDData<int> nnz;
-    SumNNZK<<<1, 1>>>(*a._device, *b._device, nnz(true));
-    cudaDeviceSynchronize();
-    nnz.SetHost();
+    c.type = CSR;
+    int *nnzs;
+    cudaMalloc(&nnzs, sizeof(int) * (a.rows + 1));
+    auto tb = Make1DThreadBlock(a.rows);
+    SumNNZK<<<tb.block, tb.thread>>>(*a._device, *b._device, nnzs);
+
+    auto d_sum = [] __device__(const T &a, const T &b) { return a + b; };
+    // ReductionOperation<typeof(d_sum)>(nnzs, d_sum);
+    ReductionIncreasing(nnzs, a.rows + 1);
+    HDData<int> nnz(nnzs[a.rows], true);
+    c.loaded_elements = nnz();
     c.SetNNZ(nnz());
-    // dim3Pair threadblock = Make1DThreadBlock(a.rows);
-    AllocateSumK<<<1, 1>>>(*a._device, *b._device, alpha, *c._device);
-    cudaDeviceSynchronize();
-    assert(c.IsConvertibleTo(CSR));
-    c.ConvertMatrixToCSR();
+
+    gpuErrchk(cudaMemcpy(c.rowPtr, nnzs, sizeof(int) * (a.rows + 1),
+                         cudaMemcpyDeviceToDevice));
+
+    SetValuesK<<<tb.block, tb.thread>>>(*a._device, *b._device, alpha,
+                                        *c._device);
+    gpuErrchk(cudaDeviceSynchronize());
     return;
 }
 
 void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, D_SparseMatrix &c) {
     HDData<T> d_alpha(1.0);
     MatrixSum(a, b, d_alpha(true), c);
+}
+
+__global__ void ScalarMultK(T *vals, int n, T &alpha) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= n)
+        return;
+    vals[i] *= alpha;
+    return;
+}
+
+void ScalarMult(D_SparseMatrix &a, T &alpha) {
+    assert(a.isDevice);
+    dim3Pair threadblock = Make1DThreadBlock(a.nnz);
+    ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.vals, a.nnz,
+                                                           alpha);
+}
+void ScalarMult(D_Array &a, T &alpha) {
+    assert(a.isDevice);
+    dim3Pair threadblock = Make1DThreadBlock(a.n);
+    ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.vals, a.n, alpha);
 }

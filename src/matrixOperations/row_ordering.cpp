@@ -61,5 +61,5 @@ void RowOrdering(D_SparseMatrix &d_mat) {
     if (cusparseHandle)
         cusparseDestroy(cusparseHandle);
     cusparseHandle = NULL;
-    cudaDeviceSynchronize();
+   gpuErrchk(cudaDeviceSynchronize());
 }

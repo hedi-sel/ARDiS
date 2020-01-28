@@ -20,6 +20,7 @@ PYBIND11_MODULE(dna, m) {
         .def(py::init<int, int>())
         .def(py::init<>())
         .def(py::init<const D_SparseMatrix &, bool>())
+        .def(py::init<const D_SparseMatrix &>())
         .def("AddElement", &D_SparseMatrix::AddElement)
         .def("ConvertMatrixToCSR", &D_SparseMatrix::ConvertMatrixToCSR)
         .def("Print", &D_SparseMatrix::Print, py::arg("printCount") = 5)
@@ -30,6 +31,13 @@ PYBIND11_MODULE(dna, m) {
                  return std::move(y);
              },
              py::return_value_policy::move)
+        .def("__imul__",
+             [](D_SparseMatrix &self, T alpha) {
+                 HDData<T> d_alpha(-alpha);
+                 ScalarMult(self, d_alpha(true));
+                 return self;
+             },
+             py::return_value_policy::take_ownership)
         .def_readonly("nnz", &D_SparseMatrix::nnz)
         .def_readonly("rows", &D_SparseMatrix::rows)
         .def_readonly("cols", &D_SparseMatrix::cols)
@@ -40,17 +48,43 @@ PYBIND11_MODULE(dna, m) {
         .def(py::init<int>())
         .def(py::init<const D_Array &>())
         .def("Print", &D_Array::Print, py::arg("printCount") = 5)
+        .def("Norm", &D_Array::Norm)
         .def("Fill",
              [](D_Array &This, py::array_t<T> &x) {
                  assert(x.size() == This.n);
                  gpuErrchk(cudaMemcpy(This.vals, x.data(), sizeof(T) * x.size(),
                                       cudaMemcpyHostToDevice));
              })
-        .def("Dot", [](D_Array &This, D_Array &b) {
-            HDData<T> res;
-            Dot(This, b, res(true));
-            return res();
-        });
+        .def("Dot",
+             [](D_Array &This, D_Array &b) {
+                 HDData<T> res;
+                 Dot(This, b, res(true));
+                 res.SetHost();
+                 return res();
+             })
+        .def("__add__",
+             [](D_Array &self, D_Array &b) {
+                 D_Array c(self.n);
+                 VectorSum(self, b, c);
+                 return std::move(c);
+             },
+             py::return_value_policy::take_ownership)
+        .def("__sub__",
+             [](D_Array &self, D_Array &b) {
+                 D_Array c(self.n);
+                 HDData<T> m1(-1);
+                 VectorSum(self, b, m1(true), c);
+                 return std::move(c);
+             },
+             py::return_value_policy::take_ownership)
+        .def("__imul__",
+             [](D_Array &self, T alpha) {
+                 HDData<T> d_alpha(-alpha);
+                 ScalarMult(self, d_alpha(true));
+                 return self;
+             },
+             py::return_value_policy::take_ownership);
+    ;
 
     m.doc() = "Sparse Linear Equation solving API"; // optional module docstring
     m.def("SolveCholesky", &SolveCholesky,
@@ -61,6 +95,7 @@ PYBIND11_MODULE(dna, m) {
           py::return_value_policy::take_ownership);
     m.def("DiffusionTest", &DiffusionTest,
           py::return_value_policy::take_ownership);
+    m.def("Test", &Test, py::return_value_policy::move);
 
     m.def("GetNumpyVector",
           [](D_Array &v) {
