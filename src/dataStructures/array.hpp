@@ -18,6 +18,8 @@ class D_Array {
 
     __host__ D_Array(int, bool = true);
     __host__ D_Array(const D_Array &, bool copyToOtherMem = false);
+    __host__ void operator=(const D_Array &);
+    __host__ void Swap(D_Array &);
 
     __host__ void Resize(int);
 

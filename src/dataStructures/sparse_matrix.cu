@@ -39,6 +39,19 @@ __host__ D_SparseMatrix::D_SparseMatrix(const D_SparseMatrix &m,
                          memCpy));
 }
 
+__host__ void D_SparseMatrix::operator=(const D_SparseMatrix &other) {
+    assert(isDevice == isDevice);
+    nnz = other.nnz;
+    rows = other.rows;
+    cols = other.cols;
+    loaded_elements = other.loaded_elements;
+    type = other.type;
+    vals = other.vals;
+    colPtr = other.colPtr;
+    rowPtr = other.rowPtr;
+    _device = other._device;
+}
+
 __host__ void D_SparseMatrix::MemAlloc() {
     if (nnz == 0)
         return;

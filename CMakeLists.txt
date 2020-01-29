@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 set (CUDA_TOOLKIT_ROOT_DIR $ENV{CUDA_BIN_PATH}) 
+set (CUDA_INCLUDE_DIRS $ENV{CUDA_BIN_PATH}/include) 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CUDA_STANDARD 14)
 project(PdeSolver LANGUAGES CUDA CXX)
@@ -16,6 +17,7 @@ find_package(pybind11)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
+message(${CUDA_INCLUDE_DIRS})
 include_directories(${BOOST_ROOT})
 include_directories(${SRC})
 include_directories(${SRC}/include)

@@ -20,8 +20,7 @@ class ChronoProfiler {
   private:
     clock_t time;
 
-    std::map<std::string, int> nameToInt;
-    std::vector<std::string> intToName;
+    std::map<std::string, int> names;
     std::vector<FLOAT> chronos;
 
     int current = -1;

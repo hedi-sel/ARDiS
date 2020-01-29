@@ -34,6 +34,7 @@ class D_SparseMatrix {
                             bool isDevice = true);
     __host__ D_SparseMatrix(const D_SparseMatrix &,
                             bool copyToOtherMem = false);
+    __host__ void operator=(const D_SparseMatrix &);
     __host__ ~D_SparseMatrix();
 
     __host__ __device__ void Print(int printCount = 5) const;

@@ -6,14 +6,13 @@ ChronoProfiler::ChronoProfiler() { time = clock(); }
 int ChronoProfiler::Start(std::string name) {
     CountTime();
 
-    current = nameToInt[name] - 1;
+    current = names[name] - 1;
 
     if (current == -1) {
-        assert(nameToInt.count(name) == 1);
-        current = nameToInt.size() - 1;
-        nameToInt[name] = current + 1;
+        assert(names.count(name) == 1);
+        current = names.size() - 1;
+        names[name] = current + 1;
         chronos.push_back(0.0);
-        intToName.push_back(name);
     }
     time = clock();
     return current;
@@ -27,8 +26,8 @@ void ChronoProfiler::End() {
 void ChronoProfiler::Print() {
     CountTime();
     std::cout << "Profiling results:\n";
-    for (int i = 0; i < chronos.size(); i++) {
-        std::cout << intToName[i] << " : " << chronos[i] << "s\n";
+    for (auto name = names.begin(); name != names.end(); name++) {
+        std::cout << name->first << " : " << chronos[name->second] << "s\n";
     }
 }
 

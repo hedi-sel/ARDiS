@@ -2,8 +2,6 @@ import numpy as np
 from scipy.sparse import *
 from enum import Enum
 
-import modulePython.dna as dna
-
 
 def ReadLine(line):
     if (line[0] == '%'):
@@ -38,19 +36,3 @@ def LoadMatrixFromFile(path, readtype=Readtype.Normal):
         else:
             print(line)
     return mat
-
-
-# def LoadMatrixFromFileToGPU(path):
-#     f = open(path, "r")
-#     lines = f.readlines()
-#     i = -1
-#     while (i == -1):
-#         i, j, k = ReadLine(lines.pop(0))
-
-#     M = dna.D_SparseMatrix(i, j, k, dna.COO, False)
-#     k = 0
-#     for line in lines:
-#         values = ReadLine(line)
-#         M.AddElement(k, values[0] - 1, values[1] - 1, values[2])
-#         k += 1
-#     return M

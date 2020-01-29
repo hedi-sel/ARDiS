@@ -56,9 +56,7 @@ void CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
         Dot(r, p, diff(true), true);
         diff.SetHost();
         profiler.End();
-
-        // printf("Prelim result %i : %f\n", n_iter, diff());
     } while (diff() > epsilon * epsilon && n_iter < 1000);
-    profiler.Print();
-    printf("\nN Iterations = %i : %f\n", n_iter, diff());
+    // profiler.Print();
+    // printf("\nN Iterations = %i : %f\n", n_iter, diff());
 }

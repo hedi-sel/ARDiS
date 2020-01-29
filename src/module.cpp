@@ -14,6 +14,37 @@ PYBIND11_MODULE(dna, m) {
         .value("CSC", CSC)
         .export_values();
 
+    py::class_<State>(m, "State")
+        .def(py::init<int>())
+        .def("AddSpecies", &State::AddSpecies,
+             py::return_value_policy::take_ownership)
+        .def("GetSpecies", &State::GetSpecies,
+             py::return_value_policy::take_ownership)
+        .def("Print", &State::Print, py::arg("printCount") = 5);
+
+    py::class_<System>(m, "System")
+        .def(py::init<int>())
+        .def("IterateDiffusion", &System::IterateDiffusion)
+        .def("IterateReaction", &System::IterateReaction)
+        .def(
+            "AddSpecies",
+            [](System &self, std::string name) { self.state.AddSpecies(name); })
+        .def("SetSpecies",
+             [](System &self, std::string name, D_Array &sub_state) {
+                 self.state.GetSpecies(name) = sub_state;
+             })
+        .def("SetSpecies",
+             [](System &self, std::string name, py::array_t<T> &sub_state) {
+                 gpuErrchk(cudaMemcpy(
+                     self.state.GetSpecies(name).vals, sub_state.data(),
+                     sizeof(T) * sub_state.size(), cudaMemcpyHostToDevice));
+             })
+        .def("LoadDampnessMatrix", &System::LoadDampnessMatrix)
+        .def("LoadStiffnessMatrix", &System::LoadStiffnessMatrix)
+        .def("Print", &System::Print, py::arg("printCount") = 5)
+        .def_readwrite("State", &System::state,
+                       py::return_value_policy::take_ownership);
+
     py::class_<D_SparseMatrix>(m, "D_SparseMatrix")
         .def(py::init<int, int, int, MatrixType>())
         .def(py::init<int, int, int>())
@@ -50,17 +81,24 @@ PYBIND11_MODULE(dna, m) {
         .def("Print", &D_Array::Print, py::arg("printCount") = 5)
         .def("Norm", &D_Array::Norm)
         .def("Fill",
-             [](D_Array &This, py::array_t<T> &x) {
-                 assert(x.size() == This.n);
-                 gpuErrchk(cudaMemcpy(This.vals, x.data(), sizeof(T) * x.size(),
+             [](D_Array &self, py::array_t<T> &x) {
+                 assert(x.size() == self.n);
+                 gpuErrchk(cudaMemcpy(self.vals, x.data(), sizeof(T) * x.size(),
                                       cudaMemcpyHostToDevice));
              })
         .def("Dot",
-             [](D_Array &This, D_Array &b) {
+             [](D_Array &self, D_Array &b) {
                  HDData<T> res;
-                 Dot(This, b, res(true));
+                 Dot(self, b, res(true));
                  res.SetHost();
                  return res();
+             })
+        .def("ToNumpyArray",
+             [](D_Array &self) {
+                 T *data = new T[self.n];
+                 cudaMemcpy(data, self.vals, sizeof(T) * self.n,
+                            cudaMemcpyDeviceToHost);
+                 return py::array_t(self.n, data);
              })
         .def("__add__",
              [](D_Array &self, D_Array &b) {
@@ -84,7 +122,6 @@ PYBIND11_MODULE(dna, m) {
                  return self;
              },
              py::return_value_policy::take_ownership);
-    ;
 
     m.doc() = "Sparse Linear Equation solving API"; // optional module docstring
     m.def("SolveCholesky", &SolveCholesky,

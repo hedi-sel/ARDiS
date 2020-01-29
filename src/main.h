@@ -13,6 +13,7 @@
 #include "hediHelper/cuda/cusparse_error_check.h"
 #include "matrixOperations/basic_operations.hpp"
 #include "matrixOperations/row_ordering.hpp"
+#include "reactionDiffusionSystem/system.hpp"
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "solvers/inversion_solver.h"
 
@@ -28,11 +29,7 @@ void checkSolve(D_SparseMatrix &M, D_Array &d_b, D_Array &d_x) {
     printf("Norme de la difference: %f\n", m1());
 }
 
-D_SparseMatrix Test(D_SparseMatrix &d_m1, D_SparseMatrix &d_m2) {
-    D_SparseMatrix d_sum;
-    MatrixSum(d_m1, d_m2, d_sum);
-    return std::move(d_sum);
-}
+void Test(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, py::array_t<T> &u) {}
 
 D_Array SolveConjugateGradient(D_SparseMatrix &d_mat, D_Array &d_x, T epsilon) {
     D_Array d_y(d_x);
@@ -55,7 +52,7 @@ D_Array DiffusionTest(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, T tau,
     return d_x;
 }
 
-D_Array SolveCholesky(D_SparseMatrix &d_mat, py::array_t<double> &bVec) {
+D_Array SolveCholesky(D_SparseMatrix &d_mat, py::array_t<T> &bVec) {
     assert(bVec.size() == d_mat.rows);
     assert(d_mat.isDevice);
 
