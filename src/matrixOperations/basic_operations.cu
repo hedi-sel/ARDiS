@@ -24,7 +24,7 @@ void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &result, bool synchronize) {
         cusparseErrchk(cusparseCreate(&handle));
     assert(d_mat.isDevice && x.isDevice && result.isDevice);
     if (&x == &result) {
-        printf("Error: X and Result vectors should not be the same instance");
+        printf("Error: X and Result vectors should not be the same instance\n");
         return;
     }
     profDot.Start("Alloc");
@@ -40,7 +40,7 @@ void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &result, bool synchronize) {
         handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, mat_descr, x_descr,
         &zero, res_descr, T_Cuda, CUSPARSE_MV_ALG_DEFAULT, &size));
     if (size > 0)
-        printf("Alert! Size >0)");
+        printf("Alert! Size >0 \n");
     cudaMalloc(&buffer, size);
     profDot.Start("Computation");
     cusparseErrchk(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one,
@@ -151,7 +151,7 @@ __global__ void SetValuesK(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
     MatrixElement it_b(b.rowPtr[i], &b);
     int k = c.rowPtr[i];
     if (k >= c.nnz) {
-        printf("GROOOOOS Probleme %i at %i\n", k, i);
+        printf("Error! In matrix sum, at %i\n", i);
         return;
     }
     while (it_a.i == i || it_b.i == i) {

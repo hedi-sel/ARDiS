@@ -20,7 +20,7 @@ __host__ D_SparseMatrix ReadFromFile(const std::string filepath/* ,
     std::ifstream myfile;
     myfile.open(filepath);
     if (!myfile.is_open()) {
-        printf("File could not be opened");
+        printf("File could not be opened\n");
     }
     while (n_lines == 0 && std::getline(myfile, line)) {
         if (line[0] != '%') {

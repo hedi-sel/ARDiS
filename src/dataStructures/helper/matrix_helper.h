@@ -67,7 +67,6 @@ __device__ __host__ void IsSymetricBody(const D_SparseMatrix *matrix,
     *_return = true;
     for (MatrixElement elm(matrix); elm.HasNext(); elm.Next()) {
         if (elm.i != elm.j && matrix->Lookup(elm.j, elm.i) != *elm.val) {
-            printf("%i %i %f %f\n", elm.i, elm.j, *elm.val, 0.1);
             *_return = false;
             return;
         }

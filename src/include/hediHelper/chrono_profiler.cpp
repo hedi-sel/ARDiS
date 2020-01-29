@@ -4,10 +4,6 @@
 ChronoProfiler::ChronoProfiler() { time = clock(); }
 
 int ChronoProfiler::Start(std::string name) {
-    // printf("%i %i %i\n", (int)nameToInt.size(), (int)chronos.size(),
-    // current); for (auto it = nameToInt.begin(); it != nameToInt.end(); it++)
-    //     printf("%s %i ||", it->first.c_str(), it->second);
-    // printf("\n");
     CountTime();
 
     current = nameToInt[name] - 1;

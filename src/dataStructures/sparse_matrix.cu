@@ -235,7 +235,7 @@ __host__ void D_SparseMatrix::OperationCuSparse(void *function,
                                                 bool addValues, void *pointer1,
                                                 void *pointer2) {
     if (addValues) {
-        printf("This function is not complete");
+        printf("This function is not complete\n");
     } else {
         if (pointer1)
             if (pointer2) {
@@ -247,7 +247,7 @@ __host__ void D_SparseMatrix::OperationCuSparse(void *function,
                                                     rowPtr, colPtr, pointer1));
             }
         else
-            printf("This function is not complete");
+            printf("This function is not complete\n");
     }
 }
 
