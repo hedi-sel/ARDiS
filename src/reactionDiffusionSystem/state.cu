@@ -20,3 +20,18 @@ void State::Print(int i) {
 }
 
 State::~State() {}
+
+D_Array **State::GetDeviceState() {
+    D_Array **output = new D_Array *[data.size()];
+    D_Array **d_output;
+    cudaMalloc(&d_output, sizeof(D_Array *) * data.size());
+    for (int i = 0; i < data.size(); i++) {
+        output[i] = data.at(i)._device;
+    }
+    cudaMemcpy(d_output, output, sizeof(D_Array *) * data.size(),
+               cudaMemcpyHostToDevice);
+    delete output;
+    return d_output;
+}
+
+void State::FreeDeviceState(D_Array **freeMe) { cudaFree(freeMe); }

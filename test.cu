@@ -11,16 +11,7 @@ int main() {
 
     auto func_cpu = [=](int i) { function_hostdevice(i); };
 
-    // for (int i = 0; i < 10; i++)
-    //     func_cpu(i);
-
     auto func_gpu2 = [=] __device__(int i) { function_onlydevice(i); };
 
     kernel<<<1, 16>>>(func_gpu2);
-
-    gpuErrchk(cudaDeviceSynchronize());
-
-    // kernel<<<1, 32>>>(func_gpu2);
-
-    gpuErrchk(cudaDeviceSynchronize());
 }

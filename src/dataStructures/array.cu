@@ -1,6 +1,8 @@
 #include "dataStructures/array.hpp"
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/helper/vector_helper.h"
+#include "hediHelper/cuda/cuda_thread_manager.hpp"
+#include "helper/apply_operation.h"
 #include "matrixOperations/basic_operations.hpp"
 
 __host__ D_Array::D_Array(int n, bool isDevice) : n(n), isDevice(isDevice) {
@@ -20,8 +22,12 @@ __host__ void D_Array::operator=(const D_Array &other) {
     assert(isDevice == other.isDevice);
     MemFree();
     n = other.n;
-    vals = other.vals;
-    _device = other._device;
+    MemAlloc();
+    cudaMemcpyKind memCpy =
+        (other.isDevice)
+            ? (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
+            : (isDevice) ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost;
+    gpuErrchk(cudaMemcpy(vals, other.vals, sizeof(T) * n, memCpy));
 }
 
 // __host__ void D_Array::Swap(D_Array &other) {
@@ -52,6 +58,26 @@ __host__ T D_Array::Norm() {
     return norm();
 }
 
+__host__ void D_Array::Fill(T value) {
+    auto setTo = [value] __device__(T & a) { a = value; };
+    ApplyFunction(*this, setTo);
+}
+
+__host__ void D_Array::Prune(T value) {
+    auto setTo = [value] __device__(T & a) {
+        if (a < value)
+            a = value;
+    };
+    ApplyFunction(*this, setTo);
+}
+__host__ void D_Array::PruneUnder(T value) {
+    auto setTo = [value] __device__(T & a) {
+        if (a > value)
+            a = value;
+    };
+    ApplyFunction(*this, setTo);
+}
+
 __host__ __device__ void D_Array::Print(int printCount) {
     printf("[ ");
 #ifndef __CUDA_ARCH__
@@ -80,7 +106,6 @@ __host__ void D_Array::MemAlloc() {
 __host__ void D_Array::MemFree() {
     if (n > 0)
         if (isDevice) {
-            Print();
             gpuErrchk(cudaFree(vals));
             gpuErrchk(cudaFree(_device));
             gpuErrchk(cudaDeviceSynchronize());

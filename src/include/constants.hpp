@@ -12,4 +12,4 @@ typedef float T;
 #define BLOCK_SIZE 32
 #endif
 
-#define NDEBUG
+// #define NDEBUG

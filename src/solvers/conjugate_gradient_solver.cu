@@ -12,19 +12,22 @@ void CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
              D_SparseMatrix &precond) {
     ChronoProfiler profiler;
     profiler.Start("Preparing Data");
-    D_Array p(b);
-    D_Array r(b);
     D_Array q(b.n, true);
     Dot(d_mat, x, q, true);
+
+    D_Array r(b);
     HDData<T> alpha(-1.0);
     VectorSum(r, q, alpha(true), r);
+
+    D_Array p(r);
     HDData<T> value;
-    HDData<T> alphaDupl(0.0);
     HDData<T> beta(0.0);
 
     HDData<T> diff(0.0);
-    Dot(r, p, diff(true), true);
+    Dot(r, r, diff(true), true);
     diff.SetHost();
+
+    T diff0 = diff();
 
     int n_iter = 0;
     do {
@@ -37,26 +40,34 @@ void CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
 
         Dot(q, p, value(true), true);
         value.SetHost();
-        alpha() = diff() / value();
+        if (value() != 0)
+            alpha() = diff() / value();
+        else
+            alpha() = 0;
         alpha.SetDevice();
 
-        VectorSum(x, p, alpha(true), x, false);
+        VectorSum(x, p, alpha(true), x, true);
 
-        alphaDupl() = -alpha();
-        alphaDupl.SetDevice();
-        VectorSum(r, q, alphaDupl(true), r, true);
+        value() = -alpha();
+        value.SetDevice();
+        VectorSum(r, q, value(true), r, true);
 
-        Dot(r, q, diff(true), true);
+        value.Set(diff());
+        Dot(r, r, diff(true), true);
         diff.SetHost();
-        beta() = -diff() / value();
+        if (value() != 0)
+            beta() = diff() / value();
+        else
+            beta() = 0;
         beta.SetDevice();
 
         VectorSum(r, p, beta(true), p, true);
 
-        Dot(r, p, diff(true), true);
-        diff.SetHost();
         profiler.End();
-    } while (diff() > epsilon * epsilon && n_iter < 1000);
+    } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);
     // profiler.Print();
-    // printf("\nN Iterations = %i : %f\n", n_iter, diff());
+    // printf("N Iterations = %i : %.3e\n", n_iter, diff());
+
+    if (diff() > epsilon * epsilon * diff0)
+        printf("Warning: It did not converge");
 }

@@ -16,7 +16,8 @@ __host__ D_SparseMatrix::D_SparseMatrix() : D_SparseMatrix(0, 0){};
 
 __host__ D_SparseMatrix::D_SparseMatrix(int rows, int cols, int nnz,
                                         MatrixType type, bool isDevice)
-    : nnz(nnz), rows(rows), cols(cols), isDevice(isDevice), type(type) {
+    : nnz(nnz), rows(rows), cols(cols), isDevice(isDevice), type(type),
+      loaded_elements(nnz) {
     MemAlloc();
 }
 
@@ -101,7 +102,19 @@ __host__ __device__ void D_SparseMatrix::Print(int printCount) const {
 __host__ void D_SparseMatrix::SetNNZ(int nnz) {
     MemFree();
     this->nnz = nnz;
+    this->loaded_elements = nnz;
     MemAlloc();
+}
+
+__host__ void D_SparseMatrix::StartFilling() {
+    loaded_elements = 0;
+    if (isDevice) {
+        gpuErrchk(cudaFree(_device));
+        gpuErrchk(cudaMalloc(&_device, sizeof(D_SparseMatrix)));
+        gpuErrchk(cudaMemcpy(_device, this, sizeof(D_SparseMatrix),
+                             cudaMemcpyHostToDevice));
+        loaded_elements = nnz;
+    }
 }
 
 __host__ __device__ void D_SparseMatrix::AddElement(int i, int j, T val) {

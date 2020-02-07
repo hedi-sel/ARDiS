@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/timer/timer.hpp>
 #include <cstdio>
 #include <cuda_runtime.h>
 #include <cusolverSp.h>
@@ -17,8 +16,6 @@
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "solvers/inversion_solver.h"
 
-using boost::timer::cpu_timer;
-
 void checkSolve(D_SparseMatrix &M, D_Array &d_b, D_Array &d_x) {
     D_Array vec(d_b.n, true);
     Dot(M, d_x, vec, true);
@@ -31,25 +28,23 @@ void checkSolve(D_SparseMatrix &M, D_Array &d_b, D_Array &d_x) {
 
 void Test(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, py::array_t<T> &u) {}
 
-D_Array SolveConjugateGradient(D_SparseMatrix &d_mat, D_Array &d_x, T epsilon) {
-    D_Array d_y(d_x);
-    CGSolve(d_mat, d_x, d_y, epsilon);
+void SolveConjugateGradient(D_SparseMatrix &d_mat, D_Array &d_b, T epsilon,
+                            D_Array &d_x) {
+    CGSolve(d_mat, d_b, d_x, epsilon);
 #ifndef NDEBUG
-    checkSolve(d_mat, d_x, d_y);
+    checkSolve(d_mat, d_x, d_b);
 #endif
-    PrintDotProfiler();
-    return d_y;
+    // PrintDotProfiler();
 }
 
-D_Array DiffusionTest(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, T tau,
-                      D_Array &d_u, T epsilon) {
+void DiffusionTest(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, T tau,
+                   D_Array &d_u, T epsilon) {
     D_Array d_b(d_u.n, true);
     Dot(d_damp, d_u, d_b);
     D_SparseMatrix M(d_stiff.rows, d_stiff.cols, 0, COO, true);
     HDData<T> m(-tau);
     MatrixSum(d_damp, d_stiff, m(true), M);
-    auto d_x = SolveConjugateGradient(M, d_b, epsilon);
-    return d_x;
+    CGSolve(M, d_b, d_u, epsilon);
 }
 
 D_Array SolveCholesky(D_SparseMatrix &d_mat, py::array_t<T> &bVec) {

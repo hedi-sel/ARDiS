@@ -33,6 +33,7 @@ __host__ D_SparseMatrix ReadFromFile(const std::string filepath/* ,
     n_elts = (readtype == Normal) ? n_lines : n_lines * 2 - i;
 
     D_SparseMatrix matrix(i, j, n_elts, COO, false);
+    matrix.StartFilling();
 
     for (int k = 0; k < n_lines; k++) {
         do {

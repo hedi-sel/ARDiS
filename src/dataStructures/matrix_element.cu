@@ -10,15 +10,15 @@ __host__ __device__ MatrixElement::MatrixElement(const D_SparseMatrix *matrix)
     : MatrixElement(0, matrix) {}
 
 __host__ __device__ bool MatrixElement::HasNext() {
-    return k < this->matrix->loaded_elements;
+    return k < this->matrix->nnz;
 }
 
 __host__ __device__ void MatrixElement::Next() { Jump(1); }
 __host__ __device__ void MatrixElement::Jump(int hop) {
     k += hop;
     if (hop != 0)
-        if (k >= this->matrix->loaded_elements) {
-            k = this->matrix->loaded_elements;
+        if (k >= this->matrix->nnz) {
+            k = this->matrix->nnz;
             val = 0;
             i = matrix->rows;
             j = matrix->cols;

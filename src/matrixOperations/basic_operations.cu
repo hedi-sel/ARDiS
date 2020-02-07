@@ -191,10 +191,8 @@ void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
     SumNNZK<<<tb.block, tb.thread>>>(*a._device, *b._device, nnzs);
 
     auto d_sum = [] __device__(const T &a, const T &b) { return a + b; };
-    // ReductionOperation<typeof(d_sum)>(nnzs, d_sum);
     ReductionIncreasing(nnzs, a.rows + 1);
     HDData<int> nnz(nnzs[a.rows], true);
-    c.loaded_elements = nnz();
     c.SetNNZ(nnz());
 
     gpuErrchk(cudaMemcpy(c.rowPtr, nnzs, sizeof(int) * (a.rows + 1),

@@ -1,5 +1,7 @@
 build/*
 matrixSymDefPos/*
 matrixFEM/*
+matrixLabyrinth/*
 output/*
-src/modulePython/dna.so
+src/pythonScripts/modulePython/dna.so
+src/pythonScripts/modulePython/__pycache__/*

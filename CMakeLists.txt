@@ -7,7 +7,7 @@ set (CMAKE_CUDA_STANDARD 14)
 project(PdeSolver LANGUAGES CUDA CXX)
 
 set(SRC ${CMAKE_SOURCE_DIR}/src)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SRC}/modulePython)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SRC}/pythonScripts/modulePython)
 set(BOOST_ROOT $ENV{BOOST_ROOT})
 # set(CMAKE_CUDA_FLAGS "-dc")
 
@@ -35,6 +35,6 @@ set(CMAKE_CUDA_FLAGS --extended-lambda)
 
 target_link_libraries(dna ${PYTHON_LIBRARIES})
 target_link_libraries(dna cudart cusolver cusparse)
-target_link_libraries(dna boost_timer)
+# target_link_libraries(dna boost_timer)
 
 # set(CMAKE_VERBOSE_MAKEFILE true)

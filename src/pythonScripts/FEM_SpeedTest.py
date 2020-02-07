@@ -1,14 +1,12 @@
 import modulePython.dna as dna
 from modulePython.read_mtx import *
 
-import numpy as np
 from scipy.sparse import *
 import scipy.sparse.linalg as spLnal
 import time
+import os
 
-experiment = "1"
-dampingPath = "matrixFEM/damping "+experiment+".mtx"
-stiffnessPath = "matrixFEM/stiffness "+experiment+".mtx"
+from modulePython._parameter import *
 
 S = dna.ReadFromFile(stiffnessPath)
 d_S = dna.D_SparseMatrix(S, True)
@@ -20,40 +18,28 @@ d_D = dna.D_SparseMatrix(D, True)
 d_D.ConvertMatrixToCSR()
 print("Dampness matrix loaded ...")
 
-U = np.random.rand(d_S.cols)
+d_U = dna.D_Array(len(U))
+d_U.Fill(U)
 
-tau = 1e-2
-epsilon = 1e-6
-Nit = 3
-
-system = dna.System(len(U))
-system.AddSpecies("U")
-system.SetSpecies("U", U)
-
-print("Start Vector:")
-system.Print()
-
-system.IterateDiffusion(tau)
-system.LoadStiffnessMatrix(d_S)
-system.LoadDampnessMatrix(d_D)
-
-# system.IterateDiffusion(tau)
-# system.Print()
-
+d_Ones = dna.D_Array(len(U))
+d_Ones.Fill(np.ones(len(U)))
 
 start = time.time()
+d_S *= tau
+M = d_D + d_S
 solve1Time = time.time() - start
 
 start = time.time()
-# for i in range(0, Nit):
-# system.IterateDiffusion(tau)
-
-system.Print()
+for i in range(0, Nit):
+    d_DU = d_D.Dot(d_U)
+    dna.SolveConjugateGradientRawData(M, d_DU, d_U, epsilon)
+    # d_U.Print(30)
+    # print(d_U.Dot(d_Ones))
 
 solve2Time = time.time() - start
 
 print("Final Vector")
-system.Print()
+d_U.Print()
 
 # C = np.array([0.5]*d_S.cols)
 # d_C = dna.D_Array(len(C))
@@ -61,5 +47,5 @@ system.Print()
 # print("Norm Difference", (d_C - d_U).Norm())
 
 
-# print("Run Time 1:", solve1Time)
-# print("Run Time 2:", solve2Time)
+print("Run Time 1:", solve1Time)
+print("Run Time 2:", solve2Time)

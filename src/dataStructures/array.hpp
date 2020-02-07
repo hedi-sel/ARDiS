@@ -2,9 +2,11 @@
 
 #include <cuda_runtime.h>
 #include <cusparse.h>
+#include <nvfunctional>
 
 #include "constants.hpp"
 #include "hediHelper/cuda/cuda_error_check.h"
+#include "hediHelper/cuda/cuda_thread_manager.hpp"
 #include "hediHelper/cuda/cusparse_error_check.h"
 
 class D_Array {
@@ -26,6 +28,9 @@ class D_Array {
     __host__ cusparseDnVecDescr_t MakeDescriptor();
 
     __host__ T Norm();
+    __host__ void Fill(T value);
+    __host__ void Prune(T value = 0);
+    __host__ void PruneUnder(T value = 0);
 
     __host__ __device__ void Print(int printCount = 5);
 

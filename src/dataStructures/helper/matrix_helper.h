@@ -81,8 +81,8 @@ __global__ void IsSymetricKernel(const D_SparseMatrix *matrix, bool *_return) {
 __device__ __host__ void AddElementBody(D_SparseMatrix *m, int i, int j,
                                         T &val) {
     if (m->loaded_elements >= m->nnz) {
-        printf("Error! The Sparse Matrix exceeded its memory allocation! At: "
-               "i=%i j=%i val=%f\n",
+        printf("Error! The Sparse Matrix exceeded its memory allocation! At:"
+               " i=%i j=%i val=%f\n",
                i, j, val);
         return;
     }

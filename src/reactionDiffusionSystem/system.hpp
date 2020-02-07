@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "constants.hpp"
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/sparse_matrix.hpp"
@@ -8,7 +10,8 @@
 #include "state.hpp"
 
 typedef std::pair<std::string, int> stochCoeff;
-typedef std::pair<std::vector<stochCoeff>, std::vector<stochCoeff>> Reaction;
+typedef std::tuple<std::vector<stochCoeff>, std::vector<stochCoeff>, T>
+    Reaction;
 
 // A top-level class that handles the operations for the reaction-diffusion
 // simulation.
@@ -20,7 +23,6 @@ class System {
 
     // The set of reactions
     std::vector<Reaction> reactions;
-    std::vector<T> factors;
 
     // Diffusion matrices
     D_SparseMatrix *damp_mat = nullptr;
@@ -35,13 +37,14 @@ class System {
 
     void AddReaction(std::vector<stochCoeff> input,
                      std::vector<stochCoeff> output, T factor);
-    void AddReaction(Reaction coeffs, T factor);
+    void AddReaction(Reaction reaction);
 
     void LoadDampnessMatrix(D_SparseMatrix &damp_mat);
     void LoadStiffnessMatrix(D_SparseMatrix &stiff_mat);
 
     void IterateReaction(T dt);
     void IterateDiffusion(T dt);
+    void Prune(T value = 0);
 
     void SetEpsilon();
 

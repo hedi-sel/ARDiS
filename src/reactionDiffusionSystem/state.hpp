@@ -24,4 +24,8 @@ class State {
     void Print(int i = 5);
 
     ~State();
+
+    // Device related functions
+    D_Array **GetDeviceState();
+    void FreeDeviceState(D_Array **);
 };

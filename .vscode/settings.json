@@ -84,7 +84,20 @@
         "cassert": "cpp",
         "cerrno": "cpp",
         "cfloat": "cpp",
-        "climits": "cpp"
+        "climits": "cpp",
+        "__nullptr": "cpp",
+        "nvfunctional": "cpp",
+        "__bit_reference": "cpp",
+        "__functional_base": "cpp",
+        "__node_handle": "cpp",
+        "__memory": "cpp",
+        "locale": "cpp",
+        "__atomic": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "__tree": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     },
     "C_Cpp.default.includePath": [
         "~/Libraries/pybind11/include",
@@ -93,5 +106,6 @@
         "/usr/local/cuda-10.2/include"
     ],
     "C_Cpp.clang_format_fallbackStyle": "{IndentWidth: 4}",
-    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+    "python.pythonPath": "/home/anthony/anaconda3/bin/python"
 }
