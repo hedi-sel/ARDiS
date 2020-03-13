@@ -8,8 +8,8 @@
 // }
 // typedef void (*FunctionDev)(...);
 
-template <typename Apply>
-__global__ void ApplyFunctionK(D_Array &vector, Apply func) {
+template <typename Apply, typename C>
+__global__ void ApplyFunctionK(D_Vector<C> &vector, Apply func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= vector.n)
         return;
@@ -17,15 +17,15 @@ __global__ void ApplyFunctionK(D_Array &vector, Apply func) {
     return;
 }
 
-template <typename Apply>
-__host__ void ApplyFunction(D_Array &vector, Apply func) {
+template <typename Apply, typename C>
+__host__ void ApplyFunction(D_Vector<C> &vector, Apply func) {
     auto tb = Make1DThreadBlock(vector.n);
     ApplyFunctionK<<<tb.block, tb.thread>>>(*vector._device, func);
 };
 
-template <typename Apply>
-__global__ void ApplyFunctionConditionalK(D_Array &vector, D_Array &booleans,
-                                          Apply func) {
+template <typename Apply, typename C>
+__global__ void ApplyFunctionConditionalK(D_Vector<C> &vector,
+                                          D_Vector<C> &booleans, Apply func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= vector.n)
         return;
@@ -34,24 +34,23 @@ __global__ void ApplyFunctionConditionalK(D_Array &vector, D_Array &booleans,
     return;
 }
 
-template <typename Apply>
-__host__ void ApplyFunctionConditional(D_Array &vector, D_Array &booleans,
-                                       Apply func) {
+template <typename Apply, typename C>
+__host__ void ApplyFunctionConditional(D_Vector<C> &vector,
+                                       D_Vector<C> &booleans, Apply func) {
     auto tb = Make1DThreadBlock(vector.n);
     ApplyFunctionConditionalK<<<tb.block, tb.thread>>>(*vector._device,
                                                        *booleans._device, func);
 };
 
-template <typename Reduction>
-__global__ void ReductionFunctionK(D_Array &A, int nValues, int shift,
+template <typename Reduction, typename C>
+__global__ void ReductionFunctionK(D_Vector<C> &A, int nValues, int shift,
                                    Reduction func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= nValues)
         return;
     for (int exp = 0; (1 << exp) < blockDim.x; exp++) {
         if (threadIdx.x % (2 << exp) == 0 &&
-            threadIdx.x + (1 << exp) < blockDim.x &&
-            i + (1 << exp) <= nValues) {
+            threadIdx.x + (1 << exp) < blockDim.x && i + (1 << exp) < nValues) {
             A.vals[shift * i] =
                 func(A.vals[shift * i], A.vals[shift * (i + (1 << exp))]);
         }
@@ -59,7 +58,8 @@ __global__ void ReductionFunctionK(D_Array &A, int nValues, int shift,
     }
 };
 
-template <typename Reduction> T ReductionFunction(D_Array &A, Reduction func) {
+template <typename Reduction, typename C>
+C ReductionFunction(D_Vector<C> &A, Reduction func) {
     int nValues = A.n;
     dim3Pair threadblock;
     int shift = 1;
@@ -74,17 +74,16 @@ template <typename Reduction> T ReductionFunction(D_Array &A, Reduction func) {
     return 0;
 }
 
-template <typename Reduction>
-__global__ void ReductionFunctionConditionalK(D_Array &A, D_Array &booleans,
-                                              int nValues, int shift,
-                                              Reduction func) {
+template <typename Reduction, typename C>
+__global__ void
+ReductionFunctionConditionalK(D_Vector<C> &A, D_Vector<C> &booleans,
+                              int nValues, int shift, Reduction func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= nValues)
         return;
     for (int exp = 0; (1 << exp) < blockDim.x; exp++) {
         if (threadIdx.x % (2 << exp) == 0 &&
-            threadIdx.x + (1 << exp) < blockDim.x &&
-            i + (1 << exp) <= nValues) {
+            threadIdx.x + (1 << exp) < blockDim.x && i + (1 << exp) < nValues) {
             if (booleans.vals[shift * (i + (1 << exp))] >
                 0) // TODO Make this as array of bool
                 if (booleans.vals[shift * i] > 0)
@@ -99,8 +98,9 @@ __global__ void ReductionFunctionConditionalK(D_Array &A, D_Array &booleans,
     }
 };
 
-template <typename Reduction>
-T ReductionFunctionConditional(D_Array &A, D_Array &booleans, Reduction func) {
+template <typename Reduction, typename C>
+C ReductionFunctionConditional(D_Vector<C> &A, D_Vector<C> &booleans,
+                               Reduction func) {
     int nValues = A.n;
     dim3Pair threadblock;
     int shift = 1;

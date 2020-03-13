@@ -1,10 +1,32 @@
 import numpy as np
 
 
+def Sign(x0, y0, x1, y1, x2, y2):
+    return (x0 - x2) * (y1 - y2) - (x1 - x2) * (y0 - y2)
+
+
+class TriangleZone:
+    x0, y0, x1, y1, x2, y2 = 0.0, 0.0, 1.0, 0.0, 1.0, 1.0
+
+    def __init__(self, x0, y0, x1, y1, x2, y2):
+        self.x0 = x0
+        self.x1 = x1
+        self.x2 = x2
+        self.y0 = y0
+        self.y1 = y1
+        self.y2 = y2
+
+    def IsInside(self, x, y):
+        b1 = Sign(x, y, self.x0, self.y0, self.x1, self.y1) < 0.0
+        b2 = Sign(x, y, self.x1, self.y1, self.x2, self.y2) < 0.0
+        b3 = Sign(x, y, self.x2, self.y2, self.x0, self.y0) < 0.0
+        return ((b1 == b2) and (b2 == b3))
+
+
 class RectangleZone:
     x0, x1, y0, y1 = 0.0, 1.0, 0.0, 1.0
 
-    def __init__(self, x0, x1, y0, y1):
+    def __init__(self, x0, y0, x1, y1):
         self.x0 = x0
         self.x1 = x1
         self.y0 = y0

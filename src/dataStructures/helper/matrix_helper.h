@@ -119,3 +119,40 @@ __global__ void GetDataWidthK(D_SparseMatrix &d_mat, D_Array &width) {
         it.Next();
     } while (it.i == i && it.HasNext());
 }
+
+__device__ __host__ bool isEqualBody(const D_SparseMatrix &m1,
+                                     const D_SparseMatrix &m2) {
+    if (m1.nnz != m2.nnz || m1.cols != m2.cols || m1.rows != m2.rows ||
+        m1.type != m2.type || m1.isDevice != m2.isDevice) {
+        printf("debut");
+        return false;
+    }
+
+    for (int i = 0; i < m1.nnz; i++)
+        if (m1.vals[i] != m2.vals[i]) {
+            printf("rows %i: %e != %e, %e == %e\nimax = %i\n", i, m1.vals[i],
+                   m2.vals[i], m1.vals[i - 1], m2.vals[i - 1], m1.nnz);
+            return false;
+        }
+
+    for (int i = 0; i < ((m1.type == CSR) ? m1.rows + 1 : m1.nnz); i++)
+        if (m1.rowPtr[i] != m2.rowPtr[i]) {
+            printf("rows %i: %i %i, %i == %i\nimax = %i\n", i, m1.rowPtr[i],
+                   m2.rowPtr[i], m1.rowPtr[i - 1], m2.rowPtr[i - 1],
+                   (m1.type == CSR) ? m1.rows + 1 : m1.nnz);
+            return false;
+        }
+    for (int i = 0; i < ((m1.type == CSC) ? m1.cols + 1 : m1.nnz); i++)
+        if (m1.colPtr[i] != m2.colPtr[i]) {
+            printf("rows %i: %i %i, %i == %i\nimax = %i\n", i, m1.colPtr[i],
+                   m2.colPtr[i], m1.colPtr[i - 1], m2.colPtr[i - 1],
+                   (m1.type == CSR) ? m1.cols + 1 : m1.nnz);
+            return false;
+        }
+    return true;
+}
+
+__global__ void isEqual(const D_SparseMatrix &m1, const D_SparseMatrix &m2,
+                        bool &result) {
+    result = isEqualBody(m1, m2);
+}

@@ -42,6 +42,7 @@ PYBIND11_MODULE(dna, m) {
                  gpuErrchk(cudaMemcpy(
                      self.state.GetSpecies(name).vals, sub_state.data(),
                      sizeof(T) * sub_state.size(), cudaMemcpyHostToDevice));
+                 self.state.GetSpecies(name).Print();
              })
         .def("AddReaction",
              [](System &self, std::string reag, int kr, std::string prod,
@@ -52,11 +53,22 @@ PYBIND11_MODULE(dna, m) {
                  output.push_back(std::pair(prod, kp));
                  self.AddReaction(input, output, rate);
              })
-        .def("GetSpecies",
-             [](System self, std::string name) {
-                 return self.state.GetSpecies(name);
-             },
-             py::return_value_policy::reference)
+        .def(
+            "GetSpecies",
+            [](System &self, std::string name) {
+                return &self.state.GetSpecies(name);
+            },
+            py::return_value_policy::reference)
+        .def(
+            "GetDiffusionMatrix",
+            [](System &self) { return self.diffusion_matrix; },
+            py::return_value_policy::reference)
+        .def(
+            "GetDampingMatrix", [](System &self) { return *self.damp_mat; },
+            py::return_value_policy::reference)
+        .def(
+            "GetStiffnessMatrix", [](System &self) { return *self.stiff_mat; },
+            py::return_value_policy::reference)
         .def("LoadDampnessMatrix", &System::LoadDampnessMatrix)
         .def("LoadStiffnessMatrix", &System::LoadStiffnessMatrix)
         .def("Print", &System::Print, py::arg("printCount") = 5)
@@ -70,69 +82,75 @@ PYBIND11_MODULE(dna, m) {
         .def(py::init<>())
         .def(py::init<const D_SparseMatrix &, bool>())
         .def(py::init<const D_SparseMatrix &>())
-        .def("Fill",
-             [](D_SparseMatrix &self, py::array_t<int> &rows,
-                py::array_t<int> &cols, py::array_t<T> &data) {
-                 assert(data.size() == self.nnz);
-                 if (self.type == CSR)
-                     assert(rows.size() == self.rows + 1);
-                 else
-                     assert(rows.size() == self.nnz);
-                 if (self.type == CSC)
-                     assert(cols.size() == self.cols + 1);
-                 else
-                     assert(cols.size() == self.nnz);
-                 gpuErrchk(cudaMemcpy(self.vals, data.data(),
-                                      sizeof(T) * data.size(),
-                                      cudaMemcpyHostToDevice));
-                 gpuErrchk(cudaMemcpy(self.colPtr, cols.data(),
-                                      sizeof(int) * cols.size(),
-                                      cudaMemcpyHostToDevice));
-                 gpuErrchk(cudaMemcpy(self.rowPtr, rows.data(),
-                                      sizeof(int) * rows.size(),
-                                      cudaMemcpyHostToDevice));
-             },
-             py::arg("rows"), py::arg("cols"), py::arg("data"))
+        .def(
+            "Fill",
+            [](D_SparseMatrix &self, py::array_t<int> &rows,
+               py::array_t<int> &cols, py::array_t<T> &data) {
+                assert(data.size() == self.nnz);
+                if (self.type == CSR)
+                    assert(rows.size() == self.rows + 1);
+                else
+                    assert(rows.size() == self.nnz);
+                if (self.type == CSC)
+                    assert(cols.size() == self.cols + 1);
+                else
+                    assert(cols.size() == self.nnz);
+                gpuErrchk(cudaMemcpy(self.vals, data.data(),
+                                     sizeof(T) * data.size(),
+                                     cudaMemcpyHostToDevice));
+                gpuErrchk(cudaMemcpy(self.colPtr, cols.data(),
+                                     sizeof(int) * cols.size(),
+                                     cudaMemcpyHostToDevice));
+                gpuErrchk(cudaMemcpy(self.rowPtr, rows.data(),
+                                     sizeof(int) * rows.size(),
+                                     cudaMemcpyHostToDevice));
+            },
+            py::arg("rows"), py::arg("cols"), py::arg("data"))
         .def("ConvertMatrixToCSR", &D_SparseMatrix::ConvertMatrixToCSR)
         .def("Print", &D_SparseMatrix::Print, py::arg("printCount") = 5)
-        .def("Dot",
-             [](D_SparseMatrix &mat, D_Array &x) {
-                 D_Array y(mat.rows);
-                 Dot(mat, x, y);
-                 return std::move(y);
-             },
-             py::return_value_policy::move)
-        .def("__imul__",
-             [](D_SparseMatrix &self, T alpha) {
-                 HDData<T> d_alpha(-alpha);
-                 ScalarMult(self, d_alpha(true));
-                 return &self;
-             },
-             py::return_value_policy::take_ownership)
-        .def("__mul__",
-             [](D_SparseMatrix &self, T alpha) {
-                 HDData<T> d_alpha(-alpha);
-                 printf("THIS FUNCTION DOESNT WORK!\n");
-                 D_SparseMatrix *self_copy = new D_SparseMatrix(self, false);
-                 ScalarMult(*self_copy, d_alpha(true));
-                 return self_copy;
-             },
-             py::return_value_policy::take_ownership)
-        .def("__add__",
-             [](D_SparseMatrix &self, D_SparseMatrix &b) {
-                 D_SparseMatrix *c = new D_SparseMatrix();
-                 MatrixSum(self, b, *c);
-                 return c;
-             },
-             py::return_value_policy::take_ownership)
-        .def("__sub__",
-             [](D_SparseMatrix &self, D_SparseMatrix &b) {
-                 D_SparseMatrix *c = new D_SparseMatrix();
-                 HDData<T> m1(-1);
-                 MatrixSum(self, b, m1(true), *c);
-                 return c;
-             },
-             py::return_value_policy::take_ownership)
+        .def(
+            "Dot",
+            [](D_SparseMatrix &mat, D_Array &x) {
+                D_Array y(mat.rows);
+                Dot(mat, x, y);
+                return std::move(y);
+            },
+            py::return_value_policy::move)
+        .def("__eq__", &D_SparseMatrix::operator==)
+        .def(
+            "__imul__",
+            [](D_SparseMatrix &self, T alpha) {
+                HDData<T> d_alpha(-alpha);
+                ScalarMult(self, d_alpha(true));
+                return &self;
+            },
+            py::return_value_policy::take_ownership)
+        .def(
+            "__mul__",
+            [](D_SparseMatrix &self, T alpha) {
+                HDData<T> d_alpha(-alpha);
+                D_SparseMatrix self_copy(self);
+                ScalarMult(self_copy, d_alpha(true));
+                return self_copy;
+            },
+            py::return_value_policy::take_ownership)
+        .def(
+            "__add__",
+            [](D_SparseMatrix &self, D_SparseMatrix &b) {
+                D_SparseMatrix *c = new D_SparseMatrix();
+                MatrixSum(self, b, *c);
+                return c;
+            },
+            py::return_value_policy::take_ownership)
+        .def(
+            "__sub__",
+            [](D_SparseMatrix &self, D_SparseMatrix &b) {
+                D_SparseMatrix *c = new D_SparseMatrix();
+                HDData<T> m1(-1);
+                MatrixSum(self, b, m1(true), *c);
+                return c;
+            },
+            py::return_value_policy::take_ownership)
         .def_readonly("nnz", &D_SparseMatrix::nnz)
         .def_readonly("rows", &D_SparseMatrix::rows)
         .def_readonly("cols", &D_SparseMatrix::cols)
@@ -143,7 +161,13 @@ PYBIND11_MODULE(dna, m) {
         .def(py::init<int>())
         .def(py::init<const D_Array &>())
         .def("Print", &D_Array::Print, py::arg("printCount") = 5)
-        .def("Norm", &D_Array::Norm)
+        .def("Norm",
+             [](D_Array &self) {
+                 HDData<T> norm;
+                 Dot(self, self, norm(true));
+                 norm.SetHost();
+                 return norm();
+             })
         .def("Fill",
              [](D_Array &self, py::array_t<T> &x) {
                  assert(x.size() == self.n);
@@ -167,21 +191,23 @@ PYBIND11_MODULE(dna, m) {
                             cudaMemcpyDeviceToHost);
                  return py::array_t(self.n, data);
              })
-        .def("__add__",
-             [](D_Array &self, D_Array &b) {
-                 D_Array c(self.n);
-                 VectorSum(self, b, c);
-                 return std::move(c);
-             },
-             py::return_value_policy::take_ownership)
-        .def("__sub__",
-             [](D_Array &self, D_Array &b) {
-                 D_Array c(self.n);
-                 HDData<T> m1(-1);
-                 VectorSum(self, b, m1(true), c);
-                 return std::move(c);
-             },
-             py::return_value_policy::take_ownership)
+        .def(
+            "__add__",
+            [](D_Array &self, D_Array &b) {
+                D_Array c(self.n);
+                VectorSum(self, b, c);
+                return std::move(c);
+            },
+            py::return_value_policy::take_ownership)
+        .def(
+            "__sub__",
+            [](D_Array &self, D_Array &b) {
+                D_Array c(self.n);
+                HDData<T> m1(-1);
+                VectorSum(self, b, m1(true), c);
+                return std::move(c);
+            },
+            py::return_value_policy::take_ownership)
         .def("__imul__",
              [](D_Array &self, T alpha) {
                  HDData<T> d_alpha(-alpha);
@@ -205,19 +231,19 @@ PYBIND11_MODULE(dna, m) {
     m.def("SolveCholesky", &SolveCholesky,
           py::return_value_policy::take_ownership);
     m.def("SolveConjugateGradientRawData",
-          [](D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon) {
-              CGSolve(d_mat, b, x, epsilon);
+          [](D_SparseMatrix *d_mat, D_Array *b, D_Array *x, T epsilon) {
+              return CGSolver::StaticCGSolve(*d_mat, *b, *x, epsilon);
           });
+    m.def("CppExplore", &LabyrinthExplore);
     m.def("ReadFromFile", &ReadFromFile,
           py::return_value_policy::take_ownership);
-              m.def("MatrixSum", [](D_SparseMatrix &a, D_SparseMatrix &b,
+    m.def("MatrixSum", [](D_SparseMatrix &a, D_SparseMatrix &b,
                           D_SparseMatrix &c) { MatrixSum(a, b, c); });
     m.def("MatrixSum",
           [](D_SparseMatrix &a, D_SparseMatrix &b, T alpha, D_SparseMatrix &c) {
               HDData<T> d_alpha(alpha);
               MatrixSum(a, b, d_alpha(true), c);
           });
-
 
     py::module zones = m.def_submodule("zones");
     zones.def("FillZone", &FillZone);

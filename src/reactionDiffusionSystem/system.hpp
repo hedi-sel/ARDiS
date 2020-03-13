@@ -21,6 +21,9 @@ class System {
     // Data holder for the species spatial concentraions
     State state;
 
+    CGSolver solver;
+    D_Array b;
+
     // The set of reactions
     std::vector<Reaction> reactions;
 
@@ -33,19 +36,31 @@ class System {
     T epsilon = 1e-3;
     T last_used_dt = 0;
 
+    // Give as input the size of the concentration vectors
     System(int);
+    ~System();
 
+    // Adds a new reaction
+    void AddReaction(std::string reag, int kr, std::string prod, int kp,
+                     T rate);
+    void AddReaction(std::vector<stochCoeff> input, std::string prod, int kp,
+                     T rate);
     void AddReaction(std::vector<stochCoeff> input,
                      std::vector<stochCoeff> output, T factor);
     void AddReaction(Reaction reaction);
 
+    // Get the memory location of the dampness and stiffness matrices
     void LoadDampnessMatrix(D_SparseMatrix &damp_mat);
     void LoadStiffnessMatrix(D_SparseMatrix &stiff_mat);
 
+    // Make one iteration of either rection or diffusion, for the given timestep
+    // Note: For optimal speed, try do the diffusion iterations with the same
+    //    time-step
     void IterateReaction(T dt);
-    void IterateDiffusion(T dt);
+    bool IterateDiffusion(T dt, std::string outPath = "");
     void Prune(T value = 0);
 
+    // Set the convergence threshold for the conjugae gradient method
     void SetEpsilon();
 
     void Print(int = 5);

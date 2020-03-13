@@ -9,7 +9,6 @@
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/matrix_element.hpp"
 #include "hediHelper/cuda/cuda_error_check.h"
-#include "hediHelper/cuda/cuda_reduction_operation.h"
 #include "hediHelper/cuda/cuda_reduction_operation.hpp"
 #include "hediHelper/cuda/cuda_thread_manager.hpp"
 
@@ -46,6 +45,9 @@ void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &result, bool synchronize) {
     cusparseErrchk(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one,
                                 mat_descr, x_descr, &zero, res_descr, T_Cuda,
                                 CUSPARSE_MV_ALG_DEFAULT, buffer));
+    cusparseDestroyDnVec(x_descr);
+    cusparseDestroyDnVec(res_descr);
+    cusparseDestroySpMat(mat_descr);
     profDot.End();
 }
 
@@ -68,10 +70,10 @@ void Dot(D_Array &x, D_Array &y, T &result, bool synchronize) {
     else
         buffer.n = x.n;
 
-    DotK<<<threadblock.block, threadblock.thread>>>(*x._device, *y._device,
-                                                    *buffer._device);
-    auto d_sum = [] __device__(const T &a, const T &b) { return a + b; };
-    ReductionOperation<typeof(d_sum)>(buffer, d_sum);
+    DotK<<<threadblock.block, threadblock.thread>>>(*(D_Array *)x._device,
+                                                    *(D_Array *)y._device,
+                                                    *(D_Array *)buffer._device);
+    ReductionOperation(buffer, sum);
     cudaMemcpy(&result, buffer.vals, sizeof(T), cudaMemcpyDeviceToDevice);
     if (synchronize) {
         gpuErrchk(cudaDeviceSynchronize());
@@ -91,7 +93,8 @@ void VectorSum(D_Array &a, D_Array &b, T &alpha, D_Array &c, bool synchronize) {
     assert(a.n == b.n);
     dim3Pair threadblock = Make1DThreadBlock(a.n);
     VectorSumK<<<threadblock.block, threadblock.thread>>>(
-        *a._device, *b._device, alpha, *c._device);
+        *(D_Array *)a._device, *(D_Array *)b._device, alpha,
+        *(D_Array *)c._device);
     if (synchronize)
         gpuErrchk(cudaDeviceSynchronize());
 }
@@ -189,10 +192,8 @@ void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
     cudaMalloc(&nnzs, sizeof(int) * (a.rows + 1));
     auto tb = Make1DThreadBlock(a.rows);
     SumNNZK<<<tb.block, tb.thread>>>(*a._device, *b._device, nnzs);
-
-    auto d_sum = [] __device__(const T &a, const T &b) { return a + b; };
     ReductionIncreasing(nnzs, a.rows + 1);
-    HDData<int> nnz(nnzs[a.rows], true);
+    HDData<int> nnz(&nnzs[a.rows], true);
     c.SetNNZ(nnz());
 
     gpuErrchk(cudaMemcpy(c.rowPtr, nnzs, sizeof(int) * (a.rows + 1),

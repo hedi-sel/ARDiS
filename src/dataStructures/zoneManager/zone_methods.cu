@@ -4,40 +4,39 @@
 #include "rectangle_zone.hpp"
 #include <dataStructures/array.hpp>
 
-__global__ void IsInsideArrayK(D_Array &mesh_x, D_Array &mesh_y,
-                               RectangleZone &zone, D_Array &is_inside,
-                               T value) {
+__global__ void IsInsideArrayK(D_Array &mesh_x, D_Array &mesh_y, Zone &zone,
+                               D_Array &is_inside, T value) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= is_inside.n)
         return;
     is_inside.vals[i] =
         (zone.IsInside(mesh_x.vals[i], mesh_y.vals[i])) ? value : 0;
 }
-D_Array IsInsideArray(D_Array &mesh_x, D_Array &mesh_y, RectangleZone &zone,
+D_Array IsInsideArray(D_Array &mesh_x, D_Array &mesh_y, Zone &zone,
                       T value = 1) {
     assert(mesh_x.n == mesh_y.n);
-    RectangleZone *d_zone;
-    cudaMalloc(&d_zone, sizeof(RectangleZone));
-    cudaMemcpy(d_zone, &zone, sizeof(RectangleZone), cudaMemcpyHostToDevice);
+    Zone *d_zone;
+    cudaMalloc(&d_zone, sizeof(zone));
+    cudaMemcpy(d_zone, &zone, sizeof(zone), cudaMemcpyHostToDevice);
 
     D_Array is_inside(mesh_x.n);
     auto tb = Make1DThreadBlock(mesh_x.n);
-    IsInsideArrayK<<<tb.block, tb.thread>>>(*mesh_x._device, *mesh_y._device,
-                                            *d_zone, *is_inside._device, value);
+    IsInsideArrayK<<<tb.block, tb.thread>>>(
+        *(D_Array *)mesh_x._device, *(D_Array *)mesh_y._device, *d_zone,
+        *(D_Array *)is_inside._device, value);
     return is_inside;
     cudaFree(d_zone);
 }
 
-void FillZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y, RectangleZone &zone,
+void FillZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y, Zone &zone,
               T value) {
-    // HDData v
     auto setToVal = [value] __device__(T & a) { a = value; };
     auto is_inside = IsInsideArray(mesh_x, mesh_y, zone);
     ApplyFunctionConditional(u, is_inside, setToVal);
 }
 
-void FillOutsideZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y,
-                     RectangleZone &zone, T value) {
+void FillOutsideZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y, Zone &zone,
+                     T value) {
     auto setToVal = [value] __device__(T & a) { a = value; };
     D_Array is_outside(u.n);
     is_outside.Fill(1);
@@ -47,8 +46,7 @@ void FillOutsideZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y,
     ApplyFunctionConditional(u, is_inside, setToVal);
 }
 
-T GetMinZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y,
-             RectangleZone &zone) {
+T GetMinZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y, Zone &zone) {
     auto min = [] __device__(T & a, T & b) { return (a < b) ? a : b; };
     D_Array u_copy(u);
     auto is_inside = IsInsideArray(mesh_x, mesh_y, zone);
@@ -58,8 +56,7 @@ T GetMinZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y,
     return result;
 };
 
-T GetMaxZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y,
-             RectangleZone &zone) {
+T GetMaxZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y, Zone &zone) {
     auto max = [] __device__(T & a, T & b) { return (a > b) ? a : b; };
     D_Array u_copy(u);
     auto is_inside = IsInsideArray(mesh_x, mesh_y, zone);
@@ -69,8 +66,7 @@ T GetMaxZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y,
     return result;
 };
 
-T GetMeanZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y,
-              RectangleZone &zone) {
+T GetMeanZone(D_Array &u, D_Array &mesh_x, D_Array &mesh_y, Zone &zone) {
     D_Array ones(u.n);
     ones.Fill(1);
     auto is_inside = IsInsideArray(mesh_x, mesh_y, zone, (T)(1.0));

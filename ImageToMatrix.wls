@@ -2,30 +2,7 @@
 
 Needs["NDSolve`FEM`"]
 
-name = $ScriptCommandLine[[2]]
-
-rayonExt = ToExpression[$ScriptCommandLine[[3]]]
-rayonInt = ToExpression[$ScriptCommandLine[[4]]]
-thickness = ToExpression[$ScriptCommandLine[[5]]]
-
-(*Define Region*)
-branchInt = (4 - thickness)/2
-branchExt = (4 + thickness)/2
-cInt = branchInt - rayonInt
-cExt = branchExt - rayonExt
-
-centerX = 0
-centerY = 0 (*the case X!=Y has not been tested !*)
-
-
-includeReg = RegionIntersection[Disk[{cExt, cExt}, rayonExt],Rectangle[{cExt, cExt}, {cExt + rayonExt,cExt + rayonExt}]]
-If[cExt > centerX, includeReg = RegionUnion[ includeReg, Rectangle[{centerX, centerY}, {cExt, branchExt}] , Rectangle[{cExt, centerY}, {branchExt, cExt}] ]]
-
-
-excludeReg = RegionIntersection[Disk[{cInt, cInt}, rayonInt],Rectangle[{cInt, cInt}, {cInt + rayonInt,cInt + rayonInt}]]
-If[cInt > centerX, excludeReg = RegionUnion[ excludeReg, Rectangle[{centerX, centerY}, {cInt, branchInt}] , Rectangle[{cInt, centerY}, {branchInt, cInt}] ]]
-
-region = RegionIntersection[RegionDifference[includeReg,excludeReg],Rectangle[{0,0},{branchExt,branchExt}]]
+region = Region@ImageMesh@Import["maze.png"]
 Export["region.png",RegionImage[region]]
 
 (* 

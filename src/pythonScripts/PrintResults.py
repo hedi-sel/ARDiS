@@ -9,8 +9,9 @@ lines = f.readlines()
 ######################
 # A modifier
 #######
-Z = np.zeros((10, 10))
-nvals = np.zeros((10, 10))
+size = 100
+Z = np.zeros((size, size))
+nvals = np.zeros((size, size))
 xparam = 0
 yparam = 1
 zresult = 0
@@ -20,6 +21,7 @@ x, y = 0, 0
 xprev, yprev = 0, 0
 i, j = -1, -1
 maxval = 0
+lines.pop(0)
 for line in lines:
     elmts = line.split(" ")
     params = elmts[0].split("_")

@@ -1,0 +1,38 @@
+
+Requirements
+====================
+
+ * CMake (3.15+), g++-7 (C++ 11 standard)
+ * Boost Library (1_70+ recommended)
+ * CUDA Compatible Graphics card, and CUDA toolkit (10.0+).
+ 
+ <h4>Optional</h4>
+ * Python 3.6, with the following modules: 
+    * Numpy 
+    * Matplotlib
+    * OS
+ * Imagick package (Debian/Ubuntu: sudo apt-get install imagemagick)
+
+Building
+====================
+
+<h3>Linux</h3>
+
+```c++
+./bootstrap.sh
+cd build/
+cmake ../   
+make
+```
+
+Run Test
+====================
+
+```c++
+python src/pythonScripts/Run_Simulation.py 
+```
+
+Plot results
+====================
+
+WIP

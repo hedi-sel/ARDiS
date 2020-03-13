@@ -5,6 +5,7 @@
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/sparse_matrix.hpp"
 #include "hediHelper/cuda/cuda_thread_manager.hpp"
+#include "reaction_computer.hpp"
 #include "system.hpp"
 
 std::pair<int *, int> getRawCoeffs(State &state,

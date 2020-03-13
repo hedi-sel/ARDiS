@@ -5,7 +5,7 @@
 #include "dataStructures/sparse_matrix.hpp"
 #include "hd_data.hpp"
 #include "hediHelper/cuda/cuda_error_check.h"
-#include "hediHelper/cuda/cuda_reduction_operation.h"
+#include "hediHelper/cuda/cuda_reduction_operation.hpp"
 #include "hediHelper/cuda/cuda_thread_manager.hpp"
 #include "hediHelper/cuda/cusolverSP_error_check.h"
 #include "hediHelper/cuda/cusparse_error_check.h"
@@ -42,15 +42,33 @@ __host__ D_SparseMatrix::D_SparseMatrix(const D_SparseMatrix &m,
 
 __host__ void D_SparseMatrix::operator=(const D_SparseMatrix &other) {
     assert(isDevice == isDevice);
+    MemFree();
     nnz = other.nnz;
     rows = other.rows;
     cols = other.cols;
     loaded_elements = other.loaded_elements;
     type = other.type;
-    vals = other.vals;
-    colPtr = other.colPtr;
-    rowPtr = other.rowPtr;
-    _device = other._device;
+    MemAlloc();
+    cudaMemcpyKind memCpy =
+        (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToHost;
+    gpuErrchk(cudaMemcpy(vals, other.vals, sizeof(T) * nnz, memCpy));
+    gpuErrchk(cudaMemcpy(colPtr, other.colPtr,
+                         sizeof(int) * ((type == CSC) ? cols + 1 : nnz),
+                         memCpy));
+    gpuErrchk(cudaMemcpy(rowPtr, other.rowPtr,
+                         sizeof(int) * ((type == CSR) ? rows + 1 : nnz),
+                         memCpy));
+}
+
+__host__ bool D_SparseMatrix::operator==(const D_SparseMatrix &other) {
+    if (isDevice) {
+        HDData<bool> result(true);
+        isEqual<<<1, 1>>>(*(this->_device), *(other._device), result(true));
+        result.SetHost();
+        return result();
+        gpuErrchk(cudaDeviceSynchronize());
+    } else
+        return isEqualBody(*this, other);
 }
 
 __host__ void D_SparseMatrix::MemAlloc() {
@@ -287,19 +305,14 @@ __host__ void D_SparseMatrix::OperationCuSolver(void *function,
     // TODO : SymOptimization
 }
 
-__device__ T max(const T &a, const T &b) { return (a > b) ? a : b; };
-
 __host__ void D_SparseMatrix::MakeDataWidth() {
     if (dataWidth >= 0)
         printf("Warning! Data width has already been computed.\n");
     dim3Pair threadblock = Make1DThreadBlock(rows);
     D_Array width(rows);
-    GetDataWidthK<<<threadblock.block, threadblock.thread>>>(*_device,
-                                                             *width._device);
-    auto d_max = [] __device__(const T &a, const T &b) {
-        return (a > b) ? a : b;
-    };
-    ReductionOperation<typeof(d_max)>(width, d_max);
+    GetDataWidthK<<<threadblock.block, threadblock.thread>>>(
+        *_device, *(D_Array *)width._device);
+    ReductionOperation(width, maximum);
     T dataWidthFloat;
     cudaMemcpy(&dataWidthFloat, width.vals, sizeof(T), cudaMemcpyDeviceToHost);
     dataWidth = (int)dataWidthFloat;
