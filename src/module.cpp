@@ -1,5 +1,6 @@
 #include "pybind11_include.hpp"
 #include <assert.h>
+#include <math.h>
 #include <vector>
 
 #include "dataStructures/array.hpp"
@@ -53,6 +54,8 @@ PYBIND11_MODULE(dna, m) {
                  output.push_back(std::pair(prod, kp));
                  self.AddReaction(input, output, rate);
              })
+        .def("AddReaction", [](System &self, std::string reaction,
+                               T rate) { self.AddReaction(reaction, rate); })
         .def(
             "GetSpecies",
             [](System &self, std::string name) {
@@ -166,7 +169,7 @@ PYBIND11_MODULE(dna, m) {
                  HDData<T> norm;
                  Dot(self, self, norm(true));
                  norm.SetHost();
-                 return norm();
+                 return sqrt(norm());
              })
         .def("Fill",
              [](D_Array &self, py::array_t<T> &x) {
@@ -244,6 +247,7 @@ PYBIND11_MODULE(dna, m) {
               HDData<T> d_alpha(alpha);
               MatrixSum(a, b, d_alpha(true), c);
           });
+    m.def("ToCSV", &ToCSV);
 
     py::module zones = m.def_submodule("zones");
     zones.def("FillZone", &FillZone);

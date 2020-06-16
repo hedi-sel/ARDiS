@@ -7,11 +7,18 @@ State::State(int size) : size(size) {}
 D_Array &State::AddSpecies(std::string name) {
     names[name] = data.size();
     data.push_back(new D_Array(size));
-    data.at(data.size() - 1)->name = name;
     return *(data.at(data.size() - 1));
 }
 
-D_Array &State::GetSpecies(std::string name) { return *(data.at(names[name])); }
+D_Array &State::GetSpecies(std::string name) {
+    auto findRes = names.find(name);
+    if (findRes == names.end()) {
+        std::cout << "\"" << name << "\""
+                  << "\n";
+        throw std::invalid_argument("^ This species is invalid\n");
+    }
+    return *(data.at(names[name]));
+}
 
 void State::Print(int i) {
     for (auto name : names) {

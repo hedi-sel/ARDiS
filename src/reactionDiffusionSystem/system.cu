@@ -11,17 +11,27 @@ void System::AddReaction(std::string reag, int kr, std::string prod, int kp,
     output.push_back(std::pair<std::string, int>(prod, kp));
     AddReaction(input, output, rate);
 }
-void System::AddReaction(std::vector<stochCoeff> input, std::string prod,
-                         int kp, T rate) {
-    std::vector<stochCoeff> output;
-    output.push_back(std::pair<std::string, int>(prod, kp));
-    AddReaction(input, output, rate);
-}
 void System::AddReaction(std::vector<stochCoeff> input,
                          std::vector<stochCoeff> output, T factor) {
     AddReaction(Reaction(input, output, factor));
 }
-void System::AddReaction(Reaction reaction) { reactions.push_back(reaction); };
+void System::AddReaction(Reaction reaction) {
+    for (auto species : std::get<0>(reaction)) {
+        if (state.names.find(species.first) == state.names.end()) {
+            std::cout << "\"" << species.first << "\""
+                      << "\n";
+            throw std::invalid_argument("^ This species is invalid\n");
+        }
+    }
+    for (auto species : std::get<1>(reaction)) {
+        if (state.names.find(species.first) == state.names.end()) {
+            std::cout << "\"" << species.first << "\""
+                      << "\n";
+            throw std::invalid_argument("^ This species is invalid\n");
+        }
+    }
+    reactions.push_back(reaction);
+};
 
 void System::LoadDampnessMatrix(D_SparseMatrix &damp_mat) {
     this->damp_mat = &damp_mat;
@@ -53,8 +63,7 @@ void System::IterateReaction(T dt) {
 }
 
 int i = 0;
-bool System::IterateDiffusion(T dt, std::string outPath) {
-    bool isSuccess = true;
+bool System::IterateDiffusion(T dt) {
     if (damp_mat == nullptr || stiff_mat == nullptr) {
         printf("Error! Stiffness and Dampness matrices not loaded\n");
         return false;
@@ -62,39 +71,20 @@ bool System::IterateDiffusion(T dt, std::string outPath) {
     if (last_used_dt != dt) {
         printf("Building a diffusion matrix for dt = %f ... ", dt);
         HDData<T> m(-dt);
-        // if (diffusion_matrix != nullptr) {
-        //     free(diffusion_matrix);
-        // }
-        // diffusion_matrix = new D_SparseMatrix();
         MatrixSum(*damp_mat, *stiff_mat, m(true), diffusion_matrix);
-        // diffusion_matrix.Print(100);
         printf("Done!\n");
         last_used_dt = dt;
-
-        if (outPath != std::string("")) {
-            remove(outPath.c_str());
-        }
     }
     for (auto &species : state.data) {
-        b.name = "B";
-        // D_Array copy(*species);
         Dot(*damp_mat, *species, b);
-        // damp_mat->Print(20);
-        // diffusion_matrix.Print(20);
-        // d_b.Print(20);
-        // printf("\n");
-        // printf("\n");
-        if (!solver.CGSolve(diffusion_matrix, b, *species, epsilon, outPath)) {
+        if (!solver.CGSolve(diffusion_matrix, b, *species, epsilon)) {
             printf("Warning: It did not converge on %i\n", i);
-            // delete species;
-            // species = new D_Array(copy);
-            // Dot(*damp_mat, species, d_b);
             species->Print(20);
-            isSuccess = false;
+            return false;
         }
     }
     i++;
-    return isSuccess;
+    return true;
 }
 
 void System::Print(int printCount) {

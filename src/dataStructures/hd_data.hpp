@@ -52,6 +52,5 @@ template <typename DataType> class HDData {
     ~HDData() {
         cudaFree(_device);
         delete _host;
-        printf("Freeingtinymem\n");
     }
 };

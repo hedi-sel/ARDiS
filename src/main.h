@@ -22,7 +22,6 @@ void ToCSV(State &state, std::string species, std::string outputPath) {
     fout.open(outputPath, std::ios_base::app);
     // fout << stateName << "\t" << state.data.size() << "\n";
     D_Array h_Arr(*state.data.at(state.names.at(species)), true);
-    // fout << species.first ;
     for (size_t j = 0; j < h_Arr.n; j++)
         fout << ((j == 0) ? "" : "\t") << h_Arr.vals[j];
     fout << "\n";
@@ -31,7 +30,7 @@ void ToCSV(State &state, std::string species, std::string outputPath) {
 
 bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
                       py::array_t<T> &u, T reaction, T max_time, T dt,
-                      T plot_dt, std::string name, py::array_t<T> &mesh_x,
+                      std::string name, py::array_t<T> &mesh_x,
                       py::array_t<T> &mesh_y) {
     std::string outputPath = "./outputCsv/" + name + ".csv";
     remove(outputPath.c_str());
@@ -51,9 +50,7 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
     gpuErrchk(cudaMemcpy(system.state.GetSpecies("P").vals, u.data(),
                          sizeof(T) * u.size(), cudaMemcpyHostToDevice));
     D_Array MeshX(mesh_x.size());
-    MeshX.name = "MeshX";
     D_Array MeshY(mesh_y.size());
-    MeshY.name = "MeshY";
     gpuErrchk(cudaMemcpy(MeshX.vals, mesh_x.data(), sizeof(T) * mesh_x.size(),
                          cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemcpy(MeshY.vals, mesh_y.data(), sizeof(T) * mesh_y.size(),
@@ -64,7 +61,9 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
     std::vector<stochCoeff> input;
     input.push_back(std::pair<std::string, int>("N", 1));
     input.push_back(std::pair<std::string, int>("P", 1));
-    system.AddReaction(input, "P", 2, reaction);
+    std::vector<stochCoeff> output;
+    input.push_back(std::pair<std::string, int>("P", 2));
+    system.AddReaction(input, output, reaction);
     system.Print();
 
     int plotCount = 0;
@@ -92,36 +91,34 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
     float timeAfterReaching = 3;
 
     for (int i = 0; i < max_time / dt; i++) {
-        if (plotCount * plot_dt <= i * dt) {
-            ToCSV(system.state, "N", outputPath);
-            plotCount += 1;
-        }
-        if (!system.IterateDiffusion(dt, "./cry/" + name + ".csv"))
+
+        ToCSV(system.state, "N", outputPath);
+        plotCount += 1;
+
+        if (!system.IterateDiffusion(dt))
             isSuccess = false;
         system.IterateReaction(dt);
-        // system.Print();
 
-        // if (max_time / dt >= 100 && i >= progPrintCount * max_time / dt / 10
-        // &&
-        //     i < progPrintCount * max_time / dt / 10 + 1) {
-        //     printf("%i completed \n", progPrintCount * 10);
-        //     progPrintCount += 1;
-        // }
+        if (max_time / dt >= 100 && i >= progPrintCount * max_time / dt / 10 &&
+            i < progPrintCount * max_time / dt / 10 + 1) {
+            printf("%i completed \n", progPrintCount * 10);
+            progPrintCount += 1;
+        }
 
-        // while (currentMinTest < nTests &&
-        //        GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY,
-        //                   TestZones[currentMinTest + 1]) > threashold) {
-        //     printf("Min %i : %f\n", currentMinTest, i * dt);
-        //     TestMinTime[currentMinTest] = i * dt;
-        //     currentMinTest += 1;
-        // }
-        // while (currentMaxTest < nTests &&
-        //        GetMaxZone(system.state.GetSpecies("N"), MeshX, MeshY,
-        //                   TestZones[currentMaxTest]) > threashold) {
-        //     printf("Max %i : %f\n", currentMaxTest, i * dt);
-        //     TestMaxTime[currentMaxTest] = i * dt;
-        //     currentMaxTest += 1;
-        // }
+        while (currentMinTest < nTests &&
+               GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY,
+                          TestZones[currentMinTest + 1]) > threashold) {
+            printf("Min %i : %f\n", currentMinTest, i * dt);
+            TestMinTime[currentMinTest] = i * dt;
+            currentMinTest += 1;
+        }
+        while (currentMaxTest < nTests &&
+               GetMaxZone(system.state.GetSpecies("N"), MeshX, MeshY,
+                          TestZones[currentMaxTest]) > threashold) {
+            printf("Max %i : %f\n", currentMaxTest, i * dt);
+            TestMaxTime[currentMaxTest] = i * dt;
+            currentMaxTest += 1;
+        }
 
         if (GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY, FinishZone) >
             threashold) {
@@ -135,8 +132,10 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
 
     if (Finished) {
         printf("Labyrinthe traversé! Arrivée à t= %f s \n", FinishTime);
-        // print("Exterior times ", TestMinTime);
-        // print("Interior times ", TestMaxTime);
+        // for (int i = 0; i < nTests; i++) {
+        //     printf("Exterior time %i : %f \n", i, TestMinTime[i]);
+        //     printf("Interior time %i : %f \n", i, TestMaxTime[i]);
+        // }
     } else
         printf("Labyrinth not completed\n");
 

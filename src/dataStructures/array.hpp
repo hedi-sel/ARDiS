@@ -13,7 +13,6 @@ template <typename C> class D_Vector {
   public:
     int n;
     const bool isDevice;
-    std::string name = "NoName";
 
     C *vals;
 

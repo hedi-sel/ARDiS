@@ -35,17 +35,14 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
                        std::string outputPath) {
     ChronoProfiler profiler;
     profiler.Start("Preparing Data");
-    q.name = "Q";
     Dot(d_mat, x, q, true);
 
     r = b;
-    r.name = "R";
     alpha() = -1.0;
     alpha.SetDevice();
     VectorSum(r, q, alpha(true), r);
 
     p = r;
-    p.name = "P";
     beta() = 0.0;
     beta.SetDevice();
     value() = 0.0;
@@ -112,16 +109,13 @@ bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x,
     ChronoProfiler profiler;
     profiler.Start("Preparing Data");
     D_Array q(b.n, true);
-    q.name = "Q";
     Dot(d_mat, x, q, true);
 
     D_Array r(b);
-    r.name = "R";
     HDData<T> alpha(-1.0);
     VectorSum(r, q, alpha(true), r);
 
     D_Array p(r);
-    p.name = "P";
     HDData<T> value;
     HDData<T> beta(0.0);
 

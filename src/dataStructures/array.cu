@@ -70,7 +70,6 @@ template <typename C> __host__ void D_Vector<C>::MemAlloc() {
             gpuErrchk(cudaMalloc(&_device, sizeof(D_Vector<C>)));
             gpuErrchk(cudaMemcpy(_device, this, sizeof(D_Vector<C>),
                                  cudaMemcpyHostToDevice));
-            // std::cout << "Allocing : " << name << "\n";
         } else {
             vals = new C[n];
         }
@@ -82,8 +81,6 @@ template <typename C> __host__ void D_Vector<C>::MemFree() {
             gpuErrchk(cudaFree(vals));
             gpuErrchk(cudaFree(_device));
             gpuErrchk(cudaDeviceSynchronize());
-            if (name != std::string("NoName"))
-                std::cout << "Delocating : " << name << "\n";
         } else {
             delete[] vals;
         }

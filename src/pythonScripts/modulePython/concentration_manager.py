@@ -1,8 +1,22 @@
 import numpy as np
+import math
 
 
 def Sign(x0, y0, x1, y1, x2, y2):
     return (x0 - x2) * (y1 - y2) - (x1 - x2) * (y0 - y2)
+
+
+class ConditionalZone:
+    zone, condition = 0, 0
+
+    def __init__(self, zone, condition):
+        self.zone = zone
+        self.condition = condition
+
+    def IsInside(self, x, y):
+        if(self.zone.IsInside(x, y)):
+            print(math.sqrt(x * x + y * y), self.condition(x, y))
+        self.zone.IsInside(x, y) and self.condition(x, y)
 
 
 class TriangleZone:
@@ -58,7 +72,8 @@ def GetMinZone(U, Mesh, Zone):
     for i in range(0, len(U)):
         if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] < Min:
             Min = U[i]
-    return Min
+            iM = i
+    return Min, iM
 
 
 def GetMaxZone(U, Mesh, Zone):
@@ -66,7 +81,8 @@ def GetMaxZone(U, Mesh, Zone):
     for i in range(0, len(U)):
         if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] > Max:
             Max = U[i]
-    return Max
+            iM = i
+    return Max, iM
 
 
 def GetMeanZone(U, Mesh, Zone):

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "constants.hpp"
@@ -43,10 +44,9 @@ class System {
     // Adds a new reaction
     void AddReaction(std::string reag, int kr, std::string prod, int kp,
                      T rate);
-    void AddReaction(std::vector<stochCoeff> input, std::string prod, int kp,
-                     T rate);
     void AddReaction(std::vector<stochCoeff> input,
-                     std::vector<stochCoeff> output, T factor);
+                     std::vector<stochCoeff> output, T rate);
+    void AddReaction(const std::string &reaction, T rate);
     void AddReaction(Reaction reaction);
 
     // Get the memory location of the dampness and stiffness matrices
@@ -57,7 +57,7 @@ class System {
     // Note: For optimal speed, try do the diffusion iterations with the same
     //    time-step
     void IterateReaction(T dt);
-    bool IterateDiffusion(T dt, std::string outPath = "");
+    bool IterateDiffusion(T dt);
     void Prune(T value = 0);
 
     // Set the convergence threshold for the conjugae gradient method

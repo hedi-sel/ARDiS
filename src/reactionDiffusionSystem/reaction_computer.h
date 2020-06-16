@@ -47,11 +47,12 @@ __global__ void ConsumeReactionK(D_Array **state, int n_species, int *reagents,
 void ConsumeReaction(State &state, Reaction &reaction, T rate) {
     auto tb = Make1DThreadBlock(state.size);
     auto d_state = state.GetDeviceState();
-    auto reagents = getRawCoeffs(state, std::get<0>(reaction));
     auto products = getRawCoeffs(state, std::get<1>(reaction));
+    auto reagents = getRawCoeffs(state, std::get<0>(reaction));
     ConsumeReactionK<<<tb.block, tb.thread>>>(
         d_state, state.data.size(), reagents.first, reagents.second,
         products.first, products.second, rate);
     gpuErrchk(cudaDeviceSynchronize());
+    cudaFree(reagents.first);
     state.FreeDeviceState(d_state);
 }

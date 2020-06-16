@@ -129,11 +129,6 @@ def ExploreLabyrinth(out, ins, thickness=1, reaction=5, output=OutputType.NONE, 
     for i in range(0, Nit):
         if use_system:
             system.IterateDiffusion(dt)
-            # d_DU = d_D.Dot(system.GetSpecies("U"))
-            # dna.SolveConjugateGradientRawData(
-            #     d_M, d_DU, system.GetSpecies("U"), epsilon)
-            #
-            # system.Prune(fillVal)
             system.IterateReaction(dt)
             U = system.GetSpecies("U").ToNumpyArray()
         else:
