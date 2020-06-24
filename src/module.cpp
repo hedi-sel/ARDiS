@@ -76,7 +76,8 @@ PYBIND11_MODULE(dna, m) {
         .def("LoadStiffnessMatrix", &System::LoadStiffnessMatrix)
         .def("Print", &System::Print, py::arg("printCount") = 5)
         .def_readwrite("State", &System::state,
-                       py::return_value_policy::reference);
+                       py::return_value_policy::reference)
+        .def("SetEpsilon", &System::SetEpsilon);
 
     py::class_<D_SparseMatrix>(m, "D_SparseMatrix")
         .def(py::init<int, int, int, MatrixType>())
@@ -219,14 +220,16 @@ PYBIND11_MODULE(dna, m) {
              })
         .def_readonly("n", &D_Array::n);
 
-    py::class_<RectangleZone>(m, "RectangleZone")
-        .def(py::init<>())
-        .def(py::init<float, float, float, float>())
-        .def(py::init<Point2D, Point2D>())
+    py::class_<Zone>(m, "Zone")
         .def("IsInside",
              [](RectangleZone self, T x, T y) { return self.IsInside(x, y); })
         .def("IsInside",
              [](RectangleZone self, Point2D p) { return self.IsInside(p); });
+
+    py::class_<RectangleZone, Zone>(m, "RectangleZone")
+        .def(py::init<>())
+        .def(py::init<float, float, float, float>())
+        .def(py::init<Point2D, Point2D>());
 
     py::class_<Point2D>(m, "Point2D").def(py::init<T, T>()).def(py::init<>());
 

@@ -105,13 +105,13 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
             progPrintCount += 1;
         }
 
-        while (currentMinTest < nTests &&
-               GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY,
-                          TestZones[currentMinTest + 1]) > threashold) {
-            printf("Min %i : %f\n", currentMinTest, i * dt);
-            TestMinTime[currentMinTest] = i * dt;
-            currentMinTest += 1;
-        }
+        // while (currentMinTest < nTests &&
+        //        GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY,
+        //                   TestZones[currentMinTest + 1]) > threashold) {
+        //     printf("Min %i : %f\n", currentMinTest, i * dt);
+        //     TestMinTime[currentMinTest] = i * dt;
+        //     currentMinTest += 1;
+        // }
         while (currentMaxTest < nTests &&
                GetMaxZone(system.state.GetSpecies("N"), MeshX, MeshY,
                           TestZones[currentMaxTest]) > threashold) {

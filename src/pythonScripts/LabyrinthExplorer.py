@@ -18,12 +18,14 @@ from enum import Enum
 
 matrixFolder = "matrixLabyrinth"
 printFolder = "output"
+csvFolder = "outputCsv"
 
 
 class OutputType(Enum):
     NONE = 0
     PLOT = 1
     RECORD = 2
+    RECORD_PLOT = 3
 
 
 class ReturnType(Enum):
@@ -32,14 +34,139 @@ class ReturnType(Enum):
     DISPERSION = 2
 
 
-def ExploreLabyrinth(out, ins, thickness=1, reaction=5, output=OutputType.NONE, return_item=ReturnType.SUCCESS, verbose=True, dt=1e-2, epsilon=1e-3, max_time=3, plot_dt=0.1, guess=float(0), use_system=True,
+def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0):
+    if verbose:
+        print("Starting result plot ...")
+
+    meshPath = matrixFolder + "/mesh_" + name + ".dat"
+    Mesh = LoadMeshFromFile(meshPath)
+
+    f = open(csvFolder+"/" + name+".csv", "r")
+    lines = f.readlines()
+
+    os.system("rm -rf "+printFolder+"/"+name)
+    os.system("mkdir " + printFolder + "/" + name + " 2> ./null")
+
+    # stateName, nSpecies = lines.pop(0).split("\t")
+    i = -1
+    for line in lines:
+        i += 1
+        if(i % plotEvery == 0):
+            U = np.array(line.split("\t"), dtype=np.float32)
+            fig, ax = plt.subplots()
+            ax.set_aspect('equal')
+            if dt == 0:
+                title = str(i)
+            else:
+                title = str(round(i*dt, 1))+"s"
+            ax.set_title(title)
+            plt.scatter(Mesh.x, Mesh.y, c=U, alpha=0.3, vmin=0, vmax=1)
+            plt.savefig(printFolder+"/"+name+"/"+str(i)+".png")
+            plt.close()
+
+    os.system("convert -delay 10 -loop 0 $(ls -1 "+printFolder +
+              "/" + name+"/*png | sort -V) "+printFolder+"/"+name+".gif")
+    os.system("rm -rf " + printFolder + "/" + name)
+
+    if(verbose):
+        print("Results plot have been saved here: " +
+              printFolder + "/" + name + ".gif")
+
+
+def CompareExterioInterior(name, dt=1e-2, verbose=True):
+    if verbose:
+        print("Starting exterior-interior compairing ...")
+
+    meshPath = matrixFolder + "/mesh_" + name + ".dat"
+    Mesh = LoadMeshFromFile(meshPath)
+
+    f = open(csvFolder+"/" + name+".csv", "r")
+    lines = f.readlines()
+
+    def norm(x, y):
+        return math.sqrt(x * x + y * y)
+
+    nTests = 10
+    angles = np.linspace(0, math.pi/2, nTests+1)
+    TestZonesExt = []
+    TestZonesInt = []
+
+    for i in range(0, nTests):
+        TestZonesExt = TestZonesExt + [ConditionalZone(TriangleZone(0, 0, 3*math.cos(angles[i]), 3*math.sin(
+            angles[i]), 3 * math.cos(angles[i + 1]), 3 * math.sin(angles[i + 1])), lambda x, y: norm(x, y) > 2)]
+        TestZonesInt = TestZonesInt + [ConditionalZone(TriangleZone(0, 0, 3*math.cos(angles[i]), 3*math.sin(
+            angles[i]), 3 * math.cos(angles[i + 1]), 3 * math.sin(angles[i + 1])), lambda x, y: norm(x, y) < 2)]
+    SpeedOut = []
+    TimeOfSpeedOut = []
+    LastSpeedOut = 0
+    currentOutTest = 0
+
+    SpeedIns = []
+    TimeOfSpeedIns = []
+    LastSpeedIns = 0
+    currentInsTest = 0
+
+    threashold = 0.9
+
+    i = -1
+    for line in lines:
+        i += 1
+        U = np.array(line.split("\t"), dtype=np.float32)
+        while (currentOutTest < nTests):
+            extr, j = GetMaxZone(U, Mesh, TestZonesExt[currentOutTest]), 0
+            if extr > threashold:
+                if(LastSpeedOut != 0):
+                    print(currentOutTest, ":", j, "/", jMin)
+                    SpeedOut.append(
+                        norm(Mesh.x[jMin] - Mesh.x[j], Mesh.y[jMin] - Mesh.y[j]) /
+                        (i * dt - LastSpeedOut))
+                    TimeOfSpeedOut.append(i*dt)
+                LastSpeedOut = i*dt
+                jMin = j
+                currentOutTest += 1
+            else:
+                break
+        while(currentInsTest < nTests):
+            extr, j = GetMaxZone(U, Mesh, TestZonesInt[currentInsTest]), 0
+            if (extr > threashold):
+                if (LastSpeedIns != 0):
+                    print(currentInsTest, ":", j, "/", jMax)
+                    SpeedIns.append(
+                        norm(Mesh.x[jMax] - Mesh.x[j], Mesh.y[jMax] - Mesh.y[j]) /
+                        (i * dt - LastSpeedIns))
+                    TimeOfSpeedIns.append(i*dt)
+                LastSpeedIns = i*dt
+                jMax = j
+                currentInsTest += 1
+            else:
+                break
+    plt.plot(TimeOfSpeedIns, SpeedIns)
+    plt.plot(TimeOfSpeedOut, SpeedOut)
+    # plt.show()
+    print("Exteriot : ", TimeOfSpeedOut)
+    print("Interior : ", TimeOfSpeedIns)
+
+
+def PrepareArea(out, ins, thickness=1, name="noName"):
+    name = str(round(out, 2))+"_"+str(round(ins, 2)) + \
+        "_" + str(round(thickness, 2))
+    os.system("./MakeMatrix.wls "+name+" "+str(out) +
+              " " + str(ins) + " " + str(thickness))
+    return name
+
+
+def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, return_item=ReturnType.SUCCESS, verbose=True, dt=1e-2, epsilon=1e-3, max_time=3, plot_dt=1e-1, guess=float(0),
                      threashold=0.9):
+    print("Starting exploration on experiment :", name)
     if True:  # Prepare output type and return item
         DoPlot = False
         DoRecordResult = False
         if (output == OutputType.PLOT):
             DoPlot = True
         elif (output == OutputType.RECORD):
+            DoRecordResult = True
+        elif (output == OutputType.RECORD_PLOT):
+            DoPlot = True
             DoRecordResult = True
         elif (output != OutputType.NONE):
             print("Error! Output type not recognized")
@@ -48,181 +175,99 @@ def ExploreLabyrinth(out, ins, thickness=1, reaction=5, output=OutputType.NONE, 
             print("Error! Return item not recognized")
             return
 
-    if True:  # Make Mesh and Matrices. Load them from file
-        name = str(round(out, 2))+"_"+str(round(ins, 2)) + \
-            "_"+str(round(thickness, 2))+"_"+str(round(reaction, 2))
-        os.system("./MakeMatrix.wls "+name+" "+str(out) +
-                  " "+str(ins)+" "+str(thickness))
+    if True:  # Load Mesh and matrices from file
+        start = time.time()
+
         dampingPath = matrixFolder+"/damping_"+name+".mtx"
         stiffnessPath = matrixFolder+"/stiffness_"+name+".mtx"
         meshPath = matrixFolder + "/mesh_" + name + ".dat"
 
-        d_S = rd.ToD_SparseMatrix(LoadMatrixFromFile(
-            stiffnessPath, Readtype.Symetric), dna.MatrixType.CSR)
-        if(verbose):
-            print("Stiffness matrix loaded ...")
-        d_D = rd.ToD_SparseMatrix(LoadMatrixFromFile(
-            dampingPath, Readtype.Symetric), dna.MatrixType.CSR)
-        if (verbose):
-            print("Dampness matrix loaded ...")
-
         Mesh = LoadMeshFromFile(meshPath)
 
-    if True:  # Set initial vector and prepare FEM resolution
-        n = d_S.cols
+        n = len(Mesh.x)
 
-        fillVal = 0.001
+        fillVal = 0
         U = np.full(n, fillVal)
-        StartZone = RectangleZone(0, 0, 10, 0.2)
+        StartZone = RectangleZone(0, 0, 500, 0.2)
         FillZone(U, Mesh, StartZone, 1)
-
-        if (use_system):
-            system = dna.System(d_D.cols)
-            system.AddSpecies("U")
-            system.SetSpecies("U", U)
-
-            system.LoadStiffnessMatrix(d_S)
-            system.LoadDampnessMatrix(d_D)
-
-            system.AddReaction("U", 1, "U", 2, reaction)
-            system.AddReaction("U", 2, "U", 1, reaction)
-        else:
-            d_U = dna.D_Array(len(U))
-            d_U.Fill(U)
-
-            d_S *= dt
-            d_M = d_D + d_S
-
         if verbose:
-            print("Start state:")
-            if(use_system):
-                system.Print()
-            else:
-                d_U.Print()
+            print("Starting vector :", U)
 
-    start = time.time()
+    # Remove csv file from previous calculations
+    os.system("rm -f "+csvFolder+"/"+name+".csv")
 
-    if (DoPlot):
-        plotPeriod = int(plot_dt/dt)
-        os.system("rm -rf "+printFolder+"/"+name)
-        os.system("mkdir " + printFolder + "/" + name + " 2> ./null")
+    success = True
 
-    start = time.time()
-    k = 0
+    # if (UseCpp):
+    #     success = dna.CppExplore(dampingPath, stiffnessPath, U,
+    #                              reaction, max_time, dt, name, Mesh.x, Mesh.y)
+    d_S = rd.ToD_SparseMatrix(LoadMatrixFromFile(
+        stiffnessPath, Readtype.Symetric), dna.MatrixType.CSR)
+    if(verbose):
+        print("Stiffness matrix loaded ...")
+    d_D = rd.ToD_SparseMatrix(LoadMatrixFromFile(
+        dampingPath, Readtype.Symetric), dna.MatrixType.CSR)
+    if (verbose):
+        print("Dampness matrix loaded ...")
+    system = dna.System(d_D.cols)
+    system.SetEpsilon(epsilon)
+    system.AddSpecies("N")
+    system.SetSpecies("N", U)
+    system.AddSpecies("P")
+    system.SetSpecies("P", U)
+
+    system.LoadStiffnessMatrix(d_S)
+    system.LoadDampnessMatrix(d_D)
+
+    system.AddReaction(" N -> 2 N", reaction)
+    system.AddReaction(" N+P -> 2P", reaction)
+    # system.AddReaction(" N -> 2 N", reaction)
+    # system.AddReaction(" 2N -> N", reaction)
+
     Nit = int(max_time / dt)
+    k = 0
 
-    nTests = 10
-    angles = np.linspace(0, math.pi/2, nTests+1)
-    TestZones = []
-    for i in range(0, nTests):
-        TestZones = TestZones + [TriangleZone(0, 0, 3*math.cos(angles[i]), 3*math.sin(
-            angles[i]), 3 * math.cos(angles[i + 1]), 3 * math.sin(angles[i + 1]))]
-    TestMinTime = [0]*nTests
-    TestMaxTime = [0]*nTests
-    currentMinTest = 0
-    currentMaxTest = 0
-
-    FinishZone = RectangleZone(0, 0, 0.2, 10)
-    Finished = False
-    FinishTime = 0
+    if (DoRecordResult):
+        FinishZone = dna.RectangleZone(0, 0, 0.2, 500)
+        FinishTime = -1
+        d_MeshX = dna.D_Array(len(Mesh.x))
+        d_MeshX.Fill(Mesh.x)
+        d_MeshY = dna.D_Array(len(Mesh.y))
+        d_MeshY.Fill(Mesh.y)
 
     for i in range(0, Nit):
-        if use_system:
-            system.IterateDiffusion(dt)
-            system.IterateReaction(dt)
-            U = system.GetSpecies("U").ToNumpyArray()
-        else:
-            d_DU = d_D.Dot(d_U)
-            dna.SolveConjugateGradientRawData(d_M, d_DU, d_U, epsilon)
-            U = d_U.ToNumpyArray()
+        system.IterateDiffusion(dt)
+        system.Prune()
+        system.IterateReaction(dt, True)
 
-        if DoPlot:  # Ploting
-            if plotPeriod != 0 and i % plotPeriod == 0:
-                fig, ax = plt.subplots()
-                ax.set_aspect('equal')
-                # tcf = ax.tricontourf(Mesh,  np.abs(U), np.logspace(math.log10(
-                #     1.e-5), math.log10(1), 11), norm=colors.LogNorm(vmin=1.e-5, vmax=1), extend='neither')
-                # fig.colorbar(tcf, extend='max')
-                title = str(i//plotPeriod)
-                # ax.set_title(title)
-                plt.scatter(Mesh.x, Mesh.y, c=U, alpha=0.3, vmin=0, vmax=1)
-                plt.savefig(printFolder+"/"+name+"/"+title+".png")
-                plt.close()
+        dna.ToCSV(system.State, "N", "./"+csvFolder+"/"+name+".csv")
+
+        if (i > 0 and (system.GetSpecies("N") - d_U).Norm() < 1.e-3):
+            break
+        d_U = dna.D_Array(system.GetSpecies("N"))
+
+        if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
+            FinishTime = i*dt
+
         if verbose:
             if Nit >= 100 and i >= k * Nit / 10 and i < k * Nit / 10 + 1:
                 print(str(k * 10) + "% completed")
                 k += 1
-        if (i * dt >= guess):  # Start checking if finished
-            while currentMinTest < nTests and (GetMinZone(U, Mesh, TestZones[currentMinTest]) > threashold):
-                TestMinTime[currentMinTest] = i * dt
-                currentMinTest += 1
-            while currentMaxTest < nTests and (GetMaxZone(U, Mesh, TestZones[currentMaxTest]) > threashold):
-                TestMaxTime[currentMaxTest] = i * dt
-                currentMaxTest += 1
 
-            if (GetMinZone(U, Mesh, FinishZone) > threashold):  # currentTest == nTests and
-                Finished = True
-                FinishTime = i*dt
-                break
-            if (i - 1) * dt < guess and currentMaxTest > 0:
-                if guess == 0:
-                    print("Error, reached the test in one iteration or less!")
-                    return
-                if verbose:
-                    print(
-                        "Reached a test zone before the guess, we will start over without using the guess!")
-                return ExploreLabyrinth(out, ins, reaction=reaction, output=output, return_item=return_item, verbose=verbose, dt=dt, epsilon=epsilon, max_time=max_time, plot_dt=plot_dt, guess=0.0)
+    if not success:
+        print("Exploration Failed")
+        return
+    else:
+        print("Exploration Suceeded")
 
-    # Dispersion = (LastFinish-FirstFinish)
-
-    if DoPlot:
-        os.system("convert -delay 10 -loop 0 $(ls -1 "+printFolder +
-                  "/" + name+"/*png | sort -V) "+printFolder+"/"+name+".gif")
-        os.system("rm -rf "+printFolder+"/"+name)
-
-    solve2Time = time.time() - start
-
-    if(verbose):
-        if (Finished):
-            print("Labyrinthe traversé! Arrivée à t= ", FinishTime, "s")
-            print("Exterior times ", TestMinTime)
-            print("Interior times ", TestMaxTime)
-            # print("Dispersion du front : ", Dispersion, "s")
-        else:
-            print("Labyrinth not completed")
-            print("Final State")
-            if(use_system):
-                system.Print()
-            else:
-                d_U.Print()
-        print("Run Time:", solve2Time)
-        if (DoPlot):
-            print("Results plot have been saved here: " +
-                  printFolder+"/"+name+".gif")
+    if verbose:
+        print ("Total computation time :", time.time() - start)
 
     if DoRecordResult:
-        os.system("echo " + name + " " + str(round(FinishTime, 2)) +
-                  #   " " + str(round(Dispersion, 8)) +
+        os.system("echo " + name + " " + str(round(FinishTime, 1+max(0, int(-math.log10(dt))))) +
                   " >> output/results.out")
+        if(verbose):
+            print ("Results have been recorded here: output/results.out")
 
-    os.system("rm "+dampingPath)
-    os.system("rm "+stiffnessPath)
-    os.system("rm "+meshPath)
-
-    if(return_item == ReturnType.SUCCESS):
-        return Finished
-    elif (return_item == ReturnType.TIME):
-        return FinishTime
-    elif (return_item == ReturnType.DISPERSION):
-        return Dispersion
-
-
-# parser = argparse.ArgumentParser(description='Process some integers.')
-# parser.add_argument('parameters', metavar='N', type=float, nargs='+',
-#                     help='an integer for the accumulator')
-
-# args = parser.parse_args()
-# print(args.parameters)
-
-# ExploreLabyrinth(args.parameters[0],  args.parameters[1], reaction=5, output=OutputType.RECORD,
-#                  return_item=ReturnType.TIME, verbose=False)
+    if (DoPlot):
+        PrintLabyrinth(name, verbose=verbose, plotEvery=int(plot_dt/dt), dt=dt)

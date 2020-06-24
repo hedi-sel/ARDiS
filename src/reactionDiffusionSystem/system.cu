@@ -1,3 +1,4 @@
+#include "dataStructures/helper/apply_operation.h"
 #include "reaction_computer.h"
 #include "system.hpp"
 
@@ -56,7 +57,14 @@ void System::Prune(T value) {
         vect->Prune(value);
 }
 
-void System::IterateReaction(T dt) {
+const T drain = 1.e-15;
+
+void System::IterateReaction(T dt, bool degradation) {
+    auto drainLambda = [] __device__(T & x) { x -= drain; };
+    for (auto species : state.data) {
+        ApplyFunction(*species, drainLambda);
+        species->Prune();
+    }
     for (auto reaction : reactions) {
         ConsumeReaction(state, reaction, std::get<2>(reaction) * dt);
     }
@@ -98,6 +106,8 @@ void System::Print(int printCount) {
         std::cout << "k=" << std::get<2>(reactions.at(i)) << "\n";
     }
 }
+
+void System::SetEpsilon(T epsilon) { this->epsilon = epsilon; }
 
 System::~System(){
     // if (damp_mat != nullptr)

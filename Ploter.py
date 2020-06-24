@@ -1,128 +1,80 @@
 import sys
 import numpy as np
 import os
+import math
 #from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
-outputName = sys.argv[-1]
-
-if (outputName == ""):
-    dataLocation = input("Data Location: (default: ./output/default)")
-    if (dataLocation == ""):
-        dataLocation = "./output/default"
-    printLocation = input("Plot Location: (default: ./plot/default)")
-    if (printLocation == ""):
-        printLocation = "./plot/default"
-else:
-    dataLocation = "./output/"+outputName
-    printLocation = "./plot/"+outputName
+resultsLocation = "output/results.out"
 
 
-def readLine(line):
-    values = []
-    nanCount = 0
-    infCount = 0
-    for str in line.split("\t"):
-        if "." in str or "e" in str:
-            values.append(float(str))
-        elif "nan" in str:
-            values.append(-1)
-            nanCount += 1
-        elif "inf" in str:
-            values.append(-2)
-            infCount += 1
-        else:
-            values.append(int(str))
-    return values, nanCount, infCount
+f = open(resultsLocation, "r")
+lines = f.readlines()
 
 
-def plotAndPrintData(fileName):
-    nanCount = 0
-    infCount = 0
-    f = open(dataLocation+"/"+fileName, "r")
-    lines = f.readlines()
+nbrParams = len((lines[0].split(" "))[0].split("_"))
+listOfParameters = [[]]*nbrParams
+sumValForEachParam = [[]]*nbrParams
+numberValuesForEachParam = [[]]*nbrParams
 
-    """
-    Expected format for the file is:
-    _________
-    shape (ex: 2 1024)
-    0	0	val
-    ..
-    i	j	val
-    ..
-    _________
-    """
-    shape = readLine(lines.pop(0))[0]
-    shape[2] = 3 #because rgb
-    Z = np.zeros(tuple(shape))
-    for line in lines:
-        values, nan, inf = readLine(line)
-        nanCount += nan
-        infCount += inf
-        z = values.pop()
-        Z[tuple(values)] = z
+# for line in lines:
+#     lineSplit = line.split(" ")
+#     params = lineSplit[0].split("_")
+#     value = float(lineSplit[1])
 
-    if (len(shape) == 2):
-        X = np.linspace(1, shape[1], shape[1])
-        plt.plot(X, Z[0, :], label='Prey')
-        plt.plot(X, Z[1, :], label='Predator')
-        #plt.xticks(X/ 1000.)
-        plt.legend(loc = 'upper right')
-        plt.ylabel('Species concentration (a.u.)')
-        plt.xlabel('x (mm)')
-        plt.grid(False)
-        plt.ylim((0, 4))
-    elif (len(shape) == 3):
-        #Z = Z / (Z.max(axis = 0).max(axis=0) + np.spacing(0))
-        plt.imshow(Z)
-    else:
-        print("Shape not supported")
-        return
+#     if value == -1:
+#         continue
 
-    plt.savefig(printLocation+"/"+fileName.replace(".dat", ".png"))
-    plt.close()
+#     for i in range(0, nbrParams):
+#         if params[i] not in listOfParameters[i]:
+#             listOfParameters[i] = listOfParameters[i] + [params[i]]
+#             sumValForEachParam[i] = sumValForEachParam[i]+[value]
+#             numberValuesForEachParam[i] = numberValuesForEachParam[i] + [1]
+#         else:
+#             j = listOfParameters[i].index(params[i])
+#             sumValForEachParam[i][j] += value
+#             numberValuesForEachParam[i][j] += 1
 
-    if nanCount > 0:
-        print("Warning, there is ", nanCount, " nan values")
+# paramNames = ["OutsideRadius", "InsideRadius", "Thickness"]
+# for i in range(0, nbrParams):
+#     plt.title(paramNames[i])
 
-    if infCount > 0:
-        print("Warning, there is ", infCount, " infinite values")
+#     plt.plot(np.array(listOfParameters[i]), np.array(
+#         sumValForEachParam[i]) / np.array(numberValuesForEachParam[i]))
+
+#     plt.xlabel(paramNames[i])
+#     plt.ylabel('Arrival Time')
+
+#     plt.savefig(paramNames[i] + ".png")
+#     plt.close()
 
 
-if os.path.exists(printLocation):
-    keepgoing = input(
-        "The files already exist, you wanna overwrite?\ny to overwrite, n to abort, any other key to save in a another folder\n")
-    if (keepgoing == "y"):
-        for file in os.listdir(printLocation):
-            if ".png" in file:
-                os.remove(printLocation + "/" + file)
-    elif (keepgoing == "n"):
-        sys.exit("Left the program without plotting anything")
-    else:
-        i = 2
-        while os.path.exists(printLocation + "_" + str(i)):
-            i += 1
-        os.makedirs(printLocation + "_" + str(i))
-        printLocation = printLocation + "_" + str(i)
-else:
-    os.makedirs(printLocation)
-
-for file in os.listdir(dataLocation):
-    plotAndPrintData(file)
-
-os.system("./makegif.sh "+outputName)
+colorForEachInput = []
+valForEachInput = []
+inputList = []
 
 
+for line in lines:
+    lineSplit = line.split(" ")
+    params = lineSplit[0].split("_")
+    value = float(lineSplit[1])
 
-# ax = fig.add_subplot(111, projection='3d')
-# x, y = np.array(2), np.array(128)
-# X, Y = np.meshgrid(x, y)
+    if value == -1:
+        continue
 
-# ax.plot_surface(X, Y, Z)
+    inp = float(params[0]) * (1 - math.sqrt(2)) - float(params[1]) * (1 - math.sqrt(2)) + float(params[2]) * math.sqrt(2)
 
-# ax.set_xlabel('X Label')
-# ax.set_ylabel('Y Label')
-# ax.set_zlabel('Z Label')
+    if (inp < 0):
+        continue
+    inputList.append(inp)
+    valForEachInput.append(value)
+    colorForEachInput.append( (float(params[0])/2,float(params[1]),float(params[2])) )
 
-# plt.show()
+plt.title("Goulot d'etranglement")
+
+plt.scatter(np.array(inputList), np.array(valForEachInput),c=np.array(colorForEachInput))
+plt.xlabel("Epaisseur goulot")
+plt.ylabel('Arrival Time')
+
+plt.savefig("Goulot d'etranglement.png")
+plt.close()

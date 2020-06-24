@@ -56,12 +56,12 @@ class System {
     // Make one iteration of either rection or diffusion, for the given timestep
     // Note: For optimal speed, try do the diffusion iterations with the same
     //    time-step
-    void IterateReaction(T dt);
+    void IterateReaction(T dt, bool degradation = false);
     bool IterateDiffusion(T dt);
     void Prune(T value = 0);
 
     // Set the convergence threshold for the conjugae gradient method
-    void SetEpsilon();
+    void SetEpsilon(T epsilon);
 
     void Print(int = 5);
 };

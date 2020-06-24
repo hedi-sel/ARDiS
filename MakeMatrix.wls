@@ -17,15 +17,18 @@ cExt = branchExt - rayonExt
 centerX = 0
 centerY = 0 (*the case X!=Y has not been tested !*)
 
-
 includeReg = RegionIntersection[Disk[{cExt, cExt}, rayonExt],Rectangle[{cExt, cExt}, {cExt + rayonExt,cExt + rayonExt}]]
 If[cExt > centerX, includeReg = RegionUnion[ includeReg, Rectangle[{centerX, centerY}, {cExt, branchExt}] , Rectangle[{cExt, centerY}, {branchExt, cExt}] ]]
-
+If[cExt < centerX, includeReg = RegionIntersection[includeReg,Rectangle[{0,0},{branchExt,branchExt}]]]
+(* 
+Export["region1.png",RegionImage[includeReg]] *)
 
 excludeReg = RegionIntersection[Disk[{cInt, cInt}, rayonInt],Rectangle[{cInt, cInt}, {cInt + rayonInt,cInt + rayonInt}]]
 If[cInt > centerX, excludeReg = RegionUnion[ excludeReg, Rectangle[{centerX, centerY}, {cInt, branchInt}] , Rectangle[{cInt, centerY}, {branchInt, cInt}] ]]
+(* 
+Export["region2.png",RegionImage[excludeReg]] *)
 
-region = RegionIntersection[RegionDifference[includeReg,excludeReg],Rectangle[{0,0},{branchExt,branchExt}]]
+region = RegionDifference[includeReg,excludeReg]
 Export["region.png",RegionImage[region]]
 
 (* 
