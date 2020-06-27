@@ -23,26 +23,44 @@ Rea = 5  # np.logspace(math.log10(1), math.log10(10), 10)
 #                     return_item=ReturnType.TIME, verbose=True, UseCpp=False)
 # CompareExterioInterior(name)
 
-# ExploreLabyrinth(PrepareArea(Out[0], Ins[0], thickness=Thi[3]), reaction=Rea, output=OutputType.PLOT,
-#                     return_item=ReturnType.TIME, verbose=False)
-
 # os.system("./ImageToMatrix.wls maze_e-2_e-3")
 # ExploreLabyrinth("maze_e-2_e-3", output=OutputType.PLOT,
-#                  max_time=1000, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1)
-for out in Out:
-    if startOut > 0:
-        startOut -= 1
-        continue
-    for ins in Ins:
-        if startIns > 0:
-            startIns -= 1
-            continue
-        for thi in Thi:
-            if startThi > 0:
-                startThi -= 1
-                continue
-            ExploreLabyrinth(PrepareArea(out, ins, thickness=thi),
-                             reaction=Rea, output=OutputType.RECORD_PLOT, verbose=True)
+#                  max_time=200, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
+
+# size = "100"
+# os.system("./MazeGenerator.wls maze_"+size+" "+size)
+# ExploreLabyrinth("maze_"+size, output=OutputType.PLOT,
+#                  max_time=200, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 10, 10))
+
+Nexpr = 1
+stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
+results=[]
+for step in stepSizes:
+    os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
+    cmpt_time_sum= 0
+    for j in range(0, Nexpr):
+        cmpt_time_sum+=ExploreLabyrinth("precision="+step, output=OutputType.NONE, return_item=ReturnType.LOADING_TIME, verbose = False, fastCalculation = True,
+                    max_time=10, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
+    results.append(cmpt_time_sum * 1.0 / Nexpr)
+    print("We had", cmpt_time_sum * 1.0 / Nexpr)
+    # input()
+print (results)
+
+
+# for out in Out:
+#     if startOut > 0:
+#         startOut -= 1
+#         continue
+#     for ins in Ins:
+#         if startIns > 0:
+#             startIns -= 1
+#             continue
+#         for thi in Thi:
+#             if startThi > 0:
+#                 startThi -= 1
+#                 continue
+#             ExploreLabyrinth(PrepareArea(out, ins, thickness=thi),
+#                              reaction=Rea, output=OutputType.RECORD_PLOT, verbose=True)
 print("fini")
 
 

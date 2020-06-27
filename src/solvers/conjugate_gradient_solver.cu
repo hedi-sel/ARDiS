@@ -37,12 +37,12 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
     profiler.Start("Preparing Data");
     Dot(d_mat, x, q, true);
 
-    r = b;
+    r = b; // Copy b into r
     alpha() = -1.0;
     alpha.SetDevice();
     VectorSum(r, q, alpha(true), r);
 
-    p = r;
+    p = r; // copy r into p
     beta() = 0.0;
     beta.SetDevice();
     value() = 0.0;

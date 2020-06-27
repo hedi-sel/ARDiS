@@ -31,14 +31,16 @@ class OutputType(Enum):
 class ReturnType(Enum):
     SUCCESS = 0
     TIME = 1
-    DISPERSION = 2
+    COMPUTATION_TIME = 2
+    LOADING_TIME = 3
 
 
-def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0):
+def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
     if verbose:
         print("Starting result plot ...")
 
-    meshPath = matrixFolder + "/mesh_" + name + ".dat"
+    if(meshPath == ""):
+        meshPath = matrixFolder + "/mesh_" + name + ".dat"
     Mesh = LoadMeshFromFile(meshPath)
 
     f = open(csvFolder+"/" + name+".csv", "r")
@@ -156,7 +158,7 @@ def PrepareArea(out, ins, thickness=1, name="noName"):
 
 
 def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, return_item=ReturnType.SUCCESS, verbose=True, dt=1e-2, epsilon=1e-3, max_time=3, plot_dt=1e-1, guess=float(0),
-                     threashold=0.9):
+                     threashold=0.9, startZone=RectangleZone(0, 0, 500, 0.2), fastCalculation = False):
     print("Starting exploration on experiment :", name)
     if True:  # Prepare output type and return item
         DoPlot = False
@@ -168,16 +170,10 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         elif (output == OutputType.RECORD_PLOT):
             DoPlot = True
             DoRecordResult = True
-        elif (output != OutputType.NONE):
-            print("Error! Output type not recognized")
-            return
-        if return_item != ReturnType.SUCCESS and return_item != ReturnType.TIME and return_item != ReturnType.DISPERSION:
-            print("Error! Return item not recognized")
-            return
+
+    start = time.time()
 
     if True:  # Load Mesh and matrices from file
-        start = time.time()
-
         dampingPath = matrixFolder+"/damping_"+name+".mtx"
         stiffnessPath = matrixFolder+"/stiffness_"+name+".mtx"
         meshPath = matrixFolder + "/mesh_" + name + ".dat"
@@ -188,19 +184,14 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
 
         fillVal = 0
         U = np.full(n, fillVal)
-        StartZone = RectangleZone(0, 0, 500, 0.2)
-        FillZone(U, Mesh, StartZone, 1)
+        FillZone(U, Mesh, startZone, 1)
         if verbose:
             print("Starting vector :", U)
 
     # Remove csv file from previous calculations
-    os.system("rm -f "+csvFolder+"/"+name+".csv")
+    if not fastCalculation:
+        os.system("rm -f "+csvFolder+"/"+name+".csv")
 
-    success = True
-
-    # if (UseCpp):
-    #     success = dna.CppExplore(dampingPath, stiffnessPath, U,
-    #                              reaction, max_time, dt, name, Mesh.x, Mesh.y)
     d_S = rd.ToD_SparseMatrix(LoadMatrixFromFile(
         stiffnessPath, Readtype.Symetric), dna.MatrixType.CSR)
     if(verbose):
@@ -209,6 +200,10 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         dampingPath, Readtype.Symetric), dna.MatrixType.CSR)
     if (verbose):
         print("Dampness matrix loaded ...")
+    
+    loading_time = time.time()-start
+    start = time.time()
+
     system = dna.System(d_D.cols)
     system.SetEpsilon(epsilon)
     system.AddSpecies("N")
@@ -240,34 +235,42 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         system.Prune()
         system.IterateReaction(dt, True)
 
-        dna.ToCSV(system.State, "N", "./"+csvFolder+"/"+name+".csv")
+        if not fastCalculation:
+            dna.ToCSV(system.State, "N", "./"+csvFolder+"/"+name+".csv")
+
+            if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
+                FinishTime = i*dt
+
+            if verbose:
+                if Nit >= 100 and i >= k * Nit / 10 and i < k * Nit / 10 + 1:
+                    print(str(k * 10) + "% completed")
+                    k += 1
 
         if (i > 0 and (system.GetSpecies("N") - d_U).Norm() < 1.e-3):
+            print(i+1, "iterations done")
             break
         d_U = dna.D_Array(system.GetSpecies("N"))
 
-        if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
-            FinishTime = i*dt
+    print("Exploration finished in", i*dt, "s")
 
-        if verbose:
-            if Nit >= 100 and i >= k * Nit / 10 and i < k * Nit / 10 + 1:
-                print(str(k * 10) + "% completed")
-                k += 1
-
-    if not success:
-        print("Exploration Failed")
-        return
-    else:
-        print("Exploration Suceeded")
-
+    computation_time = time.time() - start
     if verbose:
-        print ("Total computation time :", time.time() - start)
+        print("Total computation time :", computation_time)
 
-    if DoRecordResult:
-        os.system("echo " + name + " " + str(round(FinishTime, 1+max(0, int(-math.log10(dt))))) +
-                  " >> output/results.out")
-        if(verbose):
-            print ("Results have been recorded here: output/results.out")
+    if not fastCalculation:
 
-    if (DoPlot):
-        PrintLabyrinth(name, verbose=verbose, plotEvery=int(plot_dt/dt), dt=dt)
+        if DoRecordResult:
+            os.system("echo " + name + " " + str(round(FinishTime, 1+max(0, int(-math.log10(dt))))) +
+                    " >> output/results.out")
+            if(verbose):
+                print("Results have been recorded here: output/results.out")
+
+        if (DoPlot):
+            PrintLabyrinth(name, verbose=verbose, plotEvery=int(plot_dt/dt), dt=dt)
+
+    if (return_item == ReturnType.TIME):
+        return i * dt
+    if (return_item == ReturnType.COMPUTATION_TIME):
+        return computation_time
+    if (return_item == ReturnType.LOADING_TIME):
+        return loading_time

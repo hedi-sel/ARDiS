@@ -250,7 +250,17 @@ PYBIND11_MODULE(dna, m) {
               HDData<T> d_alpha(alpha);
               MatrixSum(a, b, d_alpha(true), c);
           });
-    m.def("ToCSV", &ToCSV);
+    m.def("ToCSV",
+          [](State &state, const std::string &species,
+             const std::string &path) { return ToCSV(state, species, path); });
+    m.def("ToCSV",
+          [](D_Array &array, std::string &path) { return ToCSV(array, path); });
+    m.def("ToCSV", [](py::array_t<T> &array, std::string &path) {
+        D_Array arrayContainer(array.size(), false);
+        cudaMemcpy(arrayContainer.vals, array.data(),
+                   sizeof(T) * arrayContainer.n, cudaMemcpyHostToHost);
+        return ToCSV(arrayContainer, path);
+    });
 
     py::module zones = m.def_submodule("zones");
     zones.def("FillZone", &FillZone);

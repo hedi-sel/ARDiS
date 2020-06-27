@@ -17,15 +17,23 @@
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "solvers/inversion_solver.h"
 
-void ToCSV(State &state, std::string species, std::string outputPath) {
+void ToCSV(D_Array &array, std::string outputPath) {
+    if (array.isDevice) { // If device memory, copy to host, and restart the
+                          // function
+        D_Array h_copy(array, true);
+        ToCSV(h_copy, outputPath);
+        return;
+    }
+    // If Host memory:
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
-    // fout << stateName << "\t" << state.data.size() << "\n";
-    D_Array h_Arr(*state.data.at(state.names.at(species)), true);
-    for (size_t j = 0; j < h_Arr.n; j++)
-        fout << ((j == 0) ? "" : "\t") << h_Arr.vals[j];
+    for (size_t j = 0; j < array.n; j++)
+        fout << ((j == 0) ? "" : "\t") << array.vals[j];
     fout << "\n";
     fout.close();
+}
+void ToCSV(State &state, std::string species, std::string outputPath) {
+    ToCSV(*state.data.at(state.names.at(species)), outputPath);
 }
 
 bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,

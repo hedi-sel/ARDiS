@@ -11,8 +11,8 @@ printLocation = "output"
 f = open(dampingPath, "r")
 s = 0
 while s == 0:
-    l  = f.readline().split(" ")[0]
-    if l[0]!='%':
+    l = f.readline().split(" ")[0]
+    if l[0] != '%':
         s = int(l.split(" ")[0])
 
 pos = np.random.randint(0, s)

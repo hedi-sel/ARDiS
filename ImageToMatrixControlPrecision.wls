@@ -2,13 +2,15 @@
 
 Needs["NDSolve`FEM`"]
 name = $ScriptCommandLine[[2]]
+meshStepSize = ToExpression[$ScriptCommandLine[[3]]]
+
 region = Region@ImageMesh@Import["maze.png"]
 (* region = ImageMesh@Graphics@{Thickness[0.1], PeanoCurve[1]};*)
 Export["region.png",RegionImage[region]]
 
 (*Make mesh*)
-nr=ToElementMesh[ BoundaryDiscretizeRegion@region , MaxCellMeasure->20]
-
+nr=ToElementMesh[ BoundaryDiscretizeRegion@region , MaxCellMeasure->meshStepSize]
+Print["Mesh number of points : "<>ToString@Length@nr["Coordinates"]]
 
 vd=NDSolve`VariableData[{"DependentVariables"->{u},"Space"->{x,y}}];
 sd=NDSolve`SolutionData[{"Space"->nr}];

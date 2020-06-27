@@ -102,7 +102,8 @@
         "__atomic_generated": "cpp",
         "__mutex_base": "cpp",
         "__threading_support": "cpp",
-        "__undef_macros": "cpp"
+        "__undef_macros": "cpp",
+        "__tuple": "cpp"
     },
     "C_Cpp.default.includePath": [
         "~/Libraries/pybind11/include",
@@ -111,6 +112,5 @@
         "/usr/local/cuda-10.2/include"
     ],
     "C_Cpp.clang_format_fallbackStyle": "{IndentWidth: 4}",
-    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
-    "python.pythonPath": "/usr/bin/python3.7"
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"
 }
