@@ -62,7 +62,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
             else:
                 title = str(round(i*dt, 1))+"s"
             ax.set_title(title)
-            plt.scatter(Mesh.x, Mesh.y, c=U, alpha=0.3, vmin=0, vmax=1)
+            plt.scatter(Mesh.x, Mesh.y, s=0.1, c=U, alpha=0.1, vmin=0, vmax=1)
             plt.savefig(printFolder+"/"+name+"/"+str(i)+".png")
             plt.close()
 

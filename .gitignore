@@ -8,3 +8,5 @@ src/pythonScripts/modulePython/dna.so
 src/pythonScripts/modulePython/__pycache__/*
 src/pythonScripts/__pycache__/*
 *.csv
+*.png
+null

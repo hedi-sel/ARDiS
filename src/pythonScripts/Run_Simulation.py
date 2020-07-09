@@ -32,20 +32,26 @@ Rea = 5  # np.logspace(math.log10(1), math.log10(10), 10)
 # ExploreLabyrinth("maze_"+size, output=OutputType.PLOT,
 #                  max_time=200, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 10, 10))
 
-Nexpr = 1
-stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
-results=[]
-for step in stepSizes:
-    os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
-    cmpt_time_sum= 0
-    for j in range(0, Nexpr):
-        cmpt_time_sum+=ExploreLabyrinth("precision="+step, output=OutputType.NONE, return_item=ReturnType.LOADING_TIME, verbose = False, fastCalculation = True,
-                    max_time=10, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
-    results.append(cmpt_time_sum * 1.0 / Nexpr)
-    print("We had", cmpt_time_sum * 1.0 / Nexpr)
-    # input()
-print (results)
+# Nexpr = 1
+# stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
+# results=[]
+# for step in stepSizes:
+#     os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
+#     cmpt_time_sum= 0
+#     for j in range(0, Nexpr):
+#         cmpt_time_sum+=ExploreLabyrinth("precision="+step, output=OutputType.NONE, return_item=ReturnType.LOADING_TIME, verbose = False, fastCalculation = True,
+#                     max_time=10, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
+#     results.append(cmpt_time_sum * 1.0 / Nexpr)
+#     print("We had", cmpt_time_sum * 1.0 / Nexpr)
+#     # input()
+# print (results)
 
+step = "0.2"
+# os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
+ExploreLabyrinth("precision="+step, output=OutputType.PLOT, return_item=ReturnType.LOADING_TIME, verbose = True,
+            max_time=10000, diffusion=1, reaction=0.2, dt=1, epsilon=1e-2, plot_dt=5, startZone=RectangleZone(0, 0, 500, 10))
+# results.append(cmpt_time_sum * 1.0 / Nexpr)
+# print("We had", cmpt_time_sum * 1.0 / Nexpr)
 
 # for out in Out:
 #     if startOut > 0:
