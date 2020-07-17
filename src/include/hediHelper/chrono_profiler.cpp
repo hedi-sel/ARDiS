@@ -26,9 +26,8 @@ void ChronoProfiler::End() {
 
 void ChronoProfiler::Print() {
     CountTime();
-    std::cout << "Profiling results:\n";
     for (auto name = names.begin(); name != names.end(); name++) {
-        std::cout << name->first << " : " << chronos[name->second] << "\n";
+        std::cout << name->first << " :\n" << chronos[name->second] << "\n";
     }
 }
 
