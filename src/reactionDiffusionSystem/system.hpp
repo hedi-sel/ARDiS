@@ -37,6 +37,9 @@ class System {
     T epsilon = 1e-3;
     T last_used_dt = 0;
 
+    // Profiler
+    ChronoProfiler profiler;
+
     // Give as input the size of the concentration vectors
     System(int);
     ~System();

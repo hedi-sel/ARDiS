@@ -20,7 +20,6 @@ matrixFolder = "matrixLabyrinth"
 printFolder = "output"
 csvFolder = "outputCsv"
 
-
 class OutputType(Enum):
     NONE = 0
     PLOT = 1
@@ -33,6 +32,7 @@ class ReturnType(Enum):
     TIME = 1
     COMPUTATION_TIME = 2
     LOADING_TIME = 3
+    LOADING_COMPUTATION_TIME=4
 
 
 def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
@@ -42,6 +42,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
     if(meshPath == ""):
         meshPath = matrixFolder + "/mesh_" + name + ".dat"
     Mesh = LoadMeshFromFile(meshPath)
+    Surface = (np.max( Mesh.x)-np.min( Mesh.x)) * (np.max( Mesh.y) - np.min( Mesh.y))
 
     f = open(csvFolder+"/" + name+".csv", "r")
     lines = f.readlines()
@@ -60,9 +61,9 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
             if dt == 0:
                 title = str(i)
             else:
-                title = str(round(i*dt, 1))+"s"
+                title = str(round(i * dt, 1)) + "s"
             ax.set_title(title)
-            plt.scatter(Mesh.x, Mesh.y, s=0.1, c=U, alpha=0.1, vmin=0, vmax=1)
+            plt.scatter(Mesh.x, Mesh.y, s=10000*Surface*1.0/len(U), c=U, alpha=0.5, vmin=0, vmax=1)
             plt.savefig(printFolder+"/"+name+"/"+str(i)+".png")
             plt.close()
 
@@ -223,7 +224,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     k = 0
 
     if (DoRecordResult):
-        FinishZone = dna.RectangleZone(0, 0, 0.2, 500)
+        FinishZone = dna.RectangleZone(0, 0, 0.5, 500)
         FinishTime = -1
         d_MeshX = dna.D_Array(len(Mesh.x))
         d_MeshX.Fill(Mesh.x)
@@ -238,7 +239,8 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         if not fastCalculation:
             dna.ToCSV(system.State, "N", "./"+csvFolder+"/"+name+".csv")
 
-            if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
+            if DoRecordResult and FinishTime == -1 and GetMaxZone(U,Mesh,FinishZone) > 0.8:
+            # if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
                 FinishTime = i*dt
 
             if verbose:
@@ -250,12 +252,14 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
             print(i+1, "iterations done")
             break
         d_U = dna.D_Array(system.GetSpecies("N"))
+        U = d_U.ToNumpyArray()
 
     print("Exploration finished in", i*dt, "s")
 
     computation_time = time.time() - start
     if verbose:
         print("Total computation time :", computation_time)
+        system.Print()
 
     if not fastCalculation:
 
@@ -274,3 +278,5 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         return computation_time
     if (return_item == ReturnType.LOADING_TIME):
         return loading_time
+    if (return_item == ReturnType.LOADING_COMPUTATION_TIME):
+        return loading_time, computation_time

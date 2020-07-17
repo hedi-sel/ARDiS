@@ -60,6 +60,7 @@ void System::Prune(T value) {
 const T drain = 1.e-15;
 
 void System::IterateReaction(T dt, bool degradation) {
+    profiler.Start("Reaction");
     auto drainLambda = [] __device__(T & x) { x -= drain; };
     for (auto species : state.data) {
         ApplyFunction(*species, drainLambda);
@@ -68,14 +69,17 @@ void System::IterateReaction(T dt, bool degradation) {
     for (auto reaction : reactions) {
         ConsumeReaction(state, reaction, std::get<2>(reaction) * dt);
     }
+    profiler.End();
 }
 
 int i = 0;
 bool System::IterateDiffusion(T dt) {
+    profiler.Start("Diffusion Initialization");
     if (damp_mat == nullptr || stiff_mat == nullptr) {
         printf("Error! Stiffness and Dampness matrices not loaded\n");
         return false;
     }
+    profiler.End();
     if (last_used_dt != dt) {
         printf("Building a diffusion matrix for dt = %f ... ", dt);
         HDData<T> m(-dt);
@@ -83,6 +87,7 @@ bool System::IterateDiffusion(T dt) {
         printf("Done!\n");
         last_used_dt = dt;
     }
+    profiler.Start("Diffusion");
     for (auto &species : state.data) {
         Dot(*damp_mat, *species, b);
         if (!solver.CGSolve(diffusion_matrix, b, *species, epsilon)) {
@@ -93,6 +98,7 @@ bool System::IterateDiffusion(T dt) {
     }
     i++;
     return true;
+    profiler.End();
 }
 
 void System::Print(int printCount) {
@@ -105,6 +111,10 @@ void System::Print(int printCount) {
             std::cout << coeff.second << "." << coeff.first << " + ";
         std::cout << "k=" << std::get<2>(reactions.at(i)) << "\n";
     }
+    std::cout << "Global Profiler : \n";
+    profiler.Print();
+    std::cout << "Operation Profiler : \n";
+    solver.profiler.Print();
 }
 
 void System::SetEpsilon(T epsilon) { this->epsilon = epsilon; }

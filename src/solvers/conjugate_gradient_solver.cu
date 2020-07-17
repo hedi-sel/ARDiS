@@ -33,7 +33,6 @@ void ToCSV(HDData<T> &val, std::string outputPath, std::string label = "") {
 
 bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
                        std::string outputPath) {
-    ChronoProfiler profiler;
     profiler.Start("Preparing Data");
     Dot(d_mat, x, q, true);
 
@@ -62,8 +61,9 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
         profiler.End();
 
         profiler.Start("VectorDot");
-
         Dot(q, p, value(true), true);
+        profiler.End();
+
         value.SetHost();
         if (value() != 0)
             alpha() = diff() / value();
@@ -73,15 +73,23 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
         }
         alpha.SetDevice();
 
+        profiler.Start("VectorSum");
         VectorSum(x, p, alpha(true), x, true);
+        profiler.End();
 
         value() = -alpha();
-        // printf("%f %f\n", value(), alpha());
         value.SetDevice();
+
+        profiler.Start("VectorSum");
         VectorSum(r, q, value(true), r, true);
+        profiler.End();
 
         value.Set(&diff());
+
+        profiler.Start("VectorDot");
         Dot(r, r, diff(true), true);
+        profiler.End();
+
         diff.SetHost();
         if (value() != 0)
             beta() = diff() / value();
@@ -91,8 +99,8 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
         }
         beta.SetDevice();
 
+        profiler.Start("VectorSum");
         VectorSum(r, p, beta(true), p, true);
-
         profiler.End();
     } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);
     // profiler.Print();

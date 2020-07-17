@@ -73,7 +73,7 @@ def GetMinZone(U, Mesh, Zone):
         if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] < Min:
             Min = U[i]
             iM = i
-    return Min, iM
+    return Min
 
 
 def GetMaxZone(U, Mesh, Zone):
@@ -82,7 +82,7 @@ def GetMaxZone(U, Mesh, Zone):
         if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] > Max:
             Max = U[i]
             iM = i
-    return Max, iM
+    return Max
 
 
 def GetMeanZone(U, Mesh, Zone):

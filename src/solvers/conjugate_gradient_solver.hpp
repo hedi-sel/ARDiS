@@ -20,6 +20,8 @@ class CGSolver {
     HDData<T> beta;
     HDData<T> diff;
 
+    ChronoProfiler profiler;
+
     CGSolver(int n);
     bool CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &y, T epsilon,
                  std::string str = "");
