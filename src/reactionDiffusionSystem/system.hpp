@@ -37,8 +37,13 @@ class System {
     T epsilon = 1e-3;
     T last_used_dt = 0;
 
+    // Enlapsed time
+    T t = 0;
+
+#ifndef NDEBUG_PROFILING
     // Profiler
     ChronoProfiler profiler;
+#endif
 
     // Give as input the size of the concentration vectors
     System(int);

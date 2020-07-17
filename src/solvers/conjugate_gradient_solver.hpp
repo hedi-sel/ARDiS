@@ -20,11 +20,14 @@ class CGSolver {
     HDData<T> beta;
     HDData<T> diff;
 
+#ifndef NDEBUG_PROFILING
     ChronoProfiler profiler;
+#endif
 
     CGSolver(int n);
     bool CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &y, T epsilon,
                  std::string str = "");
+    int n_iter_last = 0;
     static bool StaticCGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &y,
                               T epsilon); // TODO FactorizeCode
 };

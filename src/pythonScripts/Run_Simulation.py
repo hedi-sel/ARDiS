@@ -32,7 +32,7 @@ Rea = 5  # np.logspace(math.log10(1), math.log10(10), 10)
 # ExploreLabyrinth("maze_"+size, output=OutputType.PLOT,
 #                  max_time=200, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 10, 10))
 
-Nexpr = 3
+Nexpr = 1
 stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
 load_times=[]
 cmpt_times=[]
@@ -41,7 +41,7 @@ for step in stepSizes:
     cmpt_time_sum= 0
     load_time_sum= 0
     for j in range(0, Nexpr):
-        perf_times=ExploreLabyrinth("precision="+step, output=OutputType.PLOT, return_item=ReturnType.LOADING_COMPUTATION_TIME, verbose = True, fastCalculation = False,
+        perf_times=ExploreLabyrinth("precision="+step, output=OutputType.NONE, return_item=ReturnType.LOADING_COMPUTATION_TIME, verbose = True, fastCalculation = True,
                     max_time=10, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
         load_time_sum += perf_times[0]
         cmpt_time_sum+=perf_times[1]

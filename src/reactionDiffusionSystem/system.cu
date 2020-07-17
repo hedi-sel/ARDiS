@@ -1,6 +1,7 @@
 #include "dataStructures/helper/apply_operation.h"
 #include "reaction_computer.h"
 #include "system.hpp"
+#include <fstream>
 
 System::System(int size) : state(size), solver(size), b(size){};
 
@@ -60,7 +61,9 @@ void System::Prune(T value) {
 const T drain = 1.e-15;
 
 void System::IterateReaction(T dt, bool degradation) {
+#ifndef NDEBUG_PROFILING
     profiler.Start("Reaction");
+#endif
     auto drainLambda = [] __device__(T & x) { x -= drain; };
     for (auto species : state.data) {
         ApplyFunction(*species, drainLambda);
@@ -69,17 +72,19 @@ void System::IterateReaction(T dt, bool degradation) {
     for (auto reaction : reactions) {
         ConsumeReaction(state, reaction, std::get<2>(reaction) * dt);
     }
+#ifndef NDEBUG_PROFILING
     profiler.End();
+#endif
 }
 
-int i = 0;
 bool System::IterateDiffusion(T dt) {
+#ifndef NDEBUG_PROFILING
     profiler.Start("Diffusion Initialization");
+#endif
     if (damp_mat == nullptr || stiff_mat == nullptr) {
         printf("Error! Stiffness and Dampness matrices not loaded\n");
         return false;
     }
-    profiler.End();
     if (last_used_dt != dt) {
         printf("Building a diffusion matrix for dt = %f ... ", dt);
         HDData<T> m(-dt);
@@ -87,18 +92,29 @@ bool System::IterateDiffusion(T dt) {
         printf("Done!\n");
         last_used_dt = dt;
     }
+#ifndef NDEBUG_PROFILING
     profiler.Start("Diffusion");
+#endif
     for (auto &species : state.data) {
         Dot(*damp_mat, *species, b);
         if (!solver.CGSolve(diffusion_matrix, b, *species, epsilon)) {
-            printf("Warning: It did not converge on %i\n", i);
+            printf("Warning: It did not converge at time %f\n", t);
             species->Print(20);
             return false;
         }
     }
-    i++;
+
+    // std::ofstream fout;
+    // fout.open("output/CgmIterCount", std::ios_base::app);
+    // std::cout << t << "\t" << solver.n_iter_last << "\n";
+    // fout << t << "\t" << solver.n_iter_last << "\n";
+    // fout.close();
+
+    t += dt;
     return true;
+#ifndef NDEBUG_PROFILING
     profiler.End();
+#endif
 }
 
 void System::Print(int printCount) {
@@ -111,10 +127,12 @@ void System::Print(int printCount) {
             std::cout << coeff.second << "." << coeff.first << " + ";
         std::cout << "k=" << std::get<2>(reactions.at(i)) << "\n";
     }
+#ifndef NDEBUG_PROFILING
     std::cout << "Global Profiler : \n";
     profiler.Print();
     std::cout << "Operation Profiler : \n";
     solver.profiler.Print();
+#endif
 }
 
 void System::SetEpsilon(T epsilon) { this->epsilon = epsilon; }

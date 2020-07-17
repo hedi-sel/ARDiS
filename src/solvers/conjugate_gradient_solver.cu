@@ -33,7 +33,9 @@ void ToCSV(HDData<T> &val, std::string outputPath, std::string label = "") {
 
 bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
                        std::string outputPath) {
+#ifndef NDEBUG_PROFILING
     profiler.Start("Preparing Data");
+#endif
     Dot(d_mat, x, q, true);
 
     r = b; // Copy b into r
@@ -56,13 +58,14 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
     int n_iter = 0;
     do {
         n_iter++;
+#ifndef NDEBUG_PROFILING
         profiler.Start("MatMult");
+#endif
         Dot(d_mat, p, q, true);
-        profiler.End();
-
+#ifndef NDEBUG_PROFILING
         profiler.Start("VectorDot");
+#endif
         Dot(q, p, value(true), true);
-        profiler.End();
 
         value.SetHost();
         if (value() != 0)
@@ -72,23 +75,25 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
             printf("Warning no good");
         }
         alpha.SetDevice();
-
+#ifndef NDEBUG_PROFILING
         profiler.Start("VectorSum");
+#endif
         VectorSum(x, p, alpha(true), x, true);
-        profiler.End();
 
         value() = -alpha();
         value.SetDevice();
 
+#ifndef NDEBUG_PROFILING
         profiler.Start("VectorSum");
+#endif
         VectorSum(r, q, value(true), r, true);
-        profiler.End();
 
         value.Set(&diff());
 
+#ifndef NDEBUG_PROFILING
         profiler.Start("VectorDot");
+#endif
         Dot(r, r, diff(true), true);
-        profiler.End();
 
         diff.SetHost();
         if (value() != 0)
@@ -99,12 +104,16 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
         }
         beta.SetDevice();
 
+#ifndef NDEBUG_PROFILING
         profiler.Start("VectorSum");
+#endif
         VectorSum(r, p, beta(true), p, true);
-        profiler.End();
     } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);
-    // profiler.Print();
-    // printf("N Iterations = %i : %.3e\n", n_iter, diff());
+#ifndef NDEBUG_PROFILING
+    profiler.End();
+#endif
+
+    n_iter_last = n_iter;
 
     if (diff() > epsilon * epsilon * diff0)
         printf("Warning: It did not converge\n");
@@ -114,8 +123,6 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
 
 bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x,
                              T epsilon) {
-    ChronoProfiler profiler;
-    profiler.Start("Preparing Data");
     D_Array q(b.n, true);
     Dot(d_mat, x, q, true);
 
@@ -136,11 +143,7 @@ bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x,
     int n_iter = 0;
     do {
         n_iter++;
-        profiler.Start("MatMult");
         Dot(d_mat, p, q, true);
-        profiler.End();
-
-        profiler.Start("VectorDot");
 
         Dot(q, p, value(true), true);
         value.SetHost();
@@ -166,11 +169,7 @@ bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x,
         beta.SetDevice();
 
         VectorSum(r, p, beta(true), p, true);
-
-        profiler.End();
     } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);
-    // profiler.Print();
-    // printf("N Iterations = %i : %.3e\n", n_iter, diff());
 
     if (diff() > epsilon * epsilon * diff0)
         printf("Warning: It did not converge\n");

@@ -12,4 +12,6 @@ typedef float T;
 #define BLOCK_SIZE 32
 #endif
 
+#define NDEBUG_PROFILING
+
 // #define NDEBUG

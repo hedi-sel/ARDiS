@@ -16,7 +16,7 @@ import math
 import os
 from enum import Enum
 
-matrixFolder = "matrixLabyrinth"
+matrixFolder = "/mnt/ramdisk/matrixData" #"matrixLabyrinth"
 printFolder = "output"
 csvFolder = "outputCsv"
 
@@ -29,7 +29,7 @@ class OutputType(Enum):
 
 class ReturnType(Enum):
     SUCCESS = 0
-    TIME = 1
+    TIME_STEP = 1
     COMPUTATION_TIME = 2
     LOADING_TIME = 3
     LOADING_COMPUTATION_TIME=4
@@ -63,7 +63,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
             else:
                 title = str(round(i * dt, 1)) + "s"
             ax.set_title(title)
-            plt.scatter(Mesh.x, Mesh.y, s=10000*Surface*1.0/len(U), c=U, alpha=0.5, vmin=0, vmax=1)
+            plt.scatter(Mesh.x, Mesh.y, s=10*Surface*1.0/len(U), c=U, alpha=0.5, vmin=0, vmax=1)
             plt.savefig(printFolder+"/"+name+"/"+str(i)+".png")
             plt.close()
 
@@ -272,7 +272,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         if (DoPlot):
             PrintLabyrinth(name, verbose=verbose, plotEvery=int(plot_dt/dt), dt=dt)
 
-    if (return_item == ReturnType.TIME):
+    if (return_item == ReturnType.TIME_STEP):
         return i * dt
     if (return_item == ReturnType.COMPUTATION_TIME):
         return computation_time
