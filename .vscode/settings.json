@@ -103,7 +103,8 @@
         "__mutex_base": "cpp",
         "__threading_support": "cpp",
         "__undef_macros": "cpp",
-        "__tuple": "cpp"
+        "__tuple": "cpp",
+        "__config": "cpp"
     },
     "C_Cpp.default.includePath": [
         "~/Libraries/pybind11/include",

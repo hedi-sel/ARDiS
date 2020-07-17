@@ -15,12 +15,12 @@ Rea = 5  # np.logspace(math.log10(1), math.log10(10), 10)
 
 # name = PrepareArea(2.5/4, 0.5/4, thickness=0.5)
 # ExploreLabyrinth(name, reaction=5, output=OutputType.PLOT, plot_dt=0.1, dt=0.01, max_time=10,
-#                     return_item=ReturnType.TIME, verbose=True)
+#                     return_item=ReturnType.TIME_STEP, verbose=True)
 # CompareExterioInterior(name)
 
 # name = PrepareArea(9./4, 7./4, thickness=0.5)
 # ExploreLabyrinth(name, reaction=5, output=OutputType.PLOT, plot_dt=0.1, dt=0.01, max_time=10,
-#                     return_item=ReturnType.TIME, verbose=True)
+#                     return_item=ReturnType.TIME_STEP, verbose=True)
 # CompareExterioInterior(name)
 
 # os.system("./ImageToMatrix.wls maze_e-2_e-3")

@@ -16,7 +16,7 @@ import math
 import os
 from enum import Enum
 
-matrixFolder = "/mnt/ramdisk/matrixData" #"matrixLabyrinth"
+matrixFolder = "matrixLabyrinth" #"/mnt/ramdisk/matrixData" 
 printFolder = "output"
 csvFolder = "outputCsv"
 

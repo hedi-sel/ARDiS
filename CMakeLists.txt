@@ -34,7 +34,7 @@ set_target_properties(dna PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set(CMAKE_CUDA_FLAGS --extended-lambda)
 
 target_link_libraries(dna ${PYTHON_LIBRARIES})
-target_link_libraries(dna cudart cusolver cusparse)
+target_link_libraries(dna cudart cusolver cusparse cublas)
 # target_link_libraries(dna boost_timer)
 
 # set(CMAKE_VERBOSE_MAKEFILE true)

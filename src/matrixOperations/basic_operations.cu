@@ -1,6 +1,7 @@
 #define GET_PROF
 
 #include "cuda_runtime.h"
+#include "include/hediHelper/cuda/cublas_error_check.h"
 #include "include/hediHelper/cuda/cusparse_error_check.h"
 #include <assert.h>
 #include <stdio.h>
@@ -15,40 +16,36 @@
 ChronoProfiler profDot;
 void PrintDotProfiler() { profDot.Print(); }
 
-cusparseHandle_t handle = NULL;
+cusparseHandle_t cusparseHandle = NULL;
+cublasHandle_t cublasHandle = NULL;
 
 void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &result, bool synchronize) {
-    profDot.Start("Prep");
-    if (!handle)
-        cusparseErrchk(cusparseCreate(&handle));
+    if (!cusparseHandle)
+        cusparseErrchk(cusparseCreate(&cusparseHandle));
     assert(d_mat.isDevice && x.isDevice && result.isDevice);
     if (&x == &result) {
         printf("Error: X and Result vectors should not be the same instance\n");
         return;
     }
-    profDot.Start("Alloc");
     T one = 1.0;
     T zero = 0.0;
     size_t size = 0;
     T *buffer;
-    profDot.Start("BuffSize");
     auto mat_descr = d_mat.MakeSpDescriptor();
     auto x_descr = x.MakeDescriptor();
     auto res_descr = result.MakeDescriptor();
     cusparseErrchk(cusparseSpMV_bufferSize(
-        handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, mat_descr, x_descr,
-        &zero, res_descr, T_Cuda, CUSPARSE_MV_ALG_DEFAULT, &size));
+        cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, mat_descr,
+        x_descr, &zero, res_descr, T_Cuda, CUSPARSE_MV_ALG_DEFAULT, &size));
     if (size > 0)
         printf("Alert! Size >0 \n");
     cudaMalloc(&buffer, size);
-    profDot.Start("Computation");
-    cusparseErrchk(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one,
-                                mat_descr, x_descr, &zero, res_descr, T_Cuda,
-                                CUSPARSE_MV_ALG_DEFAULT, buffer));
+    cusparseErrchk(cusparseSpMV(
+        cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, mat_descr,
+        x_descr, &zero, res_descr, T_Cuda, CUSPARSE_MV_ALG_DEFAULT, buffer));
     cusparseDestroyDnVec(x_descr);
     cusparseDestroyDnVec(res_descr);
     cusparseDestroySpMat(mat_descr);
-    profDot.End();
 }
 
 D_Array buffer(0);
@@ -64,17 +61,28 @@ __global__ void DotK(D_Array &x, D_Array &y, D_Array &buffer) {
 void Dot(D_Array &x, D_Array &y, T &result, bool synchronize) {
     assert(x.isDevice && y.isDevice);
     assert(x.n == y.n);
-    dim3Pair threadblock = Make1DThreadBlock(x.n);
-    if (buffer.n < x.n)
-        buffer.Resize(x.n);
-    else
-        buffer.n = x.n;
 
-    DotK<<<threadblock.block, threadblock.thread>>>(*(D_Array *)x._device,
-                                                    *(D_Array *)y._device,
-                                                    *(D_Array *)buffer._device);
-    ReductionOperation(buffer, sum);
-    cudaMemcpy(&result, buffer.vals, sizeof(T), cudaMemcpyDeviceToDevice);
+    if (!cublasHandle)
+        cublasErrchk(cublasCreate(&cublasHandle));
+
+#ifdef USE_DOUBLE
+    cublasErrchk(cublasDdot(cublasHandle, x.n, x.vals, 1, y.vals, 1, &result));
+#else
+    cublasErrchk(cublasSdot(cublasHandle, x.n, x.vals, sizeof(T), y.vals,
+                            sizeof(T), &result));
+#endif
+    // dim3Pair threadblock = Make1DThreadBlock(x.n);
+    // if (buffer.n < x.n)
+    //     buffer.Resize(x.n);
+    // else
+    //     buffer.n = x.n;
+
+    // DotK<<<threadblock.block, threadblock.thread>>>(*(D_Array *)x._device,
+    //                                                 *(D_Array *)y._device,
+    //                                                 *(D_Array
+    //                                                 *)buffer._device);
+    // ReductionOperation(buffer, sum);
+    // cudaMemcpy(&result, buffer.vals, sizeof(T), cudaMemcpyDeviceToDevice);
     if (synchronize) {
         gpuErrchk(cudaDeviceSynchronize());
     } else
