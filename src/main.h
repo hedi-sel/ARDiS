@@ -17,7 +17,9 @@
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "solvers/inversion_solver.h"
 
-void ToCSV(D_Array &array, std::string outputPath) {
+void ToCSV(D_Array &array, std::string outputPath,
+           std::string prefix = std::string(""),
+           std::string suffix = std::string("")) {
     if (array.isDevice) { // If device memory, copy to host, and restart the
                           // function
         D_Array h_copy(array, true);
@@ -27,13 +29,23 @@ void ToCSV(D_Array &array, std::string outputPath) {
     // If Host memory:
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
+    if (prefix != std::string(""))
+        fout << prefix << "\t";
     for (size_t j = 0; j < array.n; j++)
         fout << ((j == 0) ? "" : "\t") << array.vals[j];
-    fout << "\n";
+    if (suffix != std::string(""))
+        fout << suffix;
     fout.close();
 }
-void ToCSV(State &state, std::string species, std::string outputPath) {
-    ToCSV(*state.data.at(state.names.at(species)), outputPath);
+void ToCSV(State &state, std::string outputPath) {
+    int elmtsLeft = state.names.size();
+    for (auto sp : state.names) {
+        if (elmtsLeft > 1)
+            ToCSV(*state.data.at(sp.second), outputPath, sp.first, "\n");
+        else
+            ToCSV(*state.data.at(sp.second), outputPath, sp.first, "\n\n");
+        elmtsLeft -= 1;
+    }
 }
 
 bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
@@ -100,7 +112,7 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
 
     for (int i = 0; i < max_time / dt; i++) {
 
-        ToCSV(system.state, "N", outputPath);
+        ToCSV(system.state, outputPath);
         plotCount += 1;
 
         if (!system.IterateDiffusion(dt))

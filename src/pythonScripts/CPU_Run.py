@@ -12,14 +12,14 @@ import os
 matrixFolder = "matrixLabyrinth"
 
 dt = 1.e-2
-Nit = 1000
+Nit = 5000
 epsilon = 1.e-3
 drain = 1.e-15
 reaction = 5
 
 stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
 
-dataName = "precision="+stepSizes[11]
+dataName = "precision="+stepSizes[0]
 
 start = time.time()
 
@@ -64,7 +64,9 @@ os.system("rm -f "+csvFolder+"/"+name+".csv")
 Z = np.zeros(len(N))
 for i in range(0, Nit):
     CGNaiveSolve(M, D.dot(N), N, epsilon)
-    CGNaiveSolve(M, D.dot(P), P, epsilon)
+    last_nIter = CGNaiveSolve(M, D.dot(P), P, epsilon)
+    os.system("echo "+str(i*dt)+"'\t'"+str(last_nIter)+" >> output/CgmIterCount")
+
     N -= drain
     P-= drain
     N=np.maximum(N, Z)
@@ -77,17 +79,18 @@ for i in range(0, Nit):
 
     # dna.ToCSV(N, csvFolder+"/"+name+".csv" )
 
-    if (i > 0 and np.linalg.norm(N - oldN) < 1.e-3):
-        print("Exploration Suceeded in",i*dt,"s")
-        break
-    oldN = N.copy()
+    # if (i > 0 and np.linalg.norm(N - oldN) < 1.e-3):
+    #     print("Exploration Suceeded in",i*dt,"s")
+    #     break
+    # oldN = N.copy()
 
 solve2Time = time.time() - start
 print("Run Time:", solve2Time)
 print("loading_time:", loading_time)
 
+
 # PrintLabyrinth(name, verbose=True, plotEvery=100, dt=dt, meshPath =meshPath)
 
-print("Final Vector")
-print(U)
+# print("Final Vector")
+# print(U)
 

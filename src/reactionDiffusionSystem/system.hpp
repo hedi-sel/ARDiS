@@ -36,6 +36,7 @@ class System {
     // Parameters
     T epsilon = 1e-3;
     T last_used_dt = 0;
+    T drain = 1.e-13;
 
     // Enlapsed time
     T t = 0;

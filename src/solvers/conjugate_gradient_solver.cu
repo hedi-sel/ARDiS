@@ -71,8 +71,8 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
         if (value() != 0)
             alpha() = diff() / value();
         else {
-            alpha() = 0;
-            printf("Warning no good");
+            n_iter_last = n_iter;
+            return true;
         }
         alpha.SetDevice();
 #ifndef NDEBUG_PROFILING
@@ -96,11 +96,11 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
         Dot(r, r, diff(true), true);
 
         diff.SetHost();
-        if (value() != 0)
+        if (diff() != 0)
             beta() = diff() / value();
         else {
-            beta() = 0;
-            printf("Warning no good");
+            n_iter_last = n_iter;
+            return true;
         }
         beta.SetDevice();
 

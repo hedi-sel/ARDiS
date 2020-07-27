@@ -25,24 +25,27 @@ Rea = 5  # np.logspace(math.log10(1), math.log10(10), 10)
 
 # os.system("./ImageToMatrix.wls maze_e-2_e-3")
 # ExploreLabyrinth("maze_e-2_e-3", output=OutputType.PLOT,
-#                  max_time=200, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
+#                  max_time=20, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
 
 # size = "100"
-# os.system("./MazeGenerator.wls maze_"+size+" "+size)
+#  os.system("./MazeGenerator.wls maze_"+size+" "+size)
 # ExploreLabyrinth("maze_"+size, output=OutputType.PLOT,
-#                  max_time=200, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 10, 10))
+#                  max_time=10, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 10, 10))
 
 Nexpr = 1
-stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
+# stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
+stepSizes = ["100", "30","2","0.2"]
+# stepSizes = ["0.2"]
+# stepSizes = ["0.1","0.05","0.02"]
 load_times=[]
 cmpt_times=[]
 for step in stepSizes:
-    os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
+    # os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
     cmpt_time_sum= 0
     load_time_sum= 0
     for j in range(0, Nexpr):
-        perf_times=ExploreLabyrinth("precision="+step, output=OutputType.NONE, return_item=ReturnType.LOADING_COMPUTATION_TIME, verbose = True, fastCalculation = True,
-                    max_time=10, diffusion=1, reaction=5, dt=1e-2, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
+        perf_times=ExploreLabyrinth("precision="+step, output=OutputType.PLOT, return_item=ReturnType.LOADING_COMPUTATION_TIME, verbose = True, fastCalculation = False,
+                    max_time=50, diffusion=1, reaction=0.2, dt=1e-1, epsilon=1e-3, plot_dt=5, startZone=RectangleZone(0, 0, 500, 10))
         load_time_sum += perf_times[0]
         cmpt_time_sum+=perf_times[1]
     load_times.append(load_time_sum * 1.0 / Nexpr)

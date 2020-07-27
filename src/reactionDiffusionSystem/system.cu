@@ -58,13 +58,12 @@ void System::Prune(T value) {
         vect->Prune(value);
 }
 
-const T drain = 1.e-15;
-
 void System::IterateReaction(T dt, bool degradation) {
 #ifndef NDEBUG_PROFILING
     profiler.Start("Reaction");
 #endif
-    auto drainLambda = [] __device__(T & x) { x -= drain; };
+    T drainXdt = drain * dt;
+    auto drainLambda = [drainXdt] __device__(T & x) { x -= drainXdt; };
     for (auto species : state.data) {
         ApplyFunction(*species, drainLambda);
         species->Prune();
@@ -104,17 +103,18 @@ bool System::IterateDiffusion(T dt) {
         }
     }
 
+#ifndef NDEBUG_PROFILING
+    profiler.End();
+#endif
+
     // std::ofstream fout;
     // fout.open("output/CgmIterCount", std::ios_base::app);
-    // std::cout << t << "\t" << solver.n_iter_last << "\n";
+    // // std::cout << t << "\t" << solver.n_iter_last << "\n";
     // fout << t << "\t" << solver.n_iter_last << "\n";
     // fout.close();
 
     t += dt;
     return true;
-#ifndef NDEBUG_PROFILING
-    profiler.End();
-#endif
 }
 
 void System::Print(int printCount) {

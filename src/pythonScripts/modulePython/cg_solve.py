@@ -9,12 +9,17 @@ def CGNaiveSolve(M, b, x, epsilon=1e-1):
     p = r.copy()
     diff = abs(r.dot(p))
     diff0 = diff
-    assert(diff > 0)
+    if (diff <= 0):
+        return 0
     nIter = 0
 
     while diff >= epsilon*epsilon*diff0 and nIter < 10000:
+    # last_nIter
         q = M.dot(p)
-        alpha = diff / q.dot(p)
+        value = q.dot(p)
+        if value == 0:
+            return nIter
+        alpha = diff / value
 
         x += alpha * p
         r -= alpha * q
@@ -22,12 +27,13 @@ def CGNaiveSolve(M, b, x, epsilon=1e-1):
         diffnew = r.dot(r)
         beta = diffnew / diff
         diff = diffnew
+        if diff == 0:
+            return nIter
 
         p = r + beta * p
-        assert(diff > 0)
         nIter += 1
 
     if nIter == 10000:
         print("Error didnt converge")
     # print("niter: ", nIter, " : ", diff)
-    return x
+    return nIter

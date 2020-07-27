@@ -4,6 +4,7 @@ from modulePython.read_mtx import *
 import modulePython.reaction_diffusion as rd
 from modulePython.concentration_manager import *
 
+import multiprocessing as mp
 from scipy.sparse import *
 import scipy.sparse.linalg as spLnal
 import matplotlib.pyplot as plt
@@ -51,20 +52,27 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
     os.system("mkdir " + printFolder + "/" + name + " 2> ./null")
 
     # stateName, nSpecies = lines.pop(0).split("\t")
-    i = -1
-    for line in lines:
-        i += 1
-        if(i % plotEvery == 0):
-            U = np.array(line.split("\t"), dtype=np.float32)
+    timestep = 0
+    for i in range(0,len(lines)):
+        line = lines[i]
+        if(line == ""):
+            timestep += 1
+        elif(timestep % plotEvery == 0):
+            line1 = line.split("\t")
+            name1 = line1.pop(0)
+            line2 = lines[i+1].split("\t")
+            name2 = line2.pop(0)
+            U = np.array(line1, dtype=np.float32)
+            V = np.array(line2, dtype=np.float32)
             fig, ax = plt.subplots()
             ax.set_aspect('equal')
             if dt == 0:
-                title = str(i)
+                title = str(timestep)
             else:
-                title = str(round(i * dt, 1)) + "s"
+                title = str(round(timestep * dt, 1)) + "s"
             ax.set_title(title)
-            plt.scatter(Mesh.x, Mesh.y, s=10*Surface*1.0/len(U), c=U, alpha=0.5, vmin=0, vmax=1)
-            plt.savefig(printFolder+"/"+name+"/"+str(i)+".png")
+            plt.scatter(Mesh.x, Mesh.y, marker='s', s=5*math.sqrt(Surface*1.0/len(U)), c=np.concatenate(U,V) , alpha=1, vmin=0, vmax=1)
+            plt.savefig(printFolder+"/"+name+"/"+str(timestep)+".png")
             plt.close()
 
     os.system("convert -delay 10 -loop 0 $(ls -1 "+printFolder +
@@ -237,7 +245,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         system.IterateReaction(dt, True)
 
         if not fastCalculation:
-            dna.ToCSV(system.State, "N", "./"+csvFolder+"/"+name+".csv")
+            dna.ToCSV(system.State, "./"+csvFolder+"/"+name+".csv")
 
             if DoRecordResult and FinishTime == -1 and GetMaxZone(U,Mesh,FinishZone) > 0.8:
             # if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
@@ -247,12 +255,12 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
                 if Nit >= 100 and i >= k * Nit / 10 and i < k * Nit / 10 + 1:
                     print(str(k * 10) + "% completed")
                     k += 1
-
-        if (i > 0 and (system.GetSpecies("N") - d_U).Norm() < 1.e-3):
-            print(i+1, "iterations done")
-            break
-        d_U = dna.D_Array(system.GetSpecies("N"))
-        U = d_U.ToNumpyArray()
+        if not fastCalculation:
+            # if (i > 0 and (system.GetSpecies("N") - d_U).Norm() < 1.e-3):
+            #     print(i+1, "iterations done")
+            #     break
+            d_U = dna.D_Array(system.GetSpecies("N"))
+            U = d_U.ToNumpyArray()
 
     print("Exploration finished in", i*dt, "s")
 
@@ -270,7 +278,10 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
                 print("Results have been recorded here: output/results.out")
 
         if (DoPlot):
+            # pool = mp.Pool(mp.cpu_count())
+            # pool.apply(PrintLabyrinth, args=(name,  verbose, int(plot_dt / dt), dt))
             PrintLabyrinth(name, verbose=verbose, plotEvery=int(plot_dt/dt), dt=dt)
+
 
     if (return_item == ReturnType.TIME_STEP):
         return i * dt
@@ -280,3 +291,4 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         return loading_time
     if (return_item == ReturnType.LOADING_COMPUTATION_TIME):
         return loading_time, computation_time
+

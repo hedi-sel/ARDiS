@@ -250,9 +250,9 @@ PYBIND11_MODULE(dna, m) {
               HDData<T> d_alpha(alpha);
               MatrixSum(a, b, d_alpha(true), c);
           });
-    m.def("ToCSV",
-          [](State &state, const std::string &species,
-             const std::string &path) { return ToCSV(state, species, path); });
+    m.def("ToCSV", [](State &state, const std::string &path) {
+        return ToCSV(state, path);
+    });
     m.def("ToCSV",
           [](D_Array &array, std::string &path) { return ToCSV(array, path); });
     m.def("ToCSV", [](py::array_t<T> &array, std::string &path) {

@@ -15,6 +15,7 @@ find_package(CUDA)
 find_package(PythonLibs 3.7 REQUIRED)
 find_package(pybind11)
 
+include_directories($ENV{PYBIND_PATH})
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
 message(${CUDA_INCLUDE_DIRS})
