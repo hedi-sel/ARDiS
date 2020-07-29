@@ -71,6 +71,7 @@ class System {
 
     // Set the convergence threshold for the conjugae gradient method
     void SetEpsilon(T epsilon);
+    void SetDrain(T drain);
 
     void Print(int = 5);
 };

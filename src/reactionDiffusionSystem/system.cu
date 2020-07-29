@@ -91,11 +91,14 @@ bool System::IterateDiffusion(T dt) {
         printf("Done!\n");
         last_used_dt = dt;
     }
-#ifndef NDEBUG_PROFILING
-    profiler.Start("Diffusion");
-#endif
     for (auto &species : state.data) {
+#ifndef NDEBUG_PROFILING
+        profiler.Start("Diffusion Initialization");
         Dot(*damp_mat, *species, b);
+#endif
+#ifndef NDEBUG_PROFILING
+        profiler.Start("Diffusion");
+#endif
         if (!solver.CGSolve(diffusion_matrix, b, *species, epsilon)) {
             printf("Warning: It did not converge at time %f\n", t);
             species->Print(20);
@@ -136,6 +139,7 @@ void System::Print(int printCount) {
 }
 
 void System::SetEpsilon(T epsilon) { this->epsilon = epsilon; }
+void System::SetDrain(T drain) { this->drain = drain; }
 
 System::~System(){
     // if (damp_mat != nullptr)

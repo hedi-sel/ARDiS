@@ -5,6 +5,7 @@
 #include <cusolverSp.h>
 #include <cusparse.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "dataStructures/array.hpp"
 #include "dataStructures/read_mtx_file.h"
@@ -17,20 +18,20 @@
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "solvers/inversion_solver.h"
 
-void ToCSV(D_Array &array, std::string outputPath,
-           std::string prefix = std::string(""),
-           std::string suffix = std::string("")) {
+void ToCSV(D_Array &array, std::string outputPath, std::string prefix = "",
+           std::string suffix = "") {
     if (array.isDevice) { // If device memory, copy to host, and restart the
                           // function
         D_Array h_copy(array, true);
-        ToCSV(h_copy, outputPath);
+        ToCSV(h_copy, outputPath, prefix, suffix);
         return;
     }
     // If Host memory:
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
-    if (prefix != std::string(""))
+    if (prefix != std::string("")) {
         fout << prefix << "\t";
+    }
     for (size_t j = 0; j < array.n; j++)
         fout << ((j == 0) ? "" : "\t") << array.vals[j];
     if (suffix != std::string(""))
@@ -38,13 +39,12 @@ void ToCSV(D_Array &array, std::string outputPath,
     fout.close();
 }
 void ToCSV(State &state, std::string outputPath) {
-    int elmtsLeft = state.names.size();
+    std::ofstream fout;
+    fout.open(outputPath, std::ios_base::app);
+    fout << state.size << "\n";
+    fout.close();
     for (auto sp : state.names) {
-        if (elmtsLeft > 1)
-            ToCSV(*state.data.at(sp.second), outputPath, sp.first, "\n");
-        else
-            ToCSV(*state.data.at(sp.second), outputPath, sp.first, "\n\n");
-        elmtsLeft -= 1;
+        ToCSV(*state.data.at(sp.second), outputPath, sp.first, "\n");
     }
 }
 

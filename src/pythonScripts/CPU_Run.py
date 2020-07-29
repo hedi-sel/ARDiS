@@ -14,12 +14,12 @@ matrixFolder = "matrixLabyrinth"
 dt = 1.e-2
 Nit = 5000
 epsilon = 1.e-3
-drain = 1.e-15
-reaction = 5
+drain = 1.e-8
+reaction = 1
 
 stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.2"]
 
-dataName = "precision="+stepSizes[0]
+dataName = "precision="+stepSizes[11]
 
 start = time.time()
 

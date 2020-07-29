@@ -77,6 +77,7 @@ PYBIND11_MODULE(dna, m) {
         .def("Print", &System::Print, py::arg("printCount") = 5)
         .def_readwrite("State", &System::state,
                        py::return_value_policy::reference)
+        .def("SetDrain", &System::SetDrain)
         .def("SetEpsilon", &System::SetEpsilon);
 
     py::class_<D_SparseMatrix>(m, "D_SparseMatrix")

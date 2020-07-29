@@ -43,41 +43,59 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
     if(meshPath == ""):
         meshPath = matrixFolder + "/mesh_" + name + ".dat"
     Mesh = LoadMeshFromFile(meshPath)
-    Surface = (np.max( Mesh.x)-np.min( Mesh.x)) * (np.max( Mesh.y) - np.min( Mesh.y))
+
+    Surface = (np.max(Mesh.x) - np.min(Mesh.x)) * (np.max(Mesh.y) - np.min(Mesh.y))
+    
+    if verbose:
+        print("Mesh loaded")
 
     f = open(csvFolder+"/" + name+".csv", "r")
     lines = f.readlines()
 
-    os.system("rm -rf "+printFolder+"/"+name)
+    os.system("rm -rf " + printFolder + "/" + name)
     os.system("mkdir " + printFolder + "/" + name + " 2> ./null")
 
+    k=0
     # stateName, nSpecies = lines.pop(0).split("\t")
-    timestep = 0
-    for i in range(0,len(lines)):
-        line = lines[i]
-        if(line == ""):
-            timestep += 1
-        elif(timestep % plotEvery == 0):
-            line1 = line.split("\t")
-            name1 = line1.pop(0)
-            line2 = lines[i+1].split("\t")
-            name2 = line2.pop(0)
-            U = np.array(line1, dtype=np.float32)
-            V = np.array(line2, dtype=np.float32)
+    for i in range(0, len(lines) // 3):
+        if (i % plotEvery == 0):
+            # print("Printing",i)
             fig, ax = plt.subplots()
             ax.set_aspect('equal')
             if dt == 0:
-                title = str(timestep)
+                title = str(i)
             else:
-                title = str(round(timestep * dt, 1)) + "s"
+                title = str(round(i * dt, 1)) + "s"
+
+            N = int(lines[i*3])
+            plt.scatter(Mesh.x, Mesh.y, marker='s', s=5 * math.sqrt(Surface * 1.0 / N), c=[[0,0.1,0.3]], alpha=1, vmin=0, vmax=1)
+
+            line = lines[i*3+1].split("\t")
+            line.pop(0)
+            U = np.array(line, dtype=np.float32)
             ax.set_title(title)
-            plt.scatter(Mesh.x, Mesh.y, marker='s', s=5*math.sqrt(Surface*1.0/len(U)), c=np.concatenate(U,V) , alpha=1, vmin=0, vmax=1)
-            plt.savefig(printFolder+"/"+name+"/"+str(timestep)+".png")
+            plt.scatter(Mesh.x, Mesh.y, s=U*2 * math.sqrt(Surface * 1.0 / N), c=[[0.8,0.1,0.2]], alpha=1, vmin=0, vmax=1)
+
+            line = lines[i*3+2].split("\t")
+            line.pop(0)
+            U = np.array(line, dtype=np.float32)
+            # for j in range(0, len(U)):
+            #     if (U[j] >2.5):
+            #         U[j] = 2.5
+            ax.set_title(title)
+            plt.scatter(Mesh.x, Mesh.y, s=U * 2 * math.sqrt(Surface * 1.0 / N), c=[[0.2, 0.4, 0.6]], alpha=1, vmin=0, vmax=1)
+            
+            plt.savefig(printFolder+"/"+name+"/"+str(i)+".png")
             plt.close()
 
+        if verbose: 
+            if  i >= k * len(lines) / 30:
+                print(str(k * 10) + "% completed")
+                k += 1
+
     os.system("convert -delay 10 -loop 0 $(ls -1 "+printFolder +
-              "/" + name+"/*png | sort -V) "+printFolder+"/"+name+".gif")
-    os.system("rm -rf " + printFolder + "/" + name)
+              "/" + name + "/*png | sort -V) " + printFolder + "/" + name + ".gif" + " && " +
+              "rm -rf " + printFolder + "/" + name)
 
     if(verbose):
         print("Results plot have been saved here: " +
@@ -166,7 +184,7 @@ def PrepareArea(out, ins, thickness=1, name="noName"):
     return name
 
 
-def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, return_item=ReturnType.SUCCESS, verbose=True, dt=1e-2, epsilon=1e-3, max_time=3, plot_dt=1e-1, guess=float(0),
+def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, return_item=ReturnType.SUCCESS, storeEvery = 1, verbose=True, dt=1e-2, epsilon=1e-3, max_time=3, plot_dt=1e-1, drain = 1e-13, guess=float(0),
                      threashold=0.9, startZone=RectangleZone(0, 0, 500, 0.2), fastCalculation = False):
     print("Starting exploration on experiment :", name)
     if True:  # Prepare output type and return item
@@ -215,6 +233,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
 
     system = dna.System(d_D.cols)
     system.SetEpsilon(epsilon)
+    system.SetDrain(drain)
     system.AddSpecies("N")
     system.SetSpecies("N", U)
     system.AddSpecies("P")
@@ -245,7 +264,8 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         system.IterateReaction(dt, True)
 
         if not fastCalculation:
-            dna.ToCSV(system.State, "./"+csvFolder+"/"+name+".csv")
+            if i % storeEvery == 0:
+                dna.ToCSV(system.State, "./"+csvFolder+"/"+name+".csv")
 
             if DoRecordResult and FinishTime == -1 and GetMaxZone(U,Mesh,FinishZone) > 0.8:
             # if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
@@ -280,7 +300,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
         if (DoPlot):
             # pool = mp.Pool(mp.cpu_count())
             # pool.apply(PrintLabyrinth, args=(name,  verbose, int(plot_dt / dt), dt))
-            PrintLabyrinth(name, verbose=verbose, plotEvery=int(plot_dt/dt), dt=dt)
+            PrintLabyrinth(name, verbose=verbose, plotEvery=int(plot_dt/dt/storeEvery), dt=dt)
 
 
     if (return_item == ReturnType.TIME_STEP):
