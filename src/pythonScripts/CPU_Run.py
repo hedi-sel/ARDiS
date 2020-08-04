@@ -21,6 +21,11 @@ stepSizes = ["100", "50", "30", "20", "15", "10", "5", "3", "2", "1", "0.5", "0.
 
 dataName = "precision="+stepSizes[11]
 
+diffusion = 0
+diffusion_init = 0
+reaction = 0
+
+
 start = time.time()
 
 if True:
@@ -53,7 +58,9 @@ if True:
 
     start = time.time()
 
+    start2 = time.time()
     M = D - dt * S
+    diffusion_init += time.time() - start2
 
     N = U.copy()
     P = U.copy()
@@ -63,10 +70,14 @@ os.system("rm -f "+csvFolder+"/"+name+".csv")
 
 Z = np.zeros(len(N))
 for i in range(0, Nit):
+    time2 = time.time()
     CGNaiveSolve(M, D.dot(N), N, epsilon)
     last_nIter = CGNaiveSolve(M, D.dot(P), P, epsilon)
+    diffusion += time.time() - time2
+        
     os.system("echo "+str(i*dt)+"'\t'"+str(last_nIter)+" >> output/CgmIterCount")
 
+    time2 = time.time()
     N -= drain
     P-= drain
     N=np.maximum(N, Z)
@@ -76,6 +87,7 @@ for i in range(0, Nit):
     prog = reaction*dt*P*N
     P += prog
     N -= prog
+    reaction += time.time() - time2
 
     # dna.ToCSV(N, csvFolder+"/"+name+".csv" )
 
@@ -87,6 +99,12 @@ for i in range(0, Nit):
 solve2Time = time.time() - start
 print("Run Time:", solve2Time)
 print("loading_time:", loading_time)
+
+
+print("diffusion\n", diffusion)
+print("diffusion_init\n", diffusion_init)
+print("reaction\n", reaction)
+PrintProf()
 
 
 # PrintLabyrinth(name, verbose=True, plotEvery=100, dt=dt, meshPath =meshPath)

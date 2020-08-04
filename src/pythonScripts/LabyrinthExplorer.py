@@ -44,7 +44,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
         meshPath = matrixFolder + "/mesh_" + name + ".dat"
     Mesh = LoadMeshFromFile(meshPath)
 
-    Surface = (np.max(Mesh.x) - np.min(Mesh.x)) * (np.max(Mesh.y) - np.min(Mesh.y))
+    Surface =  (np.max(Mesh.x) - np.min(Mesh.x)) * (np.max(Mesh.y) - np.min(Mesh.y))
     
     if verbose:
         print("Mesh loaded")
