@@ -39,11 +39,11 @@ stepSizes = ["100", "50", "30", "20", "15",
 load_times = []
 cmpt_times = []
 for step in stepSizes:
-    # os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
+    os.system("./ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
     cmpt_time_sum = 0
     load_time_sum = 0
     for j in range(0, Nexpr):
-        perf_times = ExploreLabyrinth("precision="+step, output=OutputType.PLOT, return_item=ReturnType.LOADING_COMPUTATION_TIME, storeEvery=1, verbose=False, fastCalculation=True,
+        perf_times = ExploreLabyrinth("precision="+step, output=OutputType.PLOT, return_item=ReturnType.LOADING_COMPUTATION_TIME, storeEvery=1, verbose=True, fastCalculation=False,
                                       max_time=50, diffusion=1, reaction=1, dt=1e-2,drain=1e-8, epsilon=1e-3, plot_dt=1, startZone=RectangleZone(0, 0, 500, 10))
         load_time_sum += perf_times[0]
         cmpt_time_sum += perf_times[1]

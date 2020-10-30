@@ -94,8 +94,8 @@ bool System::IterateDiffusion(T dt) {
     for (auto &species : state.data) {
 #ifndef NDEBUG_PROFILING
         profiler.Start("Diffusion Initialization");
-        Dot(*damp_mat, *species, b);
 #endif
+        Dot(*damp_mat, *species, b);
 #ifndef NDEBUG_PROFILING
         profiler.Start("Diffusion");
 #endif
