@@ -7,12 +7,9 @@
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/sparse_matrix.hpp"
 #include "matrixOperations/basic_operations.hpp"
+#include "reaction.h"
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "state.hpp"
-
-typedef std::pair<std::string, int> stochCoeff;
-typedef std::tuple<std::vector<stochCoeff>, std::vector<stochCoeff>, T>
-    Reaction;
 
 // A top-level class that handles the operations for the reaction-diffusion
 // simulation.
@@ -27,6 +24,9 @@ class System {
 
     // The set of reactions
     std::vector<Reaction> reactions;
+
+    // The set of Michaelis-Menten Reactions
+    std::vector<MMReaction> mmreactions;
 
     // Diffusion matrices
     D_SparseMatrix *damp_mat = nullptr;
@@ -53,10 +53,12 @@ class System {
     // Adds a new reaction
     void AddReaction(std::string reag, int kr, std::string prod, int kp,
                      T rate);
-    void AddReaction(std::vector<stochCoeff> input,
-                     std::vector<stochCoeff> output, T rate);
     void AddReaction(const std::string &reaction, T rate);
     void AddReaction(Reaction reaction);
+
+    void AddMMReaction(std::string reag, std::string prod, int kp, T Vm, T Km);
+    void AddMMReaction(const std::string &reaction, T Vm, T Km);
+    void AddMMReaction(MMReaction reaction);
 
     // Get the memory location of the dampness and stiffness matrices
     void LoadDampnessMatrix(D_SparseMatrix &damp_mat);

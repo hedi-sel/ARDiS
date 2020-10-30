@@ -11,13 +11,13 @@
 std::pair<int *, int> getRawCoeffs(State &state,
                                    std::vector<stochCoeff> &reactionSide) {
     int n = 0;
-    for (auto coef : reactionSide)
-        n += coef.second;
+    for (auto reagent : reactionSide)
+        n += reagent.second;
     int i = 0;
     int *raw_coeffs = new int[n];
-    for (auto coef : reactionSide)
-        for (int k = 0; k < coef.second; k++) {
-            raw_coeffs[i] = state.names.at(coef.first);
+    for (auto reagent : reactionSide)
+        for (int k = 0; k < reagent.second; k++) {
+            raw_coeffs[i] = state.names.at(reagent.first);
             i++;
         }
     int *d_raw_coeffs;
@@ -28,15 +28,16 @@ std::pair<int *, int> getRawCoeffs(State &state,
     return std::pair<int *, int>(d_raw_coeffs, n);
 }
 
+template <typename Func>
 __global__ void ConsumeReactionK(D_Array **state, int n_species, int *reagents,
                                  int n_reagents, int *products, int n_products,
-                                 T rate) {
+                                 T base_rate, Func rate) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= state[0]->n)
         return;
-    T progress = rate;
+    T progress = base_rate;
     for (int k = 0; k < n_reagents; k++)
-        progress *= state[reagents[k]]->vals[i];
+        rate(state[reagents[k]]->vals[i], progress);
     for (int k = 0; k < n_reagents; k++)
         state[reagents[k]]->vals[i] -= progress;
     for (int k = 0; k < n_products; k++)
@@ -44,14 +45,16 @@ __global__ void ConsumeReactionK(D_Array **state, int n_species, int *reagents,
     return;
 }
 
-void ConsumeReaction(State &state, Reaction &reaction, T rate) {
+template <typename Func>
+void ConsumeReaction(State &state, Reaction &reaction, T base_reac_rate,
+                     Func reac_rate) {
     auto tb = Make1DThreadBlock(state.size);
     auto d_state = state.GetDeviceState();
     auto products = getRawCoeffs(state, std::get<1>(reaction));
     auto reagents = getRawCoeffs(state, std::get<0>(reaction));
     ConsumeReactionK<<<tb.block, tb.thread>>>(
         d_state, state.data.size(), reagents.first, reagents.second,
-        products.first, products.second, rate);
+        products.first, products.second, base_reac_rate, reac_rate);
     gpuErrchk(cudaDeviceSynchronize());
     cudaFree(reagents.first);
     state.FreeDeviceState(d_state);

@@ -1,21 +1,23 @@
 #include "dataStructures/helper/apply_operation.h"
+#include "parseReaction.hpp"
 #include "reaction_computer.h"
 #include "system.hpp"
 #include <fstream>
 
 System::System(int size) : state(size), solver(size), b(size){};
 
+void System::AddReaction(const std::string &descriptor, T rate) {
+    Reaction reaction = ParseReaction(descriptor);
+    std::get<2>(reaction) = rate;
+    AddReaction(reaction);
+}
 void System::AddReaction(std::string reag, int kr, std::string prod, int kp,
                          T rate) {
     std::vector<stochCoeff> input;
     std::vector<stochCoeff> output;
     input.push_back(std::pair<std::string, int>(reag, kr));
     output.push_back(std::pair<std::string, int>(prod, kp));
-    AddReaction(input, output, rate);
-}
-void System::AddReaction(std::vector<stochCoeff> input,
-                         std::vector<stochCoeff> output, T factor) {
-    AddReaction(Reaction(input, output, factor));
+    AddReaction(Reaction(input, output, rate));
 }
 void System::AddReaction(Reaction reaction) {
     for (auto species : std::get<0>(reaction)) {
@@ -34,6 +36,37 @@ void System::AddReaction(Reaction reaction) {
     }
     reactions.push_back(reaction);
 };
+
+void System::AddMMReaction(std::string reag, std::string prod, int kp, T Vm,
+                           T Km) {
+    std::vector<stochCoeff> output;
+    output.push_back(std::pair<std::string, int>(prod, kp));
+    AddMMReaction(MMReaction(reag, output, Vm, Km));
+}
+void System::AddMMReaction(const std::string &descriptor, T Vm, T Km) {
+    Reaction reaction = ParseReaction(descriptor);
+    if (std::get<0>(reaction).size() != 1 ||
+        std::get<0>(reaction).at(0).second != 1)
+        throw std::invalid_argument(
+            "A Michaelis-Menten reaction takes only one species as reagent\n");
+    AddMMReaction(MMReaction(std::get<0>(reaction).at(0).first,
+                             std::get<1>(reaction), Vm, Km));
+}
+void System::AddMMReaction(MMReaction reaction) {
+    if (state.names.find(std::get<0>(reaction)) == state.names.end()) {
+        std::cout << "\"" << std::get<0>(reaction) << "\""
+                  << "\n";
+        throw std::invalid_argument("^ This species is invalid\n");
+    }
+    for (auto species : std::get<1>(reaction)) {
+        if (state.names.find(species.first) == state.names.end()) {
+            std::cout << "\"" << species.first << "\""
+                      << "\n";
+            throw std::invalid_argument("^ This species is invalid\n");
+        }
+    }
+    this->mmreactions.push_back(reaction);
+}
 
 void System::LoadDampnessMatrix(D_SparseMatrix &damp_mat) {
     this->damp_mat = &damp_mat;
@@ -69,7 +102,12 @@ void System::IterateReaction(T dt, bool degradation) {
         species->Prune();
     }
     for (auto reaction : reactions) {
-        ConsumeReaction(state, reaction, std::get<2>(reaction) * dt);
+        ConsumeReaction(
+            state, reaction, std::get<2>(reaction) * dt,
+            [] __device__(const T &x, T &progress) { progress *= x; });
+    }
+    for (auto mmreac : this->mmreactions) {
+        throw "Michaelis Menten reactiosn not implemented yet";
     }
 #ifndef NDEBUG_PROFILING
     profiler.End();

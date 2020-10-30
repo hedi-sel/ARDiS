@@ -1,10 +1,8 @@
+#include "parseReaction.hpp"
 #include "reactionDiffusionSystem/system.hpp"
-#include <hediHelper/string.h>
-#include <regex>
-#include <string>
 
 std::string arrowStr = "->";
-void System::AddReaction(const std::string &descriptor, T rate) {
+Reaction ParseReaction(const std::string &descriptor) {
     auto arrowPos = descriptor.find(arrowStr);
     if (arrowPos == std::string::npos) {
         throw std::invalid_argument("the descriptor must contain an arrow "
@@ -60,5 +58,5 @@ void System::AddReaction(const std::string &descriptor, T rate) {
     getReactionSide(lhs, input);
     getReactionSide(rhs, output);
 
-    AddReaction(input, output, rate);
+    return Reaction(input, output, 1);
 }
