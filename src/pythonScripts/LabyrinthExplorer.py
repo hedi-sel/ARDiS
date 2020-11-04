@@ -253,9 +253,9 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     if (DoRecordResult):
         FinishZone = dna.RectangleZone(0, 0, 0.5, 500)
         FinishTime = -1
-        d_MeshX = dna.D_Array(len(Mesh.x))
+        d_MeshX = dna.D_Vector(len(Mesh.x))
         d_MeshX.Fill(Mesh.x)
-        d_MeshY = dna.D_Array(len(Mesh.y))
+        d_MeshY = dna.D_Vector(len(Mesh.y))
         d_MeshY.Fill(Mesh.y)
 
     for i in range(0, Nit):
@@ -279,7 +279,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
             # if (i > 0 and (system.GetSpecies("N") - d_U).Norm() < 1.e-3):
             #     print(i+1, "iterations done")
             #     break
-            d_U = dna.D_Array(system.GetSpecies("N"))
+            d_U = dna.D_Vector(system.GetSpecies("N"))
             U = d_U.ToNumpyArray()
 
     print("Exploration finished in", i*dt, "s")

@@ -11,9 +11,9 @@
 class CGSolver {
   public:
     int n;
-    D_Array q;
-    D_Array r;
-    D_Array p;
+    D_Vector q;
+    D_Vector r;
+    D_Vector p;
 
     HDData<T> value;
     HDData<T> alpha;
@@ -25,9 +25,9 @@ class CGSolver {
 #endif
 
     CGSolver(int n);
-    bool CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &y, T epsilon,
+    bool CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &y, T epsilon,
                  std::string str = "");
     int n_iter_last = 0;
-    static bool StaticCGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &y,
+    static bool StaticCGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &y,
                               T epsilon); // TODO FactorizeCode
 };

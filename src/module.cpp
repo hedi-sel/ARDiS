@@ -35,7 +35,7 @@ PYBIND11_MODULE(dna, m) {
             "AddSpecies",
             [](System &self, std::string name) { self.state.AddSpecies(name); })
         .def("SetSpecies",
-             [](System &self, std::string name, D_Array sub_state) {
+             [](System &self, std::string name, D_Vector sub_state) {
                  self.state.GetSpecies(name) = sub_state;
              })
         .def("SetSpecies",
@@ -122,8 +122,8 @@ PYBIND11_MODULE(dna, m) {
         .def("Print", &D_SparseMatrix::Print, py::arg("printCount") = 5)
         .def(
             "Dot",
-            [](D_SparseMatrix &mat, D_Array &x) {
-                D_Array y(mat.rows);
+            [](D_SparseMatrix &mat, D_Vector &x) {
+                D_Vector y(mat.rows);
                 Dot(mat, x, y);
                 return std::move(y);
             },
@@ -169,35 +169,35 @@ PYBIND11_MODULE(dna, m) {
         .def_readonly("type", &D_SparseMatrix::type)
         .def_readonly("isDevice", &D_SparseMatrix::isDevice);
 
-    py::class_<D_Array>(m, "D_Array")
+    py::class_<D_Vector>(m, "D_Vector")
         .def(py::init<int>())
-        .def(py::init<const D_Array &>())
-        .def("Print", &D_Array::Print, py::arg("printCount") = 5)
+        .def(py::init<const D_Vector &>())
+        .def("Print", &D_Vector::Print, py::arg("printCount") = 5)
         .def("Norm",
-             [](D_Array &self) {
+             [](D_Vector &self) {
                  HDData<T> norm;
                  Dot(self, self, norm(true));
                  norm.SetHost();
                  return sqrt(norm());
              })
         .def("Fill",
-             [](D_Array &self, py::array_t<T> &x) {
+             [](D_Vector &self, py::array_t<T> &x) {
                  assert(x.size() == self.n);
                  gpuErrchk(cudaMemcpy(self.vals, x.data(), sizeof(T) * x.size(),
                                       cudaMemcpyHostToDevice));
              })
-        .def("FillValue", &D_Array::Fill)
-        .def("Prune", &D_Array::Prune, py::arg("value") = 0)
-        .def("PruneUnder", &D_Array::PruneUnder, py::arg("value") = 0)
+        .def("FillValue", &D_Vector::Fill)
+        .def("Prune", &D_Vector::Prune, py::arg("value") = 0)
+        .def("PruneUnder", &D_Vector::PruneUnder, py::arg("value") = 0)
         .def("Dot",
-             [](D_Array &self, D_Array &b) {
+             [](D_Vector &self, D_Vector &b) {
                  HDData<T> res;
                  Dot(self, b, res(true));
                  res.SetHost();
                  return res();
              })
         .def("ToNumpyArray",
-             [](D_Array &self) {
+             [](D_Vector &self) {
                  T *data = new T[self.n];
                  cudaMemcpy(data, self.vals, sizeof(T) * self.n,
                             cudaMemcpyDeviceToHost);
@@ -205,28 +205,28 @@ PYBIND11_MODULE(dna, m) {
              })
         .def(
             "__add__",
-            [](D_Array &self, D_Array &b) {
-                D_Array c(self.n);
+            [](D_Vector &self, D_Vector &b) {
+                D_Vector c(self.n);
                 VectorSum(self, b, c);
                 return std::move(c);
             },
             py::return_value_policy::take_ownership)
         .def(
             "__sub__",
-            [](D_Array &self, D_Array &b) {
-                D_Array c(self.n);
+            [](D_Vector &self, D_Vector &b) {
+                D_Vector c(self.n);
                 HDData<T> m1(-1);
                 VectorSum(self, b, m1(true), c);
                 return std::move(c);
             },
             py::return_value_policy::take_ownership)
         .def("__imul__",
-             [](D_Array &self, T alpha) {
+             [](D_Vector &self, T alpha) {
                  HDData<T> d_alpha(-alpha);
                  ScalarMult(self, d_alpha(true));
                  return self;
              })
-        .def_readonly("n", &D_Array::n);
+        .def_readonly("n", &D_Vector::n);
 
     py::class_<Zone>(m, "Zone")
         .def("IsInside",
@@ -245,7 +245,7 @@ PYBIND11_MODULE(dna, m) {
     m.def("SolveCholesky", &SolveCholesky,
           py::return_value_policy::take_ownership);
     m.def("SolveConjugateGradientRawData",
-          [](D_SparseMatrix *d_mat, D_Array *b, D_Array *x, T epsilon) {
+          [](D_SparseMatrix *d_mat, D_Vector *b, D_Vector *x, T epsilon) {
               return CGSolver::StaticCGSolve(*d_mat, *b, *x, epsilon);
           });
     m.def("CppExplore", &LabyrinthExplore);
@@ -261,10 +261,11 @@ PYBIND11_MODULE(dna, m) {
     m.def("ToCSV", [](State &state, const std::string &path) {
         return ToCSV(state, path);
     });
-    m.def("ToCSV",
-          [](D_Array &array, std::string &path) { return ToCSV(array, path); });
+    m.def("ToCSV", [](D_Vector &array, std::string &path) {
+        return ToCSV(array, path);
+    });
     m.def("ToCSV", [](py::array_t<T> &array, std::string &path) {
-        D_Array arrayContainer(array.size(), false);
+        D_Vector arrayContainer(array.size(), false);
         cudaMemcpy(arrayContainer.vals, array.data(),
                    sizeof(T) * arrayContainer.n, cudaMemcpyHostToHost);
         return ToCSV(arrayContainer, path);

@@ -108,7 +108,7 @@ __global__ void AddElementK(D_SparseMatrix *m, int i, int j, T &val) {
     AddElementBody(m, i, j, val);
 }
 
-__global__ void GetDataWidthK(D_SparseMatrix &d_mat, D_Array &width) {
+__global__ void GetDataWidthK(D_SparseMatrix &d_mat, D_Vector &width) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= d_mat.rows)
         return;

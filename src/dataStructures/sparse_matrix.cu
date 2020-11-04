@@ -309,9 +309,9 @@ __host__ void D_SparseMatrix::MakeDataWidth() {
     if (dataWidth >= 0)
         printf("Warning! Data width has already been computed.\n");
     dim3Pair threadblock = Make1DThreadBlock(rows);
-    D_Array width(rows);
+    D_Vector width(rows);
     GetDataWidthK<<<threadblock.block, threadblock.thread>>>(
-        *_device, *(D_Array *)width._device);
+        *_device, *(D_Vector *)width._device);
     ReductionOperation(width, maximum);
     T dataWidthFloat;
     cudaMemcpy(&dataWidthFloat, width.vals, sizeof(T), cudaMemcpyDeviceToHost);

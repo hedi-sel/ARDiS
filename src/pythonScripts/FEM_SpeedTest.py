@@ -18,10 +18,10 @@ d_D = dna.D_SparseMatrix(D, True)
 d_D.ConvertMatrixToCSR()
 print("Dampness matrix loaded ...")
 
-d_U = dna.D_Array(len(U))
+d_U = dna.D_Vector(len(U))
 d_U.Fill(U)
 
-d_Ones = dna.D_Array(len(U))
+d_Ones = dna.D_Vector(len(U))
 d_Ones.Fill(np.ones(len(U)))
 
 start = time.time()
@@ -42,7 +42,7 @@ print("Final Vector")
 d_U.Print()
 
 # C = np.array([0.5]*d_S.cols)
-# d_C = dna.D_Array(len(C))
+# d_C = dna.D_Vector(len(C))
 # d_C.Fill(C)
 # print("Norm Difference", (d_C - d_U).Norm())
 

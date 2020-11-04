@@ -8,7 +8,7 @@
 
 cusolverSpHandle_t cusolverSpHandle = NULL;
 
-void solveLinEqBody(D_SparseMatrix &d_mat, const D_Array &b, D_Array &x) {
+void solveLinEqBody(D_SparseMatrix &d_mat, const D_Vector &b, D_Vector &x) {
     if (cusolverSpHandle == NULL)
         cusolverErrchk(cusolverSpCreate(&cusolverSpHandle));
     int *singular = new int[0];

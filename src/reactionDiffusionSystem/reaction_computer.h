@@ -29,7 +29,7 @@ std::pair<int *, int> getRawCoeffs(State &state,
 }
 
 template <typename ReactionType>
-__global__ void ConsumeReactionK(D_Array **state, int n_species, int *reagents,
+__global__ void ConsumeReactionK(D_Vector **state, int n_species, int *reagents,
                                  int n_reagents, int *products, int n_products,
                                  T base_rate, ReactionType &rate) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;

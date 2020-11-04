@@ -67,7 +67,7 @@ void System::LoadStiffnessMatrix(D_SparseMatrix &stiff_mat) {
     this->stiff_mat = &stiff_mat;
 }
 
-__global__ void PruneK(D_Array **state, int size) {
+__global__ void PruneK(D_Vector **state, int size) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= state[0]->n)
         return;

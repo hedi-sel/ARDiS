@@ -27,7 +27,7 @@ class State:
         self.n = n
 
     def AddSpecies(self, name):
-        self.data.append(D_Array(self.n))
+        self.data.append(D_Vector(self.n))
         self.names[name] = len(self.data)-1
 
     def GetSpecies(self, name):

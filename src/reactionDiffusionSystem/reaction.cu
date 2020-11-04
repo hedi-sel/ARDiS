@@ -19,11 +19,6 @@ ReactionMichaelisMenten::ReactionMichaelisMenten(std::string reag,
     : Reaction(std::vector<stochCoeff>{stochCoeff(reag, 1)}, prod), Vm(Vm),
       Km(Km) {}
 
-// __device__ void Reaction::Rate(const T &reagent, T &progress) {
-//     printf("The \"Rate\" function of the \"Reaction\" class should not be "
-//            "called\n");
-// }
-
 __device__ void ReactionMassAction::Rate(const T &reagent, T &progress) {
     progress *= reagent;
 }

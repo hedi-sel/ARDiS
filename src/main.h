@@ -18,11 +18,11 @@
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "solvers/inversion_solver.h"
 
-void ToCSV(D_Array &array, std::string outputPath, std::string prefix = "",
+void ToCSV(D_Vector &array, std::string outputPath, std::string prefix = "",
            std::string suffix = "") {
     if (array.isDevice) { // If device memory, copy to host, and restart the
                           // function
-        D_Array h_copy(array, true);
+        D_Vector h_copy(array, true);
         ToCSV(h_copy, outputPath, prefix, suffix);
         return;
     }
@@ -69,8 +69,8 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
                          sizeof(T) * u.size(), cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemcpy(system.state.GetSpecies("P").vals, u.data(),
                          sizeof(T) * u.size(), cudaMemcpyHostToDevice));
-    D_Array MeshX(mesh_x.size());
-    D_Array MeshY(mesh_y.size());
+    D_Vector MeshX(mesh_x.size());
+    D_Vector MeshY(mesh_y.size());
     gpuErrchk(cudaMemcpy(MeshX.vals, mesh_x.data(), sizeof(T) * mesh_x.size(),
                          cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemcpy(MeshY.vals, mesh_y.data(), sizeof(T) * mesh_y.size(),
@@ -166,8 +166,8 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
     return isSuccess;
 }
 
-void checkSolve(D_SparseMatrix &M, D_Array &d_b, D_Array &d_x) {
-    D_Array vec(d_b.n, true);
+void checkSolve(D_SparseMatrix &M, D_Vector &d_b, D_Vector &d_x) {
+    D_Vector vec(d_b.n, true);
     Dot(M, d_x, vec, true);
     HDData<T> m1(-1);
     VectorSum(d_b, vec, m1(true), vec, true);
@@ -176,8 +176,8 @@ void checkSolve(D_SparseMatrix &M, D_Array &d_b, D_Array &d_x) {
     printf("Norme de la difference: %f\n", m1());
 }
 
-void SolveConjugateGradient(D_SparseMatrix &d_mat, D_Array &d_b, T epsilon,
-                            D_Array &d_x) {
+void SolveConjugateGradient(D_SparseMatrix &d_mat, D_Vector &d_b, T epsilon,
+                            D_Vector &d_x) {
     CGSolver::StaticCGSolve(d_mat, d_b, d_x, epsilon);
 #ifndef NDEBUG
     checkSolve(d_mat, d_x, d_b);
@@ -186,8 +186,8 @@ void SolveConjugateGradient(D_SparseMatrix &d_mat, D_Array &d_b, T epsilon,
 }
 
 void DiffusionTest(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, T tau,
-                   D_Array &d_u, T epsilon) {
-    D_Array d_b(d_u.n, true);
+                   D_Vector &d_u, T epsilon) {
+    D_Vector d_b(d_u.n, true);
     Dot(d_damp, d_u, d_b);
     D_SparseMatrix M(d_stiff.rows, d_stiff.cols, 0, COO, true);
     HDData<T> m(-tau);
@@ -195,14 +195,14 @@ void DiffusionTest(D_SparseMatrix &d_stiff, D_SparseMatrix &d_damp, T tau,
     CGSolver::StaticCGSolve(M, d_b, d_u, epsilon);
 }
 
-D_Array SolveCholesky(D_SparseMatrix &d_mat, py::array_t<T> &bVec) {
+D_Vector SolveCholesky(D_SparseMatrix &d_mat, py::array_t<T> &bVec) {
     assert(bVec.size() == d_mat.rows);
     assert(d_mat.isDevice);
 
-    D_Array b(bVec.size(), true);
+    D_Vector b(bVec.size(), true);
     gpuErrchk(cudaMemcpy(b.vals, bVec.data(), sizeof(T) * b.n,
                          cudaMemcpyHostToDevice));
-    D_Array x(d_mat.rows, true);
+    D_Vector x(d_mat.rows, true);
     solveLinEqBody(d_mat, b, x);
 
     return std::move(x);

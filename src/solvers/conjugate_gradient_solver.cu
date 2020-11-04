@@ -7,11 +7,11 @@
 
 CGSolver::CGSolver(int n) : q(n), r(n), p(n) {}
 
-void ToCSV(D_Array &array, std::string outputPath, std::string label = "") {
+void ToCSV(D_Vector &array, std::string outputPath, std::string label = "") {
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
     // fout << stateName << "\t" << state.data.size() << "\n";
-    D_Array h_Arr(array, true);
+    D_Vector h_Arr(array, true);
     // fout << species.first ;
     fout << label;
     for (size_t j = 0; j < h_Arr.n; j++)
@@ -31,8 +31,8 @@ void ToCSV(HDData<T> &val, std::string outputPath, std::string label = "") {
     fout.close();
 }
 
-bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
-                       std::string outputPath) {
+bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
+                       T epsilon, std::string outputPath) {
 #ifndef NDEBUG_PROFILING
     profiler.Start("Preparing Data");
 #endif
@@ -121,16 +121,16 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x, T epsilon,
     return !(diff() > epsilon * epsilon * diff0);
 }
 
-bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Array &b, D_Array &x,
+bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
                              T epsilon) {
-    D_Array q(b.n, true);
+    D_Vector q(b.n, true);
     Dot(d_mat, x, q, true);
 
-    D_Array r(b);
+    D_Vector r(b);
     HDData<T> alpha(-1.0);
     VectorSum(r, q, alpha(true), r);
 
-    D_Array p(r);
+    D_Vector p(r);
     HDData<T> value;
     HDData<T> beta(0.0);
 

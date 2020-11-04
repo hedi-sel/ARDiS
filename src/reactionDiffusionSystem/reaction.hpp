@@ -11,18 +11,10 @@
 
 typedef std::pair<std::string, int> stochCoeff;
 
-// class Rate {
-//     __device__ void Function(const T &reagent, T &progress);
-// };
-
 class Reaction {
   public:
     std::vector<stochCoeff> Reagents;
     std::vector<stochCoeff> Products;
-
-    // nvstd::function<void(void)> *Rate = &([] __device__() { printf("Hi\n");
-    // }); nvstd::function<void(void)> Rate = [] __device__() { printf("Hi\n");
-    // };
 
     Reaction(std::vector<stochCoeff>, std::vector<stochCoeff>);
 };

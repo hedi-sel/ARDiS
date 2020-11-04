@@ -20,7 +20,7 @@ class System {
     State state;
 
     CGSolver solver;
-    D_Array b;
+    D_Vector b;
 
     // The set of reactions
     std::vector<ReactionMassAction> reactions;

@@ -19,7 +19,8 @@ void PrintDotProfiler() { profDot.Print(); }
 cusparseHandle_t cusparseHandle = NULL;
 cublasHandle_t cublasHandle = NULL;
 
-void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &result, bool synchronize) {
+void Dot(D_SparseMatrix &d_mat, D_Vector &x, D_Vector &result,
+         bool synchronize) {
     if (!cusparseHandle)
         cusparseErrchk(cusparseCreate(&cusparseHandle));
     assert(d_mat.isDevice && x.isDevice && result.isDevice);
@@ -48,9 +49,9 @@ void Dot(D_SparseMatrix &d_mat, D_Array &x, D_Array &result, bool synchronize) {
     cusparseDestroySpMat(mat_descr);
 }
 
-D_Array buffer(0);
+D_Vector buffer(0);
 
-__global__ void DotK(D_Array &x, D_Array &y, D_Array &buffer) {
+__global__ void DotK(D_Vector &x, D_Vector &y, D_Vector &buffer) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= x.n)
         return;
@@ -58,7 +59,7 @@ __global__ void DotK(D_Array &x, D_Array &y, D_Array &buffer) {
     return;
 }
 
-void Dot(D_Array &x, D_Array &y, T &result, bool synchronize) {
+void Dot(D_Vector &x, D_Vector &y, T &result, bool synchronize) {
     assert(x.isDevice && y.isDevice);
     assert(x.n == y.n);
 
@@ -77,9 +78,9 @@ void Dot(D_Array &x, D_Array &y, T &result, bool synchronize) {
     // else
     //     buffer.n = x.n;
 
-    // DotK<<<threadblock.block, threadblock.thread>>>(*(D_Array *)x._device,
-    //                                                 *(D_Array *)y._device,
-    //                                                 *(D_Array
+    // DotK<<<threadblock.block, threadblock.thread>>>(*(D_Vector *)x._device,
+    //                                                 *(D_Vector *)y._device,
+    //                                                 *(D_Vector
     //                                                 *)buffer._device);
     // ReductionOperation(buffer, sum);
     // cudaMemcpy(&result, buffer.vals, sizeof(T), cudaMemcpyDeviceToDevice);
@@ -89,25 +90,26 @@ void Dot(D_Array &x, D_Array &y, T &result, bool synchronize) {
         return;
 }
 
-__global__ void VectorSumK(D_Array &a, D_Array &b, T &alpha, D_Array &c) {
+__global__ void VectorSumK(D_Vector &a, D_Vector &b, T &alpha, D_Vector &c) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= a.n)
         return;
     c.vals[i] = a.vals[i] + b.vals[i] * alpha;
 };
 
-void VectorSum(D_Array &a, D_Array &b, T &alpha, D_Array &c, bool synchronize) {
+void VectorSum(D_Vector &a, D_Vector &b, T &alpha, D_Vector &c,
+               bool synchronize) {
     assert(a.isDevice && b.isDevice);
     assert(a.n == b.n);
     dim3Pair threadblock = Make1DThreadBlock(a.n);
     VectorSumK<<<threadblock.block, threadblock.thread>>>(
-        *(D_Array *)a._device, *(D_Array *)b._device, alpha,
-        *(D_Array *)c._device);
+        *(D_Vector *)a._device, *(D_Vector *)b._device, alpha,
+        *(D_Vector *)c._device);
     if (synchronize)
         gpuErrchk(cudaDeviceSynchronize());
 }
 
-void VectorSum(D_Array &a, D_Array &b, D_Array &c, bool synchronize) {
+void VectorSum(D_Vector &a, D_Vector &b, D_Vector &c, bool synchronize) {
     HDData<T> alpha(1.0);
     VectorSum(a, b, alpha(true), c, synchronize);
 }
@@ -232,7 +234,7 @@ void ScalarMult(D_SparseMatrix &a, T &alpha) {
     ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.vals, a.nnz,
                                                            alpha);
 }
-void ScalarMult(D_Array &a, T &alpha) {
+void ScalarMult(D_Vector &a, T &alpha) {
     assert(a.isDevice);
     dim3Pair threadblock = Make1DThreadBlock(a.n);
     ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.vals, a.n, alpha);
