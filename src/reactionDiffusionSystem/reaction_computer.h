@@ -45,9 +45,8 @@ __global__ void ConsumeReactionK(D_Vector **state, int n_species, int *reagents,
     return;
 }
 
-template <typename Func>
-void ConsumeReaction(State &state, ReactionMassAction &reaction,
-                     T base_reac_rate, Func reac_rate) {
+template <typename ReactionType>
+void ConsumeReaction(State &state, ReactionType &reaction, T base_reac_rate) {
     auto tb = Make1DThreadBlock(state.size);
     auto d_state = state.GetDeviceState();
     auto products = getRawCoeffs(state, reaction.Products);

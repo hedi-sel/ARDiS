@@ -94,9 +94,7 @@ void System::IterateReaction(T dt, bool degradation) {
         species->Prune();
     }
     for (auto reaction : reactions) {
-        ConsumeReaction(
-            state, reaction, reaction.K * dt,
-            [] __device__(const T &x, T &progress) { progress *= x; });
+        ConsumeReaction<decltype(reaction)>(state, reaction, reaction.K * dt);
     }
     for (auto mmreac : this->mmreactions) {
         throw "Michaelis Menten reactiosn not implemented yet";
