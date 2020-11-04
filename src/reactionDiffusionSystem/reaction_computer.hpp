@@ -1,3 +1,3 @@
 #include "system.hpp"
 
-void ConsumeReaction(State &state, Reaction &reaction, T rate);
+void ConsumeReaction(State &state, ReactionMassAction &reaction, T rate);

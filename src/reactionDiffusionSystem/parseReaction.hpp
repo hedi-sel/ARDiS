@@ -3,6 +3,6 @@
 #include <string>
 
 #include "constants.hpp"
-#include "reaction.h"
+#include "reaction.hpp"
 
 Reaction ParseReaction(const std::string &descriptor);

@@ -83,7 +83,7 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
     input.push_back(std::pair<std::string, int>("P", 1));
     std::vector<stochCoeff> output;
     input.push_back(std::pair<std::string, int>("P", 2));
-    system.AddReaction(Reaction(input, output, reaction));
+    system.AddReaction(ReactionMassAction(input, output, reaction));
     system.Print();
 
     int plotCount = 0;

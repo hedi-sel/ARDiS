@@ -6,9 +6,26 @@
 
 System::System(int size) : state(size), solver(size), b(size){};
 
+void CheckReaction(System &sys, Reaction &reaction) {
+    for (auto species : reaction.Reagents) {
+        if (sys.state.names.find(species.first) == sys.state.names.end()) {
+            std::cout << "\"" << species.first << "\""
+                      << "\n";
+            throw std::invalid_argument("^ This species is invalid\n");
+        }
+    }
+    for (auto species : reaction.Products) {
+        if (sys.state.names.find(species.first) == sys.state.names.end()) {
+            std::cout << "\"" << species.first << "\""
+                      << "\n";
+            throw std::invalid_argument("^ This species is invalid\n");
+        }
+    }
+}
+
 void System::AddReaction(const std::string &descriptor, T rate) {
-    Reaction reaction = ParseReaction(descriptor);
-    std::get<2>(reaction) = rate;
+    ReactionMassAction reaction =
+        ReactionMassAction(ParseReaction(descriptor), rate);
     AddReaction(reaction);
 }
 void System::AddReaction(std::string reag, int kr, std::string prod, int kp,
@@ -17,23 +34,10 @@ void System::AddReaction(std::string reag, int kr, std::string prod, int kp,
     std::vector<stochCoeff> output;
     input.push_back(std::pair<std::string, int>(reag, kr));
     output.push_back(std::pair<std::string, int>(prod, kp));
-    AddReaction(Reaction(input, output, rate));
+    AddReaction(ReactionMassAction(input, output, rate));
 }
-void System::AddReaction(Reaction reaction) {
-    for (auto species : std::get<0>(reaction)) {
-        if (state.names.find(species.first) == state.names.end()) {
-            std::cout << "\"" << species.first << "\""
-                      << "\n";
-            throw std::invalid_argument("^ This species is invalid\n");
-        }
-    }
-    for (auto species : std::get<1>(reaction)) {
-        if (state.names.find(species.first) == state.names.end()) {
-            std::cout << "\"" << species.first << "\""
-                      << "\n";
-            throw std::invalid_argument("^ This species is invalid\n");
-        }
-    }
+void System::AddReaction(ReactionMassAction reaction) {
+    CheckReaction(*this, reaction);
     reactions.push_back(reaction);
 };
 
@@ -41,30 +45,18 @@ void System::AddMMReaction(std::string reag, std::string prod, int kp, T Vm,
                            T Km) {
     std::vector<stochCoeff> output;
     output.push_back(std::pair<std::string, int>(prod, kp));
-    AddMMReaction(MMReaction(reag, output, Vm, Km));
+    AddMMReaction(ReactionMichaelisMenten(reag, output, Vm, Km));
 }
 void System::AddMMReaction(const std::string &descriptor, T Vm, T Km) {
     Reaction reaction = ParseReaction(descriptor);
-    if (std::get<0>(reaction).size() != 1 ||
-        std::get<0>(reaction).at(0).second != 1)
+    if (reaction.Reagents.size() != 1 || reaction.Reagents.at(0).second != 1)
         throw std::invalid_argument(
             "A Michaelis-Menten reaction takes only one species as reagent\n");
-    AddMMReaction(MMReaction(std::get<0>(reaction).at(0).first,
-                             std::get<1>(reaction), Vm, Km));
+    AddMMReaction(ReactionMichaelisMenten(reaction.Reagents.at(0).first,
+                                          reaction.Products, Vm, Km));
 }
-void System::AddMMReaction(MMReaction reaction) {
-    if (state.names.find(std::get<0>(reaction)) == state.names.end()) {
-        std::cout << "\"" << std::get<0>(reaction) << "\""
-                  << "\n";
-        throw std::invalid_argument("^ This species is invalid\n");
-    }
-    for (auto species : std::get<1>(reaction)) {
-        if (state.names.find(species.first) == state.names.end()) {
-            std::cout << "\"" << species.first << "\""
-                      << "\n";
-            throw std::invalid_argument("^ This species is invalid\n");
-        }
-    }
+void System::AddMMReaction(ReactionMichaelisMenten reaction) {
+    CheckReaction(*this, reaction);
     this->mmreactions.push_back(reaction);
 }
 
@@ -103,7 +95,7 @@ void System::IterateReaction(T dt, bool degradation) {
     }
     for (auto reaction : reactions) {
         ConsumeReaction(
-            state, reaction, std::get<2>(reaction) * dt,
+            state, reaction, reaction.K * dt,
             [] __device__(const T &x, T &progress) { progress *= x; });
     }
     for (auto mmreac : this->mmreactions) {
@@ -161,12 +153,12 @@ bool System::IterateDiffusion(T dt) {
 void System::Print(int printCount) {
     state.Print(printCount);
     for (int i = 0; i < reactions.size(); i++) {
-        for (auto coeff : std::get<0>(reactions.at(i)))
+        for (auto coeff : reactions.at(i).Reagents)
             std::cout << coeff.second << "." << coeff.first << " + ";
         std::cout << "-> ";
-        for (auto coeff : std::get<1>(reactions.at(i)))
+        for (auto coeff : reactions.at(i).Products)
             std::cout << coeff.second << "." << coeff.first << " + ";
-        std::cout << "k=" << std::get<2>(reactions.at(i)) << "\n";
+        std::cout << "k=" << reactions.at(i).K << "\n";
     }
 #ifndef NDEBUG_PROFILING
     std::cout << "Global Profiler : \n";

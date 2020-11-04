@@ -7,7 +7,7 @@
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/sparse_matrix.hpp"
 #include "matrixOperations/basic_operations.hpp"
-#include "reaction.h"
+#include "reaction.hpp"
 #include "solvers/conjugate_gradient_solver.hpp"
 #include "state.hpp"
 
@@ -23,10 +23,10 @@ class System {
     D_Array b;
 
     // The set of reactions
-    std::vector<Reaction> reactions;
+    std::vector<ReactionMassAction> reactions;
 
     // The set of Michaelis-Menten Reactions
-    std::vector<MMReaction> mmreactions;
+    std::vector<ReactionMichaelisMenten> mmreactions;
 
     // Diffusion matrices
     D_SparseMatrix *damp_mat = nullptr;
@@ -54,11 +54,11 @@ class System {
     void AddReaction(std::string reag, int kr, std::string prod, int kp,
                      T rate);
     void AddReaction(const std::string &reaction, T rate);
-    void AddReaction(Reaction reaction);
+    void AddReaction(ReactionMassAction reaction);
 
     void AddMMReaction(std::string reag, std::string prod, int kp, T Vm, T Km);
     void AddMMReaction(const std::string &reaction, T Vm, T Km);
-    void AddMMReaction(MMReaction reaction);
+    void AddMMReaction(ReactionMichaelisMenten reaction);
 
     // Get the memory location of the dampness and stiffness matrices
     void LoadDampnessMatrix(D_SparseMatrix &damp_mat);

@@ -52,7 +52,7 @@ PYBIND11_MODULE(dna, m) {
                  std::vector<stochCoeff> output;
                  input.push_back(std::pair(reag, kr));
                  output.push_back(std::pair(prod, kp));
-                 self.AddReaction(Reaction(input, output, rate));
+                 self.AddReaction(ReactionMassAction(input, output, rate));
              })
         .def("AddReaction", [](System &self, std::string reaction,
                                T rate) { self.AddReaction(reaction, rate); })

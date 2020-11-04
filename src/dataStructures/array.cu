@@ -31,7 +31,8 @@ __host__ void D_Vector<C>::operator=(const D_Vector<C> &other) {
     gpuErrchk(cudaMemcpy(vals, other.vals, sizeof(C) * n, memCpy));
 }
 
-// template <typename C>  __host__ void D_Vector<C>::Swap(D_Vector<C> &other) {
+// template <typename C>  __host__ void D_Vector<C>::Swap(D_Vector<C> &other)
+// {
 //     assert(isDevice == other.isDevice);
 //     n = other.n;
 //     std::swap(_device, other._device);

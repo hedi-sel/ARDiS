@@ -58,5 +58,5 @@ Reaction ParseReaction(const std::string &descriptor) {
     getReactionSide(lhs, input);
     getReactionSide(rhs, output);
 
-    return Reaction(input, output, 1);
+    return Reaction(input, output);
 }
