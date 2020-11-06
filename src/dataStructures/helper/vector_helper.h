@@ -6,10 +6,10 @@ __device__ __host__ inline void printVectorBody(const D_Array<C> &vector,
                                                 int printCount) {
     printf("[ ");
     for (int i = 0; i < vector.n - 1 && i < printCount; i++)
-        printf("%.3e, ", vector.vals[i]);
+        printf("%.3e, ", vector.data[i]);
     if (printCount < vector.n - 1)
         printf("... ");
-    printf("%.3e]\n", vector.vals[vector.n - 1]);
+    printf("%.3e]\n", vector.data[vector.n - 1]);
 }
 
 __global__ void printVector(const D_Array<T> &vector, int printCount) {

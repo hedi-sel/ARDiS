@@ -3,7 +3,7 @@
 
 __host__ __device__ MatrixElement::MatrixElement(int k,
                                                  const D_SparseMatrix *matrix)
-    : k(k), matrix(matrix), val(&matrix->vals[k]) {
+    : k(k), matrix(matrix), val(&matrix->data[k]) {
     updateIandJ();
 }
 __host__ __device__ MatrixElement::MatrixElement(const D_SparseMatrix *matrix)

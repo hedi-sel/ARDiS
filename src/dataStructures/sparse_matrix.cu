@@ -31,7 +31,7 @@ __host__ D_SparseMatrix::D_SparseMatrix(const D_SparseMatrix &m,
         (m.isDevice)
             ? (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
             : (isDevice) ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost;
-    gpuErrchk(cudaMemcpy(vals, m.vals, sizeof(T) * nnz, memCpy));
+    gpuErrchk(cudaMemcpy(data, m.data, sizeof(T) * nnz, memCpy));
     gpuErrchk(cudaMemcpy(colPtr, m.colPtr,
                          sizeof(int) * ((type == CSC) ? cols + 1 : nnz),
                          memCpy));
@@ -51,7 +51,7 @@ __host__ void D_SparseMatrix::operator=(const D_SparseMatrix &other) {
     MemAlloc();
     cudaMemcpyKind memCpy =
         (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToHost;
-    gpuErrchk(cudaMemcpy(vals, other.vals, sizeof(T) * nnz, memCpy));
+    gpuErrchk(cudaMemcpy(data, other.data, sizeof(T) * nnz, memCpy));
     gpuErrchk(cudaMemcpy(colPtr, other.colPtr,
                          sizeof(int) * ((type == CSC) ? cols + 1 : nnz),
                          memCpy));
@@ -77,14 +77,14 @@ __host__ void D_SparseMatrix::MemAlloc() {
     int rowPtrSize = (type == CSR) ? rows + 1 : nnz;
     int colPtrSize = (type == CSC) ? cols + 1 : nnz;
     if (isDevice) {
-        gpuErrchk(cudaMalloc(&vals, nnz * sizeof(T)));
+        gpuErrchk(cudaMalloc(&data, nnz * sizeof(T)));
         gpuErrchk(cudaMalloc(&rowPtr, rowPtrSize * sizeof(int)));
         gpuErrchk(cudaMalloc(&colPtr, colPtrSize * sizeof(int)));
         gpuErrchk(cudaMalloc(&_device, sizeof(D_SparseMatrix)));
         gpuErrchk(cudaMemcpy(_device, this, sizeof(D_SparseMatrix),
                              cudaMemcpyHostToDevice));
     } else {
-        vals = new T[nnz];
+        data = new T[nnz];
         rowPtr = new int[rowPtrSize];
         for (int i = 0; i < rowPtrSize; i++)
             rowPtr[i] = 0;
@@ -96,12 +96,12 @@ __host__ void D_SparseMatrix::MemAlloc() {
 __host__ void D_SparseMatrix::MemFree() {
     if (nnz > 0)
         if (isDevice) {
-            gpuErrchk(cudaFree(vals));
+            gpuErrchk(cudaFree(data));
             gpuErrchk(cudaFree(rowPtr));
             gpuErrchk(cudaFree(colPtr));
             gpuErrchk(cudaFree(_device));
         } else {
-            delete[] vals;
+            delete[] data;
             delete[] rowPtr;
             delete[] colPtr;
         }
@@ -147,13 +147,13 @@ __host__ __device__ void D_SparseMatrix::AddElement(int i, int j, T val) {
 
 // Get the value at index k of the sparse matrix
 __host__ __device__ const T &D_SparseMatrix::Get(int k) const {
-    return vals[k];
+    return data[k];
 }
 __host__ __device__ const T &D_SparseMatrix::GetLine(int i) const {
     if (type != CSR) {
         printf("Error! Doesn't work with other type than CSR");
     }
-    return vals[rowPtr[i]];
+    return data[rowPtr[i]];
 }
 
 __host__ __device__ T D_SparseMatrix::Lookup(int i, int j) const {
@@ -251,7 +251,7 @@ __host__ cusparseMatDescr_t D_SparseMatrix::MakeDescriptor() {
 __host__ cusparseSpMatDescr_t D_SparseMatrix::MakeSpDescriptor() {
     cusparseSpMatDescr_t descr;
     cusparseErrchk(cusparseCreateCsr(
-        &descr, rows, cols, nnz, rowPtr, colPtr, vals, CUSPARSE_INDEX_32I,
+        &descr, rows, cols, nnz, rowPtr, colPtr, data, CUSPARSE_INDEX_32I,
         CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, T_Cuda));
     return std::move(descr);
 }
@@ -300,7 +300,7 @@ __host__ void D_SparseMatrix::OperationCuSolver(void *function,
                                                 cusolverSpHandle_t &handle,
                                                 cusparseMatDescr_t descr, T *b,
                                                 T *xOut, int *singularOut) {
-    cusolverErrchk(((FuncSolv)function)(handle, rows, nnz, descr, vals, rowPtr,
+    cusolverErrchk(((FuncSolv)function)(handle, rows, nnz, descr, data, rowPtr,
                                         colPtr, b, 0.0, 0, xOut, singularOut));
     // TODO : SymOptimization
 }
@@ -314,7 +314,7 @@ __host__ void D_SparseMatrix::MakeDataWidth() {
         *_device, *(D_Vector *)width._device);
     ReductionOperation(width, maximum);
     T dataWidthFloat;
-    cudaMemcpy(&dataWidthFloat, width.vals, sizeof(T), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&dataWidthFloat, width.data, sizeof(T), cudaMemcpyDeviceToHost);
     dataWidth = (int)dataWidthFloat;
 }
 

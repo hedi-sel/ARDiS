@@ -55,7 +55,7 @@ __global__ void DotK(D_Vector &x, D_Vector &y, D_Vector &buffer) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= x.n)
         return;
-    buffer.vals[i] = x.vals[i] * y.vals[i];
+    buffer.data[i] = x.data[i] * y.data[i];
     return;
 }
 
@@ -67,9 +67,9 @@ void Dot(D_Vector &x, D_Vector &y, T &result, bool synchronize) {
         cublasErrchk(cublasCreate(&cublasHandle));
 
 #ifdef USE_DOUBLE
-    cublasErrchk(cublasDdot(cublasHandle, x.n, x.vals, 1, y.vals, 1, &result));
+    cublasErrchk(cublasDdot(cublasHandle, x.n, x.data, 1, y.data, 1, &result));
 #else
-    cublasErrchk(cublasSdot(cublasHandle, x.n, x.vals, sizeof(T), y.vals,
+    cublasErrchk(cublasSdot(cublasHandle, x.n, x.data, sizeof(T), y.data,
                             sizeof(T), &result));
 #endif
     // dim3Pair threadblock = Make1DThreadBlock(x.n);
@@ -83,7 +83,7 @@ void Dot(D_Vector &x, D_Vector &y, T &result, bool synchronize) {
     //                                                 *(D_Vector
     //                                                 *)buffer._device);
     // ReductionOperation(buffer, sum);
-    // cudaMemcpy(&result, buffer.vals, sizeof(T), cudaMemcpyDeviceToDevice);
+    // cudaMemcpy(&result, buffer.data, sizeof(T), cudaMemcpyDeviceToDevice);
     if (synchronize) {
         gpuErrchk(cudaDeviceSynchronize());
     } else
@@ -94,7 +94,7 @@ __global__ void VectorSumK(D_Vector &a, D_Vector &b, T &alpha, D_Vector &c) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= a.n)
         return;
-    c.vals[i] = a.vals[i] + b.vals[i] * alpha;
+    c.data[i] = a.data[i] + b.data[i] * alpha;
 };
 
 void VectorSum(D_Vector &a, D_Vector &b, T &alpha, D_Vector &c,
@@ -170,16 +170,16 @@ __global__ void SetValuesK(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
     while (it_a.i == i || it_b.i == i) {
         if (IsEqu(it_a, it_b)) {
             c.colPtr[k] = it_a.j;
-            c.vals[k] = it_a.val[0] + alpha * it_b.val[0];
+            c.data[k] = it_a.val[0] + alpha * it_b.val[0];
             it_a.Next();
             it_b.Next();
         } else if (IsSup(it_a, it_b)) {
             c.colPtr[k] = it_b.j;
-            c.vals[k] = alpha * it_b.val[0];
+            c.data[k] = alpha * it_b.val[0];
             it_b.Next();
         } else if (IsSup(it_b, it_a)) {
             c.colPtr[k] = it_a.j;
-            c.vals[k] = it_a.val[0];
+            c.data[k] = it_a.val[0];
             it_a.Next();
         } else {
             printf("Error! Nobody was iterated in SumNNZK function.\n");
@@ -220,22 +220,22 @@ void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, D_SparseMatrix &c) {
     MatrixSum(a, b, d_alpha(true), c);
 }
 
-__global__ void ScalarMultK(T *vals, int n, T &alpha) {
+__global__ void ScalarMultK(T *data, int n, T &alpha) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n)
         return;
-    vals[i] *= alpha;
+    data[i] *= alpha;
     return;
 }
 
 void ScalarMult(D_SparseMatrix &a, T &alpha) {
     assert(a.isDevice);
     dim3Pair threadblock = Make1DThreadBlock(a.nnz);
-    ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.vals, a.nnz,
+    ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.data, a.nnz,
                                                            alpha);
 }
 void ScalarMult(D_Vector &a, T &alpha) {
     assert(a.isDevice);
     dim3Pair threadblock = Make1DThreadBlock(a.n);
-    ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.vals, a.n, alpha);
+    ScalarMultK<<<threadblock.block, threadblock.thread>>>(a.data, a.n, alpha);
 }

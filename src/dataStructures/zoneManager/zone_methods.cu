@@ -9,8 +9,8 @@ __global__ void IsInsideArrayK(D_Vector &mesh_x, D_Vector &mesh_y, Zone &zone,
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= is_inside.n)
         return;
-    is_inside.vals[i] =
-        (zone.IsInside(mesh_x.vals[i], mesh_y.vals[i])) ? value : 0;
+    is_inside.data[i] =
+        (zone.IsInside(mesh_x.data[i], mesh_y.data[i])) ? value : 0;
 }
 D_Vector IsInsideArray(D_Vector &mesh_x, D_Vector &mesh_y, Zone &zone,
                        T value = 1) {
@@ -52,7 +52,7 @@ T GetMinZone(D_Vector &u, D_Vector &mesh_x, D_Vector &mesh_y, Zone &zone) {
     auto is_inside = IsInsideArray(mesh_x, mesh_y, zone);
     ReductionFunctionConditional(u_copy, is_inside, min);
     T result = -1;
-    cudaMemcpy(&result, u_copy.vals, sizeof(T), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&result, u_copy.data, sizeof(T), cudaMemcpyDeviceToHost);
     return result;
 };
 
@@ -62,7 +62,7 @@ T GetMaxZone(D_Vector &u, D_Vector &mesh_x, D_Vector &mesh_y, Zone &zone) {
     auto is_inside = IsInsideArray(mesh_x, mesh_y, zone);
     ReductionFunctionConditional(u_copy, is_inside, max);
     T result = -1;
-    cudaMemcpy(&result, u_copy.vals, sizeof(T), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&result, u_copy.data, sizeof(T), cudaMemcpyDeviceToHost);
     return result;
 };
 

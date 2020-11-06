@@ -15,7 +15,7 @@ void ToCSV(D_Vector &array, std::string outputPath, std::string label = "") {
     // fout << species.first ;
     fout << label;
     for (size_t j = 0; j < h_Arr.n; j++)
-        fout << ((j == 0) ? "" : "\t") << h_Arr.vals[j];
+        fout << ((j == 0) ? "" : "\t") << h_Arr.data[j];
     fout << "\n";
     fout.close();
 }

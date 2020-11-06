@@ -37,11 +37,11 @@ __global__ void ConsumeReactionK(D_Vector **state, int n_species, int *reagents,
         return;
     T progress = base_rate;
     for (int k = 0; k < n_reagents; k++)
-        rate.Rate(state[reagents[k]]->vals[i], progress);
+        rate.Rate(state[reagents[k]]->data[i], progress);
     for (int k = 0; k < n_reagents; k++)
-        state[reagents[k]]->vals[i] -= progress;
+        state[reagents[k]]->data[i] -= progress;
     for (int k = 0; k < n_products; k++)
-        state[products[k]]->vals[i] += progress;
+        state[products[k]]->data[i] += progress;
     return;
 }
 

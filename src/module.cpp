@@ -41,7 +41,7 @@ PYBIND11_MODULE(dna, m) {
         .def("SetSpecies",
              [](System &self, std::string name, py::array_t<T> &sub_state) {
                  gpuErrchk(cudaMemcpy(
-                     self.state.GetSpecies(name).vals, sub_state.data(),
+                     self.state.GetSpecies(name).data, sub_state.data(),
                      sizeof(T) * sub_state.size(), cudaMemcpyHostToDevice));
                  self.state.GetSpecies(name).Print();
              })
@@ -107,7 +107,7 @@ PYBIND11_MODULE(dna, m) {
                     assert(cols.size() == self.cols + 1);
                 else
                     assert(cols.size() == self.nnz);
-                gpuErrchk(cudaMemcpy(self.vals, data.data(),
+                gpuErrchk(cudaMemcpy(self.data, data.data(),
                                      sizeof(T) * data.size(),
                                      cudaMemcpyHostToDevice));
                 gpuErrchk(cudaMemcpy(self.colPtr, cols.data(),
@@ -172,6 +172,9 @@ PYBIND11_MODULE(dna, m) {
     py::class_<D_Vector>(m, "D_Vector")
         .def(py::init<int>())
         .def(py::init<const D_Vector &>())
+        .def("At", &D_Vector::At)
+        .def("Size", &D_Vector::Size)
+        .def("IsDevice", &D_Vector::IsDevice)
         .def("Print", &D_Vector::Print, py::arg("printCount") = 5)
         .def("Norm",
              [](D_Vector &self) {
@@ -183,7 +186,7 @@ PYBIND11_MODULE(dna, m) {
         .def("Fill",
              [](D_Vector &self, py::array_t<T> &x) {
                  assert(x.size() == self.n);
-                 gpuErrchk(cudaMemcpy(self.vals, x.data(), sizeof(T) * x.size(),
+                 gpuErrchk(cudaMemcpy(self.data, x.data(), sizeof(T) * x.size(),
                                       cudaMemcpyHostToDevice));
              })
         .def("FillValue", &D_Vector::Fill)
@@ -199,7 +202,7 @@ PYBIND11_MODULE(dna, m) {
         .def("ToNumpyArray",
              [](D_Vector &self) {
                  T *data = new T[self.n];
-                 cudaMemcpy(data, self.vals, sizeof(T) * self.n,
+                 cudaMemcpy(data, self.data, sizeof(T) * self.n,
                             cudaMemcpyDeviceToHost);
                  return py::array_t(self.n, data);
              })
@@ -226,7 +229,8 @@ PYBIND11_MODULE(dna, m) {
                  ScalarMult(self, d_alpha(true));
                  return self;
              })
-        .def_readonly("n", &D_Vector::n);
+        .def_readonly("Size", &D_Vector::n)
+        .def_readonly("IsDevice", &D_Vector::isDevice);
 
     py::class_<Zone>(m, "Zone")
         .def("IsInside",
@@ -266,7 +270,7 @@ PYBIND11_MODULE(dna, m) {
     });
     m.def("ToCSV", [](py::array_t<T> &array, std::string &path) {
         D_Vector arrayContainer(array.size(), false);
-        cudaMemcpy(arrayContainer.vals, array.data(),
+        cudaMemcpy(arrayContainer.data, array.data(),
                    sizeof(T) * arrayContainer.n, cudaMemcpyHostToHost);
         return ToCSV(arrayContainer, path);
     });

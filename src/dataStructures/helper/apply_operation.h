@@ -13,7 +13,7 @@ __global__ void ApplyFunctionK(D_Array<C> &vector, Apply func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= vector.n)
         return;
-    (func)(vector.vals[i]);
+    (func)(vector.data[i]);
     return;
 }
 
@@ -29,8 +29,8 @@ __global__ void ApplyFunctionConditionalK(D_Array<C> &vector,
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= vector.n)
         return;
-    if (booleans.vals[i] > 0)
-        (func)(vector.vals[i]);
+    if (booleans.data[i] > 0)
+        (func)(vector.data[i]);
     return;
 }
 
@@ -51,8 +51,8 @@ __global__ void ReductionFunctionK(D_Array<C> &A, int nValues, int shift,
     for (int exp = 0; (1 << exp) < blockDim.x; exp++) {
         if (threadIdx.x % (2 << exp) == 0 &&
             threadIdx.x + (1 << exp) < blockDim.x && i + (1 << exp) < nValues) {
-            A.vals[shift * i] =
-                func(A.vals[shift * i], A.vals[shift * (i + (1 << exp))]);
+            A.data[shift * i] =
+                func(A.data[shift * i], A.data[shift * (i + (1 << exp))]);
         }
         __syncthreads();
     }
@@ -84,15 +84,15 @@ __global__ void ReductionFunctionConditionalK(D_Array<C> &A,
     for (int exp = 0; (1 << exp) < blockDim.x; exp++) {
         if (threadIdx.x % (2 << exp) == 0 &&
             threadIdx.x + (1 << exp) < blockDim.x && i + (1 << exp) < nValues) {
-            if (booleans.vals[shift * (i + (1 << exp))] >
+            if (booleans.data[shift * (i + (1 << exp))] >
                 0) // TODO Make this as array of bool
-                if (booleans.vals[shift * i] > 0)
-                    A.vals[shift * i] = func(A.vals[shift * i],
-                                             A.vals[shift * (i + (1 << exp))]);
+                if (booleans.data[shift * i] > 0)
+                    A.data[shift * i] = func(A.data[shift * i],
+                                             A.data[shift * (i + (1 << exp))]);
                 else
-                    A.vals[shift * i] = A.vals[shift * (i + (1 << exp))];
-            booleans.vals[shift * i] = booleans.vals[shift * i] +
-                                       booleans.vals[shift * (i + (1 << exp))];
+                    A.data[shift * i] = A.data[shift * (i + (1 << exp))];
+            booleans.data[shift * i] = booleans.data[shift * i] +
+                                       booleans.data[shift * (i + (1 << exp))];
         }
         __syncthreads();
     }

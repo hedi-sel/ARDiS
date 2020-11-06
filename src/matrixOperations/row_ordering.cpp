@@ -39,17 +39,17 @@ void RowOrdering(D_SparseMatrix &d_mat) {
 
     // /* step 5: gather sorted cooVals */
 #ifdef USE_DOUBLE
-    cusparseErrchk(cusparseDgthr(rowOrdHandle, d_mat.nnz, d_mat.vals,
+    cusparseErrchk(cusparseDgthr(rowOrdHandle, d_mat.nnz, d_mat.data,
                                  d_cooVals_sorted, d_P,
                                  CUSPARSE_INDEX_BASE_ZERO));
 #else
-    cusparseErrchk(cusparseSgthr(rowOrdHandle, d_mat.nnz, d_mat.vals,
+    cusparseErrchk(cusparseSgthr(rowOrdHandle, d_mat.nnz, d_mat.data,
                                  d_cooVals_sorted, d_P,
                                  CUSPARSE_INDEX_BASE_ZERO));
 #endif
 
-    T *freeMe = d_mat.vals;
-    d_mat.vals = d_cooVals_sorted;
+    T *freeMe = d_mat.data;
+    d_mat.data = d_cooVals_sorted;
 
     /* free resources */
     if (d_P)

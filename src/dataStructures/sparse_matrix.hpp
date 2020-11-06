@@ -24,7 +24,7 @@ class D_SparseMatrix {
     const bool isDevice;
     // cusparseMatDescr_t descr = NULL;
 
-    T *vals;
+    T *data;
     int *rowPtr;
     int *colPtr;
     D_SparseMatrix *_device;

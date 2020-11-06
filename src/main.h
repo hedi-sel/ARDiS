@@ -33,7 +33,7 @@ void ToCSV(D_Vector &array, std::string outputPath, std::string prefix = "",
         fout << prefix << "\t";
     }
     for (size_t j = 0; j < array.n; j++)
-        fout << ((j == 0) ? "" : "\t") << array.vals[j];
+        fout << ((j == 0) ? "" : "\t") << array.data[j];
     if (suffix != std::string(""))
         fout << suffix;
     fout.close();
@@ -65,15 +65,15 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
     System system(u.size());
     system.state.AddSpecies("N");
     system.state.AddSpecies("P");
-    gpuErrchk(cudaMemcpy(system.state.GetSpecies("N").vals, u.data(),
+    gpuErrchk(cudaMemcpy(system.state.GetSpecies("N").data, u.data(),
                          sizeof(T) * u.size(), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(system.state.GetSpecies("P").vals, u.data(),
+    gpuErrchk(cudaMemcpy(system.state.GetSpecies("P").data, u.data(),
                          sizeof(T) * u.size(), cudaMemcpyHostToDevice));
     D_Vector MeshX(mesh_x.size());
     D_Vector MeshY(mesh_y.size());
-    gpuErrchk(cudaMemcpy(MeshX.vals, mesh_x.data(), sizeof(T) * mesh_x.size(),
+    gpuErrchk(cudaMemcpy(MeshX.data, mesh_x.data(), sizeof(T) * mesh_x.size(),
                          cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(MeshY.vals, mesh_y.data(), sizeof(T) * mesh_y.size(),
+    gpuErrchk(cudaMemcpy(MeshY.data, mesh_y.data(), sizeof(T) * mesh_y.size(),
                          cudaMemcpyHostToDevice));
     system.LoadDampnessMatrix(d_D);
     system.LoadStiffnessMatrix(d_S);
@@ -200,7 +200,7 @@ D_Vector SolveCholesky(D_SparseMatrix &d_mat, py::array_t<T> &bVec) {
     assert(d_mat.isDevice);
 
     D_Vector b(bVec.size(), true);
-    gpuErrchk(cudaMemcpy(b.vals, bVec.data(), sizeof(T) * b.n,
+    gpuErrchk(cudaMemcpy(b.data, bVec.data(), sizeof(T) * b.n,
                          cudaMemcpyHostToDevice));
     D_Vector x(d_mat.rows, true);
     solveLinEqBody(d_mat, b, x);

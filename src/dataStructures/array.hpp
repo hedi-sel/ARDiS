@@ -14,20 +14,25 @@ template <typename C> class D_Array {
     int n;
     const bool isDevice;
 
-    C *vals;
+    C *data;
 
     D_Array *_device;
 
+    // Constructors
     __host__ D_Array(int, bool = true);
     __host__ D_Array(const D_Array &, bool copyToOtherMem = false);
+
+    // Manipulation
     __host__ void operator=(const D_Array &);
-    __host__ void Swap(D_Array &);
-
     __host__ void Resize(int);
+    __host__ void Fill(C value);
 
+    // Accessors
+    __host__ __device__ C &At(int i);
+    __host__ __device__ int Size();
+    __host__ __device__ bool IsDevice();
     __host__ cusparseDnVecDescr_t MakeDescriptor();
 
-    __host__ void Fill(C value);
     __host__ ~D_Array();
 
   private:

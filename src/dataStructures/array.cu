@@ -17,7 +17,7 @@ __host__ D_Array<C>::D_Array(const D_Array<C> &m, bool copyToOtherMem)
         (m.isDevice)
             ? (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
             : (isDevice) ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost;
-    gpuErrchk(cudaMemcpy(vals, m.vals, sizeof(C) * n, memCpy));
+    gpuErrchk(cudaMemcpy(data, m.data, sizeof(C) * n, memCpy));
 }
 
 template <typename C>
@@ -27,17 +27,8 @@ __host__ void D_Array<C>::operator=(const D_Array<C> &other) {
         (other.isDevice)
             ? (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
             : (isDevice) ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost;
-    gpuErrchk(cudaMemcpy(vals, other.vals, sizeof(C) * n, memCpy));
+    gpuErrchk(cudaMemcpy(data, other.data, sizeof(C) * n, memCpy));
 }
-
-// template <typename C>  __host__ void D_Array<C>::Swap(D_Array<C> &other)
-// {
-//     assert(isDevice == other.isDevice);
-//     n = other.n;
-//     std::swap(_device, other._device);
-//     std::swap(vals, other.vals);
-//     other.MemFree();
-// }
 
 template <typename C> __host__ void D_Array<C>::Resize(int n) {
     if (n == this->n)
@@ -47,10 +38,29 @@ template <typename C> __host__ void D_Array<C>::Resize(int n) {
     MemAlloc();
 }
 
+template <typename C> __host__ __device__ C &D_Array<C>::At(int i) {
+#ifndef __CUDA_ARCH__
+    if (!isDevice)
+        printf("You tried to access host data while you're on the device.\nYou "
+               "should define your array as a device array.\n");
+    return data[i];
+#else
+    if (isDevice)
+        printf("You tried to access device data while you're on the host.\nYou "
+               "should define your array as a host array.\n");
+    return data[i];
+#endif
+}
+
+template <typename C> __host__ __device__ int D_Array<C>::Size() { return n; }
+template <typename C> __host__ __device__ bool D_Array<C>::IsDevice() {
+    return isDevice;
+}
+
 template <typename C>
 __host__ cusparseDnVecDescr_t D_Array<C>::MakeDescriptor() {
     cusparseDnVecDescr_t descr;
-    cusparseErrchk(cusparseCreateDnVec(&descr, n, vals, T_Cuda));
+    cusparseErrchk(cusparseCreateDnVec(&descr, n, data, T_Cuda));
     return descr;
 }
 
@@ -66,23 +76,23 @@ template <typename C> __host__ D_Array<C>::~D_Array<C>() { MemFree(); }
 template <typename C> __host__ void D_Array<C>::MemAlloc() {
     if (n > 0)
         if (isDevice) {
-            gpuErrchk(cudaMalloc(&vals, n * sizeof(T)));
+            gpuErrchk(cudaMalloc(&data, n * sizeof(T)));
             gpuErrchk(cudaMalloc(&_device, sizeof(D_Array<C>)));
             gpuErrchk(cudaMemcpy(_device, this, sizeof(D_Array<C>),
                                  cudaMemcpyHostToDevice));
         } else {
-            vals = new C[n];
+            data = new C[n];
         }
 }
 
 template <typename C> __host__ void D_Array<C>::MemFree() {
     if (n > 0)
         if (isDevice) {
-            gpuErrchk(cudaFree(vals));
+            gpuErrchk(cudaFree(data));
             gpuErrchk(cudaFree(_device));
             gpuErrchk(cudaDeviceSynchronize());
         } else {
-            delete[] vals;
+            delete[] data;
         }
 }
 

@@ -86,7 +86,7 @@ __device__ __host__ void AddElementBody(D_SparseMatrix *m, int i, int j,
                i, j, val);
         return;
     }
-    m->vals[m->loaded_elements] = val;
+    m->data[m->loaded_elements] = val;
     if (m->type == CSC) {
         if (m->colPtr[j + 1] == 0)
             m->colPtr[j + 1] = m->colPtr[j];
@@ -113,9 +113,9 @@ __global__ void GetDataWidthK(D_SparseMatrix &d_mat, D_Vector &width) {
     if (i >= d_mat.rows)
         return;
     MatrixElement it(d_mat.rowPtr[i], &d_mat);
-    width.vals[i] = 0;
+    width.data[i] = 0;
     do {
-        width.vals[i] += 1;
+        width.data[i] += 1;
         it.Next();
     } while (it.i == i && it.HasNext());
 }
@@ -129,9 +129,9 @@ __device__ __host__ bool isEqualBody(const D_SparseMatrix &m1,
     }
 
     for (int i = 0; i < m1.nnz; i++)
-        if (m1.vals[i] != m2.vals[i]) {
-            printf("rows %i: %e != %e, %e == %e\nimax = %i\n", i, m1.vals[i],
-                   m2.vals[i], m1.vals[i - 1], m2.vals[i - 1], m1.nnz);
+        if (m1.data[i] != m2.data[i]) {
+            printf("rows %i: %e != %e, %e == %e\nimax = %i\n", i, m1.data[i],
+                   m2.data[i], m1.data[i - 1], m2.data[i - 1], m1.nnz);
             return false;
         }
 

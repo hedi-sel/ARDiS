@@ -8,13 +8,13 @@ __global__ void ReductionK(D_Vector &A, int nValues, int shift, int op) {
         if (threadIdx.x % (2 << exp) == 0 &&
             threadIdx.x + (1 << exp) < blockDim.x && i + (1 << exp) < nValues) {
             if (op == sum)
-                A.vals[shift * i] =
-                    A.vals[shift * i] + A.vals[shift * (i + (1 << exp))];
+                A.data[shift * i] =
+                    A.data[shift * i] + A.data[shift * (i + (1 << exp))];
             else if (op == maximum)
-                A.vals[shift * i] =
-                    (A.vals[shift * i] > A.vals[shift * (i + (1 << exp))])
-                        ? A.vals[shift * i]
-                        : A.vals[shift * (i + (1 << exp))];
+                A.data[shift * i] =
+                    (A.data[shift * i] > A.data[shift * (i + (1 << exp))])
+                        ? A.data[shift * i]
+                        : A.data[shift * (i + (1 << exp))];
         }
         __syncthreads();
     }

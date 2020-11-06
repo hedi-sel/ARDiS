@@ -16,7 +16,7 @@ void solveLinEqBody(D_SparseMatrix &d_mat, const D_Vector &b, D_Vector &x) {
     d_mat.OperationCuSolver(
         (void *)cusolverSpDcsrlsvchol, // cusolverSpDcsrlsvchol
                                        // cusolverSpDcsrlsvqr
-        cusolverSpHandle, descr, b.vals, x.vals, singular);
+        cusolverSpHandle, descr, b.data, x.data, singular);
     cudaFree(descr);
     assert(singular[0] == -1);
 

@@ -72,8 +72,8 @@ __global__ void PruneK(D_Vector **state, int size) {
     if (i >= state[0]->n)
         return;
     for (int k = 0; k < size; k++) {
-        if (state[k]->vals[i] < 0)
-            state[k]->vals[i] = 0;
+        if (state[k]->data[i] < 0)
+            state[k]->data[i] = 0;
     }
 }
 
