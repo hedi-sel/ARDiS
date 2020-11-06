@@ -242,7 +242,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     system.LoadStiffnessMatrix(d_S)
     system.LoadDampnessMatrix(d_D)
 
-    system.AddReaction(" N -> 2 N", reaction)
+    system.AddMMReaction(" N -> 2 N", reaction, 1)
     system.AddReaction(" N+P -> 2P", reaction)
     # system.AddReaction(" N -> 2 N", reaction)
     # system.AddReaction(" 2N -> N", reaction)

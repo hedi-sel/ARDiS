@@ -5,6 +5,8 @@
 State::State(int size) : size(size) {}
 
 D_Vector &State::AddSpecies(std::string name) {
+    deviceStateToBeUpdated = true;
+    mappingStateToBeUpdated = true;
     names[name] = data.size();
     data.push_back(new D_Vector(size));
     return *(data.at(data.size() - 1));
@@ -30,19 +32,45 @@ void State::Print(int i) {
 State::~State() {
     for (auto arrPtr : data)
         delete arrPtr;
+    if (deviceState != NULL)
+        cudaFree(deviceState);
 }
 
 D_Vector **State::GetDeviceState() {
-    D_Vector **output = new D_Vector *[data.size()];
-    D_Vector **d_output;
-    cudaMalloc(&d_output, sizeof(D_Vector *) * data.size());
-    for (int i = 0; i < data.size(); i++) {
-        output[i] = (D_Vector *)data.at(i)->_device;
+    if (deviceStateToBeUpdated) {
+        D_Vector **output = new D_Vector *[data.size()];
+        if (deviceState != NULL)
+            cudaFree(deviceState);
+        cudaMalloc(&deviceState, sizeof(D_Vector *) * data.size());
+        for (int i = 0; i < data.size(); i++) {
+            output[i] = (D_Vector *)data.at(i)->_device;
+        }
+        cudaMemcpy(deviceState, output, sizeof(D_Vector *) * data.size(),
+                   cudaMemcpyHostToDevice);
+        delete output;
+        deviceStateToBeUpdated = false;
     }
-    cudaMemcpy(d_output, output, sizeof(D_Vector *) * data.size(),
-               cudaMemcpyHostToDevice);
-    delete output;
-    return d_output;
+    return deviceState;
 }
 
-void State::FreeDeviceState(D_Vector **freeMe) { cudaFree(freeMe); }
+__global__ void GetMappingStateK(D_Vector **deviceState, T ***mappingState,
+                                 int nSpecies) {
+    int n = deviceState[0]->Size();
+    mappingState = new T **[n];
+    for (int i = 0; i < n; i++) {
+        mappingState[i] = new T *[nSpecies];
+        for (int j = 0; j < nSpecies; j++) {
+            mappingState[i][j] = &deviceState[j]->At(i);
+        }
+    }
+}
+
+T ***State::GetMappingState() {
+    if (mappingStateToBeUpdated) {
+        if (deviceState != nullptr)
+            cudaFree(deviceState);
+        GetMappingStateK<<<1, 1>>>(GetDeviceState(), mappingState, data.size());
+        mappingStateToBeUpdated = false;
+    }
+    return mappingState;
+}

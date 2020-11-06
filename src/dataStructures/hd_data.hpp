@@ -16,12 +16,14 @@ template <typename DataType> class HDData {
     };
     HDData(DataType *data, bool itsDevice) : HDData() { Set(data, itsDevice); }
     HDData(DataType data) : HDData() { Set(&data, false); }
-    DataType &operator()(bool device = false) {
+
+    __host__ __device__ DataType &operator()(bool device = false) {
         if (device)
             return *_device;
         else
             return *_host;
     }
+
     void SetDevice(DataType *data, bool itsDevice = true) {
         if (itsDevice) {
             gpuErrchk(cudaMemcpy(_device, data, sizeof(DataType),

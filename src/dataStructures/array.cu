@@ -39,17 +39,7 @@ template <typename C> __host__ void D_Array<C>::Resize(int n) {
 }
 
 template <typename C> __host__ __device__ C &D_Array<C>::At(int i) {
-#ifndef __CUDA_ARCH__
-    if (!isDevice)
-        printf("You tried to access host data while you're on the device.\nYou "
-               "should define your array as a device array.\n");
     return data[i];
-#else
-    if (isDevice)
-        printf("You tried to access device data while you're on the host.\nYou "
-               "should define your array as a host array.\n");
-    return data[i];
-#endif
 }
 
 template <typename C> __host__ __device__ int D_Array<C>::Size() { return n; }

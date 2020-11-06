@@ -37,24 +37,26 @@ __global__ void ConsumeReactionK(D_Vector **state, int n_species, int *reagents,
         return;
     T progress = base_rate;
     for (int k = 0; k < n_reagents; k++)
-        rate.Rate(state[reagents[k]]->data[i], progress);
+        rate.Rate(state[reagents[k]]->At(i), progress);
     for (int k = 0; k < n_reagents; k++)
-        state[reagents[k]]->data[i] -= progress;
+        state[reagents[k]]->At(i) -= progress;
     for (int k = 0; k < n_products; k++)
-        state[products[k]]->data[i] += progress;
+        state[products[k]]->At(i) += progress;
     return;
 }
 
 template <typename ReactionType>
-void ConsumeReaction(State &state, ReactionType &reaction, T base_reac_rate) {
+void ConsumeReaction(State &state, ReactionType &reaction, T dt) {
+    // std::cout << (ReactionType == ReactionMassAction) ? "mA" : "MM";
     auto tb = Make1DThreadBlock(state.size);
     auto d_state = state.GetDeviceState();
     auto products = getRawCoeffs(state, reaction.Products);
     auto reagents = getRawCoeffs(state, reaction.Reagents);
     ConsumeReactionK<<<tb.block, tb.thread>>>(
         d_state, state.data.size(), reagents.first, reagents.second,
-        products.first, products.second, base_reac_rate, reaction);
+        products.first, products.second, reaction.BaseRate(dt),
+        *reaction._device);
     gpuErrchk(cudaDeviceSynchronize());
     cudaFree(reagents.first);
-    state.FreeDeviceState(d_state);
+    // state.FreeDeviceState(d_state);
 }

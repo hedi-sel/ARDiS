@@ -94,10 +94,10 @@ void System::IterateReaction(T dt, bool degradation) {
         species->Prune();
     }
     for (auto reaction : reactions) {
-        ConsumeReaction<decltype(reaction)>(state, reaction, reaction.K * dt);
+        ConsumeReaction<decltype(reaction)>(state, reaction, dt);
     }
-    for (auto mmreac : this->mmreactions) {
-        throw "Michaelis Menten reactiosn not implemented yet";
+    for (auto reaction : this->mmreactions) {
+        ConsumeReaction<decltype(reaction)>(state, reaction, dt);
     }
 #ifndef NDEBUG_PROFILING
     profiler.End();
@@ -133,16 +133,9 @@ bool System::IterateDiffusion(T dt) {
             return false;
         }
     }
-
 #ifndef NDEBUG_PROFILING
     profiler.End();
 #endif
-
-    // std::ofstream fout;
-    // fout.open("output/CgmIterCount", std::ios_base::app);
-    // // std::cout << t << "\t" << solver.n_iter_last << "\n";
-    // fout << t << "\t" << solver.n_iter_last << "\n";
-    // fout.close();
 
     t += dt;
     return true;
@@ -150,13 +143,11 @@ bool System::IterateDiffusion(T dt) {
 
 void System::Print(int printCount) {
     state.Print(printCount);
-    for (int i = 0; i < reactions.size(); i++) {
-        for (auto coeff : reactions.at(i).Reagents)
-            std::cout << coeff.second << "." << coeff.first << " + ";
-        std::cout << "-> ";
-        for (auto coeff : reactions.at(i).Products)
-            std::cout << coeff.second << "." << coeff.first << " + ";
-        std::cout << "k=" << reactions.at(i).K << "\n";
+    for (auto reaction : reactions) {
+        reaction.Print();
+    }
+    for (auto reaction : this->mmreactions) {
+        reaction.Print();
     }
 #ifndef NDEBUG_PROFILING
     std::cout << "Global Profiler : \n";
