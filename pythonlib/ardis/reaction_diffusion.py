@@ -1,5 +1,5 @@
-from modulePython.dna import *
-from modulePython.read_mtx import *
+from .ardisLib import *
+from .read_mtx import *
 
 
 def ToD_SparseMatrix(matrix, m_type=MatrixType.COO):
@@ -42,35 +42,35 @@ class State:
             self.data[self.names[name]].Print()
 
 
-class System(State):
-    d_D = 0
-    d_S = 0
-    d_M = 0
-    last_dt = 0
-    epsilon = 1.e-3
+# class System(State):
+#     d_D = 0
+#     d_S = 0
+#     d_M = 0
+#     last_dt = 0
+#     epsilon = 1.e-3
 
-    Reactions = []
+#     Reactions = []
 
-    def LoadStiffnessMatrix(self, d_S):
-        self.d_S = d_S
+#     def LoadStiffnessMatrix(self, d_S):
+#         self.d_S = d_S
 
-    def LoadDampnessMatrix(self, d_D):
-        self.d_D = d_D
+#     def LoadDampnessMatrix(self, d_D):
+#         self.d_D = d_D
 
-    def IterateDiffusion(self, dt):
-        if self.last_dt != dt:
-            if type(self.d_D) == int or type(self.d_S) == int:
-                print("Error: you have to load damping and stiffness matrices first")
-            else:
-                self.d_M = self.d_D + self.d_S * dt
-                self.last_dt = dt
+#     def IterateDiffusion(self, dt):
+#         if self.last_dt != dt:
+#             if type(self.d_D) == int or type(self.d_S) == int:
+#                 print("Error: you have to load damping and stiffness matrices first")
+#             else:
+#                 self.d_M = self.d_D + self.d_S * dt
+#                 self.last_dt = dt
 
-        for d_U in self.data:
-            d_DU = self.d_D.Dot(d_U)
-            SolveConjugateGradientRawData(self.d_M, d_DU, d_U, self.epsilon)
+#         for d_U in self.data:
+#             d_DU = self.d_D.Dot(d_U)
+#             SolveConjugateGradientRawData(self.d_M, d_DU, d_U, self.epsilon)
 
-    def AddReaction(self, reag, kr, prod, kp, rate=1):
-        Reactions = Reactions + [([(reag, kr)], [(prod, kp)], rate)]
+#     def AddReaction(self, reag, kr, prod, kp, rate=1):
+#         Reactions = Reactions + [([(reag, kr)], [(prod, kp)], rate)]
 
-    def IterateReaction(self, dt):
-        print("No reaction")
+#     def IterateReaction(self, dt):
+#         print("No reaction")

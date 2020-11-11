@@ -41,10 +41,10 @@ class RectangleZone:
     x0, x1, y0, y1 = 0.0, 1.0, 0.0, 1.0
 
     def __init__(self, x0, y0, x1, y1):
-        self.x0 = x0
-        self.x1 = x1
-        self.y0 = y0
-        self.y1 = y1
+        self.x0 = min(x0,x1)
+        self.x1 = max(y0,y1)
+        self.y0 = min(x0,x1)
+        self.y1 = max(y0,y1)
 
     def IsInside(self, x, y):
         return self.x0 <= x and self.x1 >= x and self.y0 <= y and self.y1 >= y

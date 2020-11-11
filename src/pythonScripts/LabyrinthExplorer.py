@@ -1,10 +1,5 @@
-import argparse
-import modulePython.dna as dna
-from modulePython.read_mtx import *
-import modulePython.reaction_diffusion as rd
-from modulePython.concentration_manager import *
+from ardis import *
 
-import multiprocessing as mp
 from scipy.sparse import *
 import scipy.sparse.linalg as spLnal
 import matplotlib.pyplot as plt
@@ -12,8 +7,11 @@ import matplotlib.tri as tri
 import matplotlib.colors as colors
 from matplotlib import ticker, cm
 import numpy as np
+
+# import multiprocessing as mp
 import time
 import math
+import argparse
 import os
 from enum import Enum
 
@@ -55,9 +53,10 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
     os.system("rm -rf " + printFolder + "/" + name)
     os.system("mkdir " + printFolder + "/" + name + " 2> ./null")
 
-    k=0
+    k = 0
+    stride = 1 + 3 # 1 + number of species
     # stateName, nSpecies = lines.pop(0).split("\t")
-    for i in range(0, len(lines) // 3):
+    for i in range(0, len(lines) // stride):
         if (i % plotEvery == 0):
             # print("Printing",i)
             fig, ax = plt.subplots()
@@ -67,16 +66,16 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
             else:
                 title = str(round(i * dt, 1)) + "s"
 
-            N = int(lines[i*3])
+            N = int(lines[i*stride])
             plt.scatter(Mesh.x, Mesh.y, marker='s', s=5 * math.sqrt(Surface * 1.0 / N), c=[[0,0.1,0.3]], alpha=1, vmin=0, vmax=1)
 
-            line = lines[i*3+1].split("\t")
+            line = lines[i*stride+1].split("\t")
             line.pop(0)
             U = np.array(line, dtype=np.float32)
             ax.set_title(title)
             plt.scatter(Mesh.x, Mesh.y, s=U*2 * math.sqrt(Surface * 1.0 / N), c=[[0.8,0.1,0.2]], alpha=1, vmin=0, vmax=1)
 
-            line = lines[i*3+2].split("\t")
+            line = lines[i*stride+3].split("\t")
             line.pop(0)
             U = np.array(line, dtype=np.float32)
             # for j in range(0, len(U)):
@@ -89,7 +88,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
             plt.close()
 
         if verbose: 
-            if  i >= k * len(lines) / 30:
+            if  i >= k * len(lines) / 10 / stride:
                 print(str(k * 10) + "% completed")
                 k += 1
 
@@ -219,23 +218,26 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     if not fastCalculation:
         os.system("rm -f "+csvFolder+"/"+name+".csv")
 
-    d_S = rd.ToD_SparseMatrix(LoadMatrixFromFile(
-        stiffnessPath, Readtype.Symetric), dna.MatrixType.CSR)
+    d_S = ToD_SparseMatrix(LoadMatrixFromFile(
+        stiffnessPath, Readtype.Symetric), MatrixType.CSR)
     if(verbose):
         print("Stiffness matrix loaded ...")
-    d_D = rd.ToD_SparseMatrix(LoadMatrixFromFile(
-        dampingPath, Readtype.Symetric), dna.MatrixType.CSR)
+    d_D = ToD_SparseMatrix(LoadMatrixFromFile(
+        dampingPath, Readtype.Symetric), MatrixType.CSR)
     if (verbose):
         print("Dampness matrix loaded ...")
     
     loading_time = time.time()-start
     start = time.time()
 
-    system = dna.System(d_D.cols)
-    system.SetEpsilon(epsilon)
-    system.SetDrain(drain)
+    system = System(d_D.Cols)
+    system.Drain = drain
+    system.Epsilon = epsilon
+    
     system.AddSpecies("N")
     system.SetSpecies("N", U)
+    system.AddSpecies("NP")
+    system.SetSpecies("NP", np.array([0]*len(U)))
     system.AddSpecies("P")
     system.SetSpecies("P", U)
 
@@ -243,7 +245,8 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     system.LoadDampnessMatrix(d_D)
 
     system.AddMMReaction(" N -> 2 N", reaction, 1)
-    system.AddReaction(" N+P -> 2P", reaction)
+    system.AddReaction(" N+P -> NP", reaction)
+    system.AddMMReaction(" NP -> 2P", reaction, 1)
     # system.AddReaction(" N -> 2 N", reaction)
     # system.AddReaction(" 2N -> N", reaction)
 
@@ -251,11 +254,11 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     k = 0
 
     if (DoRecordResult):
-        FinishZone = dna.RectangleZone(0, 0, 0.5, 500)
+        FinishZone = RectangleZone(0, 0, 0.5, 500)
         FinishTime = -1
-        d_MeshX = dna.D_Vector(len(Mesh.x))
+        d_MeshX = D_Vector(len(Mesh.x))
         d_MeshX.Fill(Mesh.x)
-        d_MeshY = dna.D_Vector(len(Mesh.y))
+        d_MeshY = D_Vector(len(Mesh.y))
         d_MeshY.Fill(Mesh.y)
 
     for i in range(0, Nit):
@@ -265,10 +268,9 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
 
         if not fastCalculation:
             if i % storeEvery == 0:
-                dna.ToCSV(system.State, "./"+csvFolder+"/"+name+".csv")
+                ToCSV(system.State, "./"+csvFolder+"/"+name+".csv")
 
             if DoRecordResult and FinishTime == -1 and GetMaxZone(U,Mesh,FinishZone) > 0.8:
-            # if DoRecordResult and dna.zones.GetMinZone(d_U, d_MeshX, d_MeshY, FinishZone) > 0.8:
                 FinishTime = i*dt
 
             if verbose:
@@ -279,7 +281,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
             # if (i > 0 and (system.GetSpecies("N") - d_U).Norm() < 1.e-3):
             #     print(i+1, "iterations done")
             #     break
-            d_U = dna.D_Vector(system.GetSpecies("N"))
+            d_U = D_Vector(system.GetSpecies("N"))
             U = d_U.ToNumpyArray()
 
     print("Exploration finished in", i*dt, "s")

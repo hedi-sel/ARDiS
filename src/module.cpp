@@ -12,7 +12,7 @@
 #include "matrixOperations/basic_operations.hpp"
 #include "reactionDiffusionSystem/system.hpp"
 
-PYBIND11_MODULE(dna, m) {
+PYBIND11_MODULE(ardisLib, m) {
     py::enum_<MatrixType>(m, "MatrixType")
         .value("COO", COO)
         .value("CSR", CSR)
@@ -84,8 +84,22 @@ PYBIND11_MODULE(dna, m) {
         .def("Print", &System::Print, py::arg("printCount") = 5)
         .def_readwrite("State", &System::state,
                        py::return_value_policy::reference)
-        .def("SetDrain", &System::SetDrain)
-        .def("SetEpsilon", &System::SetEpsilon);
+        .def_property(
+            "Epsilon",
+            [](System &self) { // Getter
+                return self.epsilon;
+            },
+            [](System &self, T value) { // Setter
+                self.epsilon = value;
+            })
+        .def_property(
+            "Drain",
+            [](System &self) { // Getter
+                return self.drain;
+            },
+            [](System &self, T value) { // Setter
+                self.drain = value;
+            });
 
     py::class_<D_SparseMatrix>(m, "D_SparseMatrix")
         .def(py::init<int, int, int, MatrixType>())
@@ -163,18 +177,21 @@ PYBIND11_MODULE(dna, m) {
                 return c;
             },
             py::return_value_policy::take_ownership)
-        .def_readonly("nnz", &D_SparseMatrix::nnz)
-        .def_readonly("rows", &D_SparseMatrix::rows)
-        .def_readonly("cols", &D_SparseMatrix::cols)
-        .def_readonly("type", &D_SparseMatrix::type)
-        .def_readonly("isDevice", &D_SparseMatrix::isDevice);
+        .def_readonly("Nnz", &D_SparseMatrix::nnz)
+        .def_property_readonly("Shape",
+                               [](D_SparseMatrix &self) { // Getter
+                                   return std::pair<int, int>(self.rows,
+                                                              self.cols);
+                               })
+        .def_readonly("Rows", &D_SparseMatrix::rows)
+        .def_readonly("Cols", &D_SparseMatrix::cols)
+        .def_readonly("Type", &D_SparseMatrix::type)
+        .def_readonly("IsDevice", &D_SparseMatrix::isDevice);
 
     py::class_<D_Vector>(m, "D_Vector")
         .def(py::init<int>())
         .def(py::init<const D_Vector &>())
         .def("At", &D_Vector::At)
-        .def("Size", &D_Vector::Size)
-        .def("IsDevice", &D_Vector::IsDevice)
         .def("Print", &D_Vector::Print, py::arg("printCount") = 5)
         .def("Norm",
              [](D_Vector &self) {

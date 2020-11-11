@@ -7,6 +7,12 @@ region.png
 src/pythonScripts/modulePython/dna.so
 src/pythonScripts/modulePython/__pycache__/*
 src/pythonScripts/__pycache__/*
+pythonlib/*
+!pythonlib/ardis/*
+!pythonlib/setup.py
+!pythonlib/build.sh
+
+*.so
 *.csv
 *.png
 null
