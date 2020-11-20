@@ -5,6 +5,11 @@ import math
 def Sign(x0, y0, x1, y1, x2, y2):
     return (x0 - x2) * (y1 - y2) - (x1 - x2) * (y0 - y2)
 
+class Point:
+    x, y = 0.0, 0.0
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
 class ConditionalZone:
     zone, condition = 0, 0
@@ -29,6 +34,14 @@ class TriangleZone:
         self.y0 = y0
         self.y1 = y1
         self.y2 = y2
+
+    # def __init__(self, p0, p1, p2):
+    #     self.x0 = p0.x
+    #     self.x1 = p1.x
+    #     self.x2 = p2.x
+    #     self.y0 = p0.y
+    #     self.y1 = p1.y
+    #     self.y2 = p2.y
 
     def IsInside(self, x, y):
         b1 = Sign(x, y, self.x0, self.y0, self.x1, self.y1) < 0.0
@@ -72,7 +85,6 @@ def GetMinZone(U, Mesh, Zone):
     for i in range(0, len(U)):
         if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] < Min:
             Min = U[i]
-            iM = i
     return Min
 
 
@@ -81,7 +93,6 @@ def GetMaxZone(U, Mesh, Zone):
     for i in range(0, len(U)):
         if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] > Max:
             Max = U[i]
-            iM = i
     return Max
 
 

@@ -7,8 +7,10 @@ region.png
 src/pythonScripts/modulePython/dna.so
 src/pythonScripts/modulePython/__pycache__/*
 src/pythonScripts/__pycache__/*
-pythonlib/*
-!pythonlib/ardis/*
+pythonlib/build/*
+pythonlib/ardis.egg-info/*
+pythonlib/dist/*
+pythonlib/ardis/__pycache__/*
 !pythonlib/setup.py
 !pythonlib/build.sh
 

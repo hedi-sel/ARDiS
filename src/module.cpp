@@ -25,7 +25,18 @@ PYBIND11_MODULE(ardisLib, m) {
              py::return_value_policy::reference)
         .def("GetSpecies", &State::GetSpecies,
              py::return_value_policy::reference)
-        .def("Print", &State::Print, py::arg("printCount") = 5);
+        .def("Print", &State::Print, py::arg("printCount") = 5)
+        .def("ListSpecies",
+             [](State &self) {
+                 py::list listSpecies;
+                 for (std::map<std::string, int>::iterator it =
+                          self.names.begin();
+                      it != self.names.end(); ++it) {
+                     listSpecies.append(it->first);
+                 }
+                 return
+             })
+        .def_readonly("Size", &State::size);
     py::class_<System>(m, "System")
         .def(py::init<int>())
         .def("IterateDiffusion", &System::IterateDiffusion)
