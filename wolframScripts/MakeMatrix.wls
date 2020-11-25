@@ -29,7 +29,7 @@ If[cInt > centerX, excludeReg = RegionUnion[ excludeReg, Rectangle[{centerX, cen
 Export["region2.png",RegionImage[excludeReg]] *)
 
 region = RegionDifference[includeReg,excludeReg]
-Export["region.png",RegionImage[region]]
+(* Export["region.png",RegionImage[region]] *)
 
 (* 
 branches = 

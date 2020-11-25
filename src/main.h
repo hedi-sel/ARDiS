@@ -52,118 +52,115 @@ bool LabyrinthExplore(std::string dampingPath, std::string stiffnessPath,
                       py::array_t<T> &u, T reaction, T max_time, T dt,
                       std::string name, py::array_t<T> &mesh_x,
                       py::array_t<T> &mesh_y) {
-    std::string outputPath = "./outputCsv/" + name + ".csv";
-    remove(outputPath.c_str());
+    // std::string outputPath = "./outputCsv/" + name + ".csv";
+    // remove(outputPath.c_str());
 
-    bool isSuccess = true;
-    D_SparseMatrix d_D(ReadFromFile(dampingPath), true);
-    d_D.ConvertMatrixToCSR();
-    D_SparseMatrix d_S(ReadFromFile(stiffnessPath), true);
-    d_S.ConvertMatrixToCSR();
-    ReadFromFile(dampingPath);
-    ReadFromFile(stiffnessPath);
-    System system(u.size());
-    system.state.AddSpecies("N");
-    system.state.AddSpecies("P");
-    gpuErrchk(cudaMemcpy(system.state.GetSpecies("N").data, u.data(),
-                         sizeof(T) * u.size(), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(system.state.GetSpecies("P").data, u.data(),
-                         sizeof(T) * u.size(), cudaMemcpyHostToDevice));
-    D_Vector MeshX(mesh_x.size());
-    D_Vector MeshY(mesh_y.size());
-    gpuErrchk(cudaMemcpy(MeshX.data, mesh_x.data(), sizeof(T) * mesh_x.size(),
-                         cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(MeshY.data, mesh_y.data(), sizeof(T) * mesh_y.size(),
-                         cudaMemcpyHostToDevice));
-    system.LoadDampnessMatrix(d_D);
-    system.LoadStiffnessMatrix(d_S);
-    system.AddReaction("N", 1, "N", 2, reaction);
-    std::vector<stochCoeff> input;
-    input.push_back(std::pair<std::string, int>("N", 1));
-    input.push_back(std::pair<std::string, int>("P", 1));
-    std::vector<stochCoeff> output;
-    input.push_back(std::pair<std::string, int>("P", 2));
-    system.AddReaction(ReactionMassAction(input, output, reaction));
-    system.Print();
+    // bool isSuccess = true;
+    // D_SparseMatrix d_D(ReadFromFile(dampingPath), true);
+    // d_D.ConvertMatrixToCSR();
+    // D_SparseMatrix d_S(ReadFromFile(stiffnessPath), true);
+    // d_S.ConvertMatrixToCSR();
+    // ReadFromFile(dampingPath);
+    // ReadFromFile(stiffnessPath);
+    // System system(u.size());
+    // system.state.AddSpecies("N");
+    // system.state.AddSpecies("P");
+    // gpuErrchk(cudaMemcpy(system.state.GetSpecies("N").data, u.data(),
+    //                      sizeof(T) * u.size(), cudaMemcpyHostToDevice));
+    // gpuErrchk(cudaMemcpy(system.state.GetSpecies("P").data, u.data(),
+    //                      sizeof(T) * u.size(), cudaMemcpyHostToDevice));
+    // D_Vector MeshX(mesh_x.size());
+    // D_Vector MeshY(mesh_y.size());
+    // gpuErrchk(cudaMemcpy(MeshX.data, mesh_x.data(), sizeof(T) *
+    // mesh_x.size(),
+    //                      cudaMemcpyHostToDevice));
+    // gpuErrchk(cudaMemcpy(MeshY.data, mesh_y.data(), sizeof(T) *
+    // mesh_y.size(),
+    //                      cudaMemcpyHostToDevice));
+    // system.LoadDampnessMatrix(d_D);
+    // system.LoadStiffnessMatrix(d_S);
+    // system.AddReaction("N", 1, "N", 2, reaction);
+    // std::vector<stochCoeff> input;
+    // input.push_back(std::pair<std::string, int>("N", 1));
+    // input.push_back(std::pair<std::string, int>("P", 1));
+    // std::vector<stochCoeff> output;
+    // input.push_back(std::pair<std::string, int>("P", 2));
+    // system.AddReaction(ReactionMassAction(input, output, reaction));
+    // system.Print();
 
-    int plotCount = 0;
-    int progPrintCount = 0;
+    // int plotCount = 0;
+    // int progPrintCount = 0;
 
-    int nTests = 5;
-    T *angles = new T[nTests + 2];
-    for (int i = 0; i < nTests + 2; i++)
-        angles[i] = (M_PI / 2) * i /* (nTests + 1 - i) */ / (nTests + 1.0);
-    TriangleZone *TestZones = new TriangleZone[nTests + 1];
-    for (int i = 0; i < nTests + 1; i++)
-        TestZones[i] =
-            TriangleZone(0, 0, 10 * cos(angles[i]), 10 * sin(angles[i]),
-                         10 * cos(angles[i + 1]), 10 * sin(angles[i + 1]));
-    T *TestMinTime = new T[nTests];
-    T *TestMaxTime = new T[nTests];
-    int currentMinTest = 0;
-    int currentMaxTest = 0;
+    // int nTests = 5;
+    // T *angles = new T[nTests + 2];
+    // for (int i = 0; i < nTests + 2; i++)
+    //     angles[i] = (M_PI / 2) * i /* (nTests + 1 - i) */ / (nTests + 1.0);
+    // TriangleZone *TestZones = new TriangleZone[nTests + 1];
+    // for (int i = 0; i < nTests + 1; i++)
+    //     TestZones[i] =
+    //         TriangleZone(0, 0, 10 * cos(angles[i]), 10 * sin(angles[i]),
+    //                      10 * cos(angles[i + 1]), 10 * sin(angles[i + 1]));
+    // T *TestMinTime = new T[nTests];
+    // T *TestMaxTime = new T[nTests];
+    // int currentMinTest = 0;
+    // int currentMaxTest = 0;
 
-    RectangleZone FinishZone = RectangleZone(0, 0, 0.2, 10);
-    bool Finished = false;
-    T FinishTime = 0;
+    // RectangleZone FinishZone = RectangleZone(0, 0, 0.2, 10);
+    // bool Finished = false;
+    // T FinishTime = 0;
 
-    float threashold = 0.8;
-    float timeAfterReaching = 3;
+    // float threashold = 0.8;
+    // float timeAfterReaching = 3;
 
-    for (int i = 0; i < max_time / dt; i++) {
+    // for (int i = 0; i < max_time / dt; i++) {
 
-        ToCSV(system.state, outputPath);
-        plotCount += 1;
+    //     ToCSV(system.state, outputPath);
+    //     plotCount += 1;
 
-        if (!system.IterateDiffusion(dt))
-            isSuccess = false;
-        system.IterateReaction(dt);
+    //     if (!system.IterateDiffusion(dt))
+    //         isSuccess = false;
+    //     system.IterateReaction(dt);
 
-        if (max_time / dt >= 100 && i >= progPrintCount * max_time / dt / 10 &&
-            i < progPrintCount * max_time / dt / 10 + 1) {
-            printf("%i completed \n", progPrintCount * 10);
-            progPrintCount += 1;
-        }
+    //     if (max_time / dt >= 100 && i >= progPrintCount * max_time / dt / 10
+    //     &&
+    //         i < progPrintCount * max_time / dt / 10 + 1) {
+    //         printf("%i completed \n", progPrintCount * 10);
+    //         progPrintCount += 1;
+    //     }
 
-        // while (currentMinTest < nTests &&
-        //        GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY,
-        //                   TestZones[currentMinTest + 1]) > threashold) {
-        //     printf("Min %i : %f\n", currentMinTest, i * dt);
-        //     TestMinTime[currentMinTest] = i * dt;
-        //     currentMinTest += 1;
-        // }
-        while (currentMaxTest < nTests &&
-               GetMaxZone(system.state.GetSpecies("N"), MeshX, MeshY,
-                          TestZones[currentMaxTest]) > threashold) {
-            printf("Max %i : %f\n", currentMaxTest, i * dt);
-            TestMaxTime[currentMaxTest] = i * dt;
-            currentMaxTest += 1;
-        }
+    //     while (currentMaxTest < nTests &&
+    //            GetMaxZone(system.state.GetSpecies("N"), MeshX, MeshY,
+    //                       TestZones[currentMaxTest]) > threashold) {
+    //         printf("Max %i : %f\n", currentMaxTest, i * dt);
+    //         TestMaxTime[currentMaxTest] = i * dt;
+    //         currentMaxTest += 1;
+    //     }
 
-        if (GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY, FinishZone) >
-            threashold) {
-            FinishTime = i * dt;
-            Finished = true;
-        }
+    //     if (GetMinZone(system.state.GetSpecies("N"), MeshX, MeshY,
+    //     FinishZone) >
+    //         threashold) {
+    //         FinishTime = i * dt;
+    //         Finished = true;
+    //     }
 
-        if (Finished && i * dt >= FinishTime * timeAfterReaching)
-            break;
-    }
+    //     if (Finished && i * dt >= FinishTime * timeAfterReaching)
+    //         break;
+    // }
 
-    if (Finished) {
-        printf("Labyrinthe traversé! Arrivée à t= %f s \n", FinishTime);
-        // for (int i = 0; i < nTests; i++) {
-        //     printf("Exterior time %i : %f \n", i, TestMinTime[i]);
-        //     printf("Interior time %i : %f \n", i, TestMaxTime[i]);
-        // }
-    } else
-        printf("Labyrinth not completed\n");
+    // if (Finished) {
+    //     printf("Labyrinthe traversé! Arrivée à t= %f s \n", FinishTime);
+    //     // for (int i = 0; i < nTests; i++) {
+    //     //     printf("Exterior time %i : %f \n", i, TestMinTime[i]);
+    //     //     printf("Interior time %i : %f \n", i, TestMaxTime[i]);
+    //     // }
+    // } else
+    //     printf("Labyrinth not completed\n");
 
-    delete[] angles;
-    delete[] TestMaxTime;
-    delete[] TestMinTime;
-    delete[] TestZones;
-    return isSuccess;
+    // delete[] angles;
+    // delete[] TestMaxTime;
+    // delete[] TestMinTime;
+    // delete[] TestZones;
+    // return isSuccess;
 }
 
 void checkSolve(D_SparseMatrix &M, D_Vector &d_b, D_Vector &d_x) {

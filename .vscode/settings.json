@@ -104,7 +104,8 @@
         "__threading_support": "cpp",
         "__undef_macros": "cpp",
         "__tuple": "cpp",
-        "__config": "cpp"
+        "__config": "cpp",
+        "__functional_base_03": "cpp"
     },
     "C_Cpp.default.includePath": [
         "~/Libraries/pybind11/include",

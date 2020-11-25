@@ -43,6 +43,8 @@ template <typename C> class D_Array {
 // typedef D_Array<T> D_Vector;
 
 template class D_Array<T>;
+template class D_Array<bool>;
+template class D_Array<int>;
 
 class D_Vector : public D_Array<T> {
   public:
@@ -52,5 +54,4 @@ class D_Vector : public D_Array<T> {
     __host__ void PruneUnder(T value = 0);
 };
 
-template class D_Array<int>;
 template class D_Array<D_Vector *>;

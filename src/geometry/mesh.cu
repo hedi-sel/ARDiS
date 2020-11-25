@@ -1,0 +1,13 @@
+#include "mesh.hpp"
+#include <cuda_runtime.h>
+
+D_Mesh::D_Mesh(D_Vector &X, D_Vector &Y) : X(X), Y(Y) {
+    assert(X.n == Y.n);
+    // X.Print();
+    // this->X.Print();
+    // printf("Here\n");
+}
+
+__host__ __device__ int D_Mesh::Size() { return X.n; }
+
+D_Mesh::~D_Mesh() {}

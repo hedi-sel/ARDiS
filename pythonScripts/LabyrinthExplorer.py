@@ -1,5 +1,7 @@
 from ardis import *
 
+import ardis.d_geometry as dg
+
 from scipy.sparse import *
 import scipy.sparse.linalg as spLnal
 import matplotlib.pyplot as plt
@@ -189,7 +191,7 @@ def PrepareArea(out, ins, thickness=1, name="noName"):
 
 
 def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, return_item=ReturnType.SUCCESS, storeEvery=1, verbose=True, dt=1e-2, epsilon=1e-3, max_time=3, plot_dt=1e-1, drain=1e-13, guess=float(0),
-                     threashold=0.9, startZone=RectangleZone(0, 0, 500, 0.2), fastCalculation=False):
+                     threashold=0.9, startZone=dg.RectangleZone(0, 0, 500, 0.2), fastCalculation=False):
     print("Starting exploration on experiment :", name)
     if True:  # Prepare output type and return item
         DoPlot = False
@@ -211,14 +213,6 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
 
         Mesh = LoadMeshFromFile(meshPath)
 
-        n = len(Mesh.x)
-
-        fillVal = 0
-        U = np.full(n, fillVal)
-        FillZone(U, Mesh, startZone, 1)
-        if verbose:
-            print("Starting vector :", U)
-
     # Remove csv file from previous calculations
     if not fastCalculation:
         os.system("rm -f "+csvFolder+"/"+name+".csv")
@@ -239,10 +233,18 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     system.Drain = drain
     system.Epsilon = epsilon
 
+    MeshX = D_Vector(Mesh.x)
+    MeshY = D_Vector(Mesh.y)
+    n = len(Mesh.x)
+
+    U = D_Vector(n)
+    U.FillValue(0)
+    dg.FillZone(U, dg.D_Mesh(MeshX, MeshY), startZone, 1)
+
     system.AddSpecies("N")
     system.SetSpecies("N", U)
     system.AddSpecies("NP")
-    system.SetSpecies("NP", np.array([0]*len(U)))
+    system.SetSpecies("NP", np.array([0] * U.Size))
     system.AddSpecies("P")
     system.SetSpecies("P", U)
 

@@ -16,5 +16,5 @@ pythonlib/ardis/__pycache__/*
 
 *.so
 *.csv
-*.png
+*.pyc
 null

@@ -1,12 +1,23 @@
 #pragma once
 
 #include "point_2d.hpp"
+#include "pybind11_include.hpp"
 #include <constants.hpp>
 #include <dataStructures/hd_data.hpp>
 
 struct Zone {
-    __device__ __host__ bool IsInside(T x, T y) const { return false; }
-    __device__ __host__ bool IsInside(Point2D p) { return false; }
+    // __device__ __host__ virtual bool IsInside(T x, T y) = 0;
+    // __device__ __host__ virtual bool IsInside(Point2D p) = 0;
+};
+
+struct SimpleZone : Zone {
+    bool always_return;
+    SimpleZone(bool b) : always_return(b){};
+    __device__ __host__ bool IsInside(T x, T y) { return always_return; }
+    __device__ __host__ bool IsInside(Point2D p) { return always_return; }
+
+    static SimpleZone all;
+    static SimpleZone none;
 };
 
 struct RectangleZone : Zone {
@@ -16,7 +27,7 @@ struct RectangleZone : Zone {
     RectangleZone(T x0, T y0, T x1, T y1);
     RectangleZone(Point2D p0, Point2D p1);
 
-    __device__ __host__ bool IsInside(T x, T y) const;
+    __device__ __host__ bool IsInside(T x, T y);
     __device__ __host__ bool IsInside(Point2D p);
 };
 
@@ -27,7 +38,7 @@ struct TriangleZone : Zone {
     TriangleZone(T x0, T y0, T x1, T y1, T x2, T y2);
     TriangleZone(Point2D p0, Point2D p1, Point2D p2);
 
-    __device__ __host__ bool IsInside(T x, T y) const;
+    __device__ __host__ bool IsInside(T x, T y);
     __device__ __host__ bool IsInside(Point2D p);
 
     void Print() {

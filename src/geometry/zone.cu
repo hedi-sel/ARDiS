@@ -1,4 +1,7 @@
-#include "rectangle_zone.hpp"
+#include "zone.hpp"
+
+SimpleZone SimpleZone::all = SimpleZone(true);
+SimpleZone SimpleZone::none = SimpleZone(false);
 
 RectangleZone::RectangleZone() : RectangleZone(0, 0, 0, 0){};
 RectangleZone::RectangleZone(T x0, T y0, T x1, T y1)
@@ -6,7 +9,7 @@ RectangleZone::RectangleZone(T x0, T y0, T x1, T y1)
 RectangleZone::RectangleZone(Point2D p0, Point2D p1)
     : RectangleZone(p0.x, p0.y, p1.x, p1.y){};
 
-__device__ __host__ bool RectangleZone::IsInside(T x, T y) const {
+__device__ __host__ bool RectangleZone::IsInside(T x, T y) {
     return x0 <= x && x1 >= x && y0 <= y && y1 >= y;
 }
 __device__ __host__ bool RectangleZone::IsInside(Point2D p) {
@@ -23,7 +26,7 @@ __device__ __host__ T Sign(T x0, T y0, T x1, T y1, T x2, T y2) {
     return (x0 - x2) * (y1 - y2) - (x1 - x2) * (y0 - y2);
 }
 
-__device__ __host__ bool TriangleZone::IsInside(T x, T y) const {
+__device__ __host__ bool TriangleZone::IsInside(T x, T y) {
     bool b1 = Sign(x, y, x0, y0, x1, y1) < 0.0;
     bool b2 = Sign(x, y, x1, y1, x2, y2) < 0.0;
     bool b3 = Sign(x, y, x2, y2, x0, y0) < 0.0;

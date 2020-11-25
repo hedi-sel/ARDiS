@@ -6,8 +6,9 @@
 #include "dataStructures/array.hpp"
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/sparse_matrix.hpp"
-#include "dataStructures/zoneManager/rectangle_zone.hpp"
-#include "dataStructures/zoneManager/zone_methods.hpp"
+#include "geometry/mesh.hpp"
+#include "geometry/zone.hpp"
+#include "geometry/zone_methods.hpp"
 #include "main.h"
 #include "matrixOperations/basic_operations.hpp"
 #include "reactionDiffusionSystem/system.hpp"
@@ -34,7 +35,7 @@ PYBIND11_MODULE(ardisLib, m) {
                       it != self.names.end(); ++it) {
                      listSpecies.append(it->first);
                  }
-                 return
+                 return listSpecies;
              })
         .def_readonly("Size", &State::size);
     py::class_<System>(m, "System")
@@ -119,30 +120,31 @@ PYBIND11_MODULE(ardisLib, m) {
         .def(py::init<>())
         .def(py::init<const D_SparseMatrix &, bool>())
         .def(py::init<const D_SparseMatrix &>())
-        .def(
-            "Fill",
-            [](D_SparseMatrix &self, py::array_t<int> &rows,
-               py::array_t<int> &cols, py::array_t<T> &data) {
-                assert(data.size() == self.nnz);
-                if (self.type == CSR)
-                    assert(rows.size() == self.rows + 1);
-                else
-                    assert(rows.size() == self.nnz);
-                if (self.type == CSC)
-                    assert(cols.size() == self.cols + 1);
-                else
-                    assert(cols.size() == self.nnz);
-                gpuErrchk(cudaMemcpy(self.data, data.data(),
-                                     sizeof(T) * data.size(),
-                                     cudaMemcpyHostToDevice));
-                gpuErrchk(cudaMemcpy(self.colPtr, cols.data(),
-                                     sizeof(int) * cols.size(),
-                                     cudaMemcpyHostToDevice));
-                gpuErrchk(cudaMemcpy(self.rowPtr, rows.data(),
-                                     sizeof(int) * rows.size(),
-                                     cudaMemcpyHostToDevice));
-            },
-            py::arg("rows"), py::arg("cols"), py::arg("data"))
+        .def(py::init([](int n_rows, int n_cols, py::array_t<int> &rows,
+                         py::array_t<int> &cols, py::array_t<T> &data,
+                         MatrixType type = COO) {
+            D_SparseMatrix self =
+                D_SparseMatrix(n_rows, n_cols, data.size(), type);
+            if (type == CSR)
+                assert(rows.size() == self.rows + 1);
+            else
+                assert(rows.size() == self.nnz);
+            if (type == CSC)
+                assert(cols.size() == self.cols + 1);
+            else
+                assert(cols.size() == self.nnz);
+
+            gpuErrchk(cudaMemcpy(self.data, data.data(),
+                                 sizeof(T) * data.size(),
+                                 cudaMemcpyHostToDevice));
+            gpuErrchk(cudaMemcpy(self.colPtr, cols.data(),
+                                 sizeof(int) * cols.size(),
+                                 cudaMemcpyHostToDevice));
+            gpuErrchk(cudaMemcpy(self.rowPtr, rows.data(),
+                                 sizeof(int) * rows.size(),
+                                 cudaMemcpyHostToDevice));
+            return std::move(self);
+        }))
         .def("ConvertMatrixToCSR", &D_SparseMatrix::ConvertMatrixToCSR)
         .def("Print", &D_SparseMatrix::Print, py::arg("printCount") = 5)
         .def(
@@ -202,6 +204,12 @@ PYBIND11_MODULE(ardisLib, m) {
     py::class_<D_Vector>(m, "D_Vector")
         .def(py::init<int>())
         .def(py::init<const D_Vector &>())
+        .def(py::init([](py::array_t<T> &x) {
+            auto vector = D_Vector(x.size());
+            gpuErrchk(cudaMemcpy(vector.data, x.data(), sizeof(T) * x.size(),
+                                 cudaMemcpyHostToDevice));
+            return std::move(vector);
+        }))
         .def("At", &D_Vector::At)
         .def("Print", &D_Vector::Print, py::arg("printCount") = 5)
         .def("Norm",
@@ -210,12 +218,6 @@ PYBIND11_MODULE(ardisLib, m) {
                  Dot(self, self, norm(true));
                  norm.SetHost();
                  return sqrt(norm());
-             })
-        .def("Fill",
-             [](D_Vector &self, py::array_t<T> &x) {
-                 assert(x.size() == self.n);
-                 gpuErrchk(cudaMemcpy(self.data, x.data(), sizeof(T) * x.size(),
-                                      cudaMemcpyHostToDevice));
              })
         .def("FillValue", &D_Vector::Fill)
         .def("Prune", &D_Vector::Prune, py::arg("value") = 0)
@@ -260,19 +262,6 @@ PYBIND11_MODULE(ardisLib, m) {
         .def_readonly("Size", &D_Vector::n)
         .def_readonly("IsDevice", &D_Vector::isDevice);
 
-    py::class_<Zone>(m, "Zone")
-        .def("IsInside",
-             [](RectangleZone self, T x, T y) { return self.IsInside(x, y); })
-        .def("IsInside",
-             [](RectangleZone self, Point2D p) { return self.IsInside(p); });
-
-    py::class_<RectangleZone, Zone>(m, "RectangleZone")
-        .def(py::init<>())
-        .def(py::init<float, float, float, float>())
-        .def(py::init<Point2D, Point2D>());
-
-    py::class_<Point2D>(m, "Point2D").def(py::init<T, T>()).def(py::init<>());
-
     m.doc() = "Sparse Linear Equation solving API"; // optional module docstring
     m.def("SolveCholesky", &SolveCholesky,
           py::return_value_policy::take_ownership);
@@ -303,10 +292,53 @@ PYBIND11_MODULE(ardisLib, m) {
         return ToCSV(arrayContainer, path);
     });
 
-    py::module zones = m.def_submodule("zones");
-    zones.def("FillZone", &FillZone);
-    zones.def("FillOutsideZone", &FillOutsideZone);
-    zones.def("GetMinZone", &GetMinZone);
-    zones.def("GetMaxZone", &GetMaxZone);
-    zones.def("GetMeanZone", &GetMeanZone);
+    py::module geometry = m.def_submodule("geometry");
+
+    py::class_<Zone>(geometry, "Zone");
+    py::class_<RectangleZone, Zone>(geometry, "RectangleZone")
+        .def(py::init<>())
+        .def(py::init<float, float, float, float>())
+        .def(py::init<Point2D, Point2D>())
+        .def("IsInside", [](RectangleZone &self, float x,
+                            float y) { return self.IsInside(x, y); })
+        .def("IsInside",
+             [](RectangleZone &self, Point2D p) { return self.IsInside(p); });
+
+    py::class_<TriangleZone, Zone>(geometry, "TriangleZone")
+        .def(py::init<>())
+        .def(py::init<float, float, float, float, float, float>())
+        .def(py::init<Point2D, Point2D, Point2D>())
+        .def("IsInside", [](TriangleZone &self, float x,
+                            float y) { return self.IsInside(x, y); })
+        .def("IsInside",
+             [](TriangleZone &self, Point2D p) { return self.IsInside(p); });
+
+    py::class_<Point2D>(geometry, "Point2D")
+        .def(py::init<T, T>())
+        .def(py::init<>());
+
+    py::module d_geometry = m.def_submodule("d_geometry");
+
+    d_geometry.def("FillZone", &FillZone);
+    d_geometry.def("FillOutsideZone", &FillOutsideZone);
+    d_geometry.def("GetMinZone", &GetMinZone);
+    d_geometry.def("GetMaxZone", &GetMaxZone);
+    d_geometry.def("GetMeanZone", &GetMeanZone);
+
+    py::class_<D_Mesh>(d_geometry, "D_Mesh")
+        .def(py::init<D_Vector &, D_Vector &>())
+        .def(py::init([](py::array_t<T> x, py::array_t<T> y) {
+            assert(x.size() == y.size());
+            auto d_X = D_Vector(x.size());
+            auto d_Y = D_Vector(y.size());
+            gpuErrchk(cudaMemcpy(d_X.data, x.data(), sizeof(T) * x.size(),
+                                 cudaMemcpyHostToDevice));
+            gpuErrchk(cudaMemcpy(d_Y.data, y.data(), sizeof(T) * x.size(),
+                                 cudaMemcpyHostToDevice));
+            return std::move(D_Mesh(d_X, d_Y));
+        }))
+        .def("Size", &D_Mesh::Size)
+        .def_readonly("X", &D_Mesh::X)
+        .def_readonly("Y", &D_Mesh::Y);
+
 } // namespace PYBIND11_MODULE(dna,m)

@@ -1,9 +1,8 @@
 from .cg_solve import *
-from .geometry import *
 from .convert import *
 from .read_mtx import *
+from .plotlib_wrap import *
 from .ardisLib import *
-from .print import *
 
 __author__ = "Hedi Sellami"
 __license__ = "MIT"

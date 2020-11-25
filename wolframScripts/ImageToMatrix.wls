@@ -1,25 +1,10 @@
 #!/usr/bin/env wolframscript
 
 Needs["NDSolve`FEM`"]
-
 name = $ScriptCommandLine[[2]]
-size = ToExpression[$ScriptCommandLine[[3]]]
-
-X = size; Y = size;
-(* custom styling *)
-style = {Background -> GrayLevel[0], 
-   BaseStyle -> {Directive[White, EdgeForm[], Opacity[1]]}, 
-   VertexShapeFunction -> (Rectangle[#1 + .16, #1 - .16] &), 
-   EdgeShapeFunction -> (Rectangle[#1[[1]] + .16, #1[[2]] - .16] &)};
-embedding = GraphEmbedding[GridGraph[{X, Y}]];
-
-g = GridGraph[{X, Y}, EdgeWeight -> RandomReal[10, X*Y*2-X-Y]];
-tree = FindSpanningTree[{g, 1}];
-maze = Graph[tree, VertexCoordinates -> embedding, style];
-
-region =Region@ImageMesh@Image@maze
-Export["region.png",RegionImage[region]]
-
+region = Region@ImageMesh@Import["maze.png"]
+(* region = ImageMesh@Graphics@{Thickness[0.1], PeanoCurve[1]};*)
+(* Export["region.png",RegionImage[region]] *)
 
 (*Make mesh*)
 nr=ToElementMesh[ BoundaryDiscretizeRegion@region , MaxCellMeasure->20]
