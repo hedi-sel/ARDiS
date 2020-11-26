@@ -1,9 +1,10 @@
 #include "dataStructures/array.hpp"
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/helper/vector_helper.h"
-#include "hediHelper/cuda/cuda_thread_manager.hpp"
 #include "helper/apply_operation.h"
+#include "helper/cuda/cuda_thread_manager.hpp"
 #include "matrixOperations/basic_operations.hpp"
+#include "sstream"
 
 template <typename C>
 __host__ D_Array<C>::D_Array(int n, bool isDevice) : n(n), isDevice(isDevice) {
@@ -99,6 +100,25 @@ __host__ void D_Vector::PruneUnder(T value) {
             a = value;
     };
     ApplyFunction(*this, setTo);
+}
+
+__host__ std::string D_Vector::ToString() {
+    int printCount = 5;
+    std::stringstream strs;
+    strs << "[ ";
+    T *printBuffer = new T[printCount + 1];
+    cudaMemcpy(printBuffer, data, sizeof(T) * printCount,
+               (isDevice) ? cudaMemcpyDeviceToHost : cudaMemcpyHostToHost);
+    cudaMemcpy(printBuffer + printCount, data + n - 1, sizeof(T),
+               (isDevice) ? cudaMemcpyDeviceToHost : cudaMemcpyHostToHost);
+
+    for (int i = 0; i < (n - 1) && i < printCount; i++)
+        strs << printBuffer[i] << ", ";
+    if (printCount < n - 1)
+        strs << "... ";
+    strs << printBuffer[printCount] << "]";
+    delete[] printBuffer;
+    return strs.str();
 }
 
 __host__ __device__ void D_Vector::Print(int printCount) {

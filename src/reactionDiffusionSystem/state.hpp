@@ -24,6 +24,7 @@ class State {
     // Uses the given vector as a concentration vector
     void SetSpecies(std::string name, D_Vector &sub_state);
 
+    int Size();
     // Give as input the number of elements of each vector to be printed
     void Print(int i = 5);
 

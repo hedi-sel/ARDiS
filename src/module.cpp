@@ -37,7 +37,7 @@ PYBIND11_MODULE(ardisLib, m) {
                  }
                  return listSpecies;
              })
-        .def_readonly("Size", &State::size);
+        .def("__len__", &State::Size);
     py::class_<System>(m, "System")
         .def(py::init<int>())
         .def("IterateDiffusion", &System::IterateDiffusion)
@@ -120,28 +120,28 @@ PYBIND11_MODULE(ardisLib, m) {
         .def(py::init<>())
         .def(py::init<const D_SparseMatrix &, bool>())
         .def(py::init<const D_SparseMatrix &>())
-        .def(py::init([](int n_rows, int n_cols, py::array_t<int> &rows,
-                         py::array_t<int> &cols, py::array_t<T> &data,
+        .def(py::init([](int n_rows, int n_cols, py::array_t<int> &rowArr,
+                         py::array_t<int> &colArr, py::array_t<T> &data,
                          MatrixType type = COO) {
             D_SparseMatrix self =
                 D_SparseMatrix(n_rows, n_cols, data.size(), type);
             if (type == CSR)
-                assert(rows.size() == self.rows + 1);
+                assert(rowArr.size() == self.rows + 1);
             else
-                assert(rows.size() == self.nnz);
+                assert(rowArr.size() == self.nnz);
             if (type == CSC)
-                assert(cols.size() == self.cols + 1);
+                assert(colArr.size() == self.cols + 1);
             else
-                assert(cols.size() == self.nnz);
+                assert(colArr.size() == self.nnz);
 
             gpuErrchk(cudaMemcpy(self.data, data.data(),
                                  sizeof(T) * data.size(),
                                  cudaMemcpyHostToDevice));
-            gpuErrchk(cudaMemcpy(self.colPtr, cols.data(),
-                                 sizeof(int) * cols.size(),
+            gpuErrchk(cudaMemcpy(self.colPtr, colArr.data(),
+                                 sizeof(int) * colArr.size(),
                                  cudaMemcpyHostToDevice));
-            gpuErrchk(cudaMemcpy(self.rowPtr, rows.data(),
-                                 sizeof(int) * rows.size(),
+            gpuErrchk(cudaMemcpy(self.rowPtr, rowArr.data(),
+                                 sizeof(int) * rowArr.size(),
                                  cudaMemcpyHostToDevice));
             return std::move(self);
         }))
@@ -190,12 +190,13 @@ PYBIND11_MODULE(ardisLib, m) {
                 return c;
             },
             py::return_value_policy::take_ownership)
+        .def("__str__", &D_SparseMatrix::ToString)
+        .def("__len__", [](D_SparseMatrix &self) { return self.nnz; })
+        .def("shape",
+             [](D_SparseMatrix &self) {
+                 return py::make_tuple(self.rows, self.cols);
+             })
         .def_readonly("Nnz", &D_SparseMatrix::nnz)
-        .def_property_readonly("Shape",
-                               [](D_SparseMatrix &self) { // Getter
-                                   return std::pair<int, int>(self.rows,
-                                                              self.cols);
-                               })
         .def_readonly("Rows", &D_SparseMatrix::rows)
         .def_readonly("Cols", &D_SparseMatrix::cols)
         .def_readonly("Type", &D_SparseMatrix::type)
@@ -259,7 +260,8 @@ PYBIND11_MODULE(ardisLib, m) {
                  ScalarMult(self, d_alpha(true));
                  return self;
              })
-        .def_readonly("Size", &D_Vector::n)
+        .def("__len__", &D_Vector::Size)
+        .def("__str__", &D_Vector::ToString)
         .def_readonly("IsDevice", &D_Vector::isDevice);
 
     m.doc() = "Sparse Linear Equation solving API"; // optional module docstring
@@ -337,7 +339,7 @@ PYBIND11_MODULE(ardisLib, m) {
                                  cudaMemcpyHostToDevice));
             return std::move(D_Mesh(d_X, d_Y));
         }))
-        .def("Size", &D_Mesh::Size)
+        .def("__len__", &D_Mesh::Size)
         .def_readonly("X", &D_Mesh::X)
         .def_readonly("Y", &D_Mesh::Y);
 

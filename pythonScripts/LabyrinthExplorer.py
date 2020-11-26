@@ -244,7 +244,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     system.AddSpecies("N")
     system.SetSpecies("N", U)
     system.AddSpecies("NP")
-    system.SetSpecies("NP", np.array([0] * U.Size))
+    system.SetSpecies("NP", np.array([0] * len(U)))
     system.AddSpecies("P")
     system.SetSpecies("P", U)
 

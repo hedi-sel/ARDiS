@@ -1,5 +1,5 @@
 #include "dataStructures/helper/apply_operation.h"
-#include "hediHelper/cuda/cuda_device_converter.h"
+#include "helper/cuda/cuda_device_converter.h"
 #include "matrixOperations/basic_operations.hpp"
 #include "zone_methods.hpp"
 

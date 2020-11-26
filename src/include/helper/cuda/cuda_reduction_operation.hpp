@@ -5,7 +5,7 @@
 #include "constants.hpp"
 #include "dataStructures/array.hpp"
 #include "dataStructures/hd_data.hpp"
-#include "hediHelper/cuda/cuda_thread_manager.hpp"
+#include "helper/cuda/cuda_thread_manager.hpp"
 
 enum OpType { sum, maximum };
 

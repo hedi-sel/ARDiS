@@ -4,7 +4,7 @@
 #include "dataStructures/array.hpp"
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/sparse_matrix.hpp"
-#include "hediHelper/cuda/cuda_thread_manager.hpp"
+#include "helper/cuda/cuda_thread_manager.hpp"
 #include "reaction_computer.hpp"
 #include "system.hpp"
 
@@ -29,7 +29,7 @@ std::pair<int *, int> getRawCoeffs(State &state,
 }
 
 template <typename ReactionType>
-__global__ void ConsumeReactionK(D_Vector **state, int n_species, int *reagents,
+__global__ void ComputeReactionK(D_Vector **state, int n_species, int *reagents,
                                  int n_reagents, int *products, int n_products,
                                  T base_rate, ReactionType &rate) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -46,13 +46,12 @@ __global__ void ConsumeReactionK(D_Vector **state, int n_species, int *reagents,
 }
 
 template <typename ReactionType>
-void ConsumeReaction(State &state, ReactionType &reaction, T dt) {
-    // std::cout << (ReactionType == ReactionMassAction) ? "mA" : "MM";
+void ComputeReaction(State &state, ReactionType &reaction, T dt) {
     auto tb = Make1DThreadBlock(state.size);
     auto d_state = state.GetDeviceState();
     auto products = getRawCoeffs(state, reaction.Products);
     auto reagents = getRawCoeffs(state, reaction.Reagents);
-    ConsumeReactionK<<<tb.block, tb.thread>>>(
+    ComputeReactionK<<<tb.block, tb.thread>>>(
         d_state, state.data.size(), reagents.first, reagents.second,
         products.first, products.second, reaction.BaseRate(dt),
         *reaction._device);

@@ -1,6 +1,6 @@
-#include "hediHelper/cuda/cublas_error_check.h"
-#include "hediHelper/cuda/cusolverSP_error_check.h"
-#include "hediHelper/cuda/cusparse_error_check.h"
+#include "helper/cuda/cublas_error_check.h"
+#include "helper/cuda/cusolverSP_error_check.h"
+#include "helper/cuda/cusparse_error_check.h"
 
 const char *cusolverErrors[CUSOLVER_ERROR_SIZE]{
     "CUSOLVER_STATUS_SUCCESS",

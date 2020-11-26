@@ -4,7 +4,7 @@
 #include "cuda_runtime.h"
 
 #include "constants.hpp"
-#include <hediHelper/cuda/cuda_error_check.h>
+#include <helper/cuda/cuda_error_check.h>
 
 template <typename DataType> class HDData {
   public:

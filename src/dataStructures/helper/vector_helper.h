@@ -17,8 +17,11 @@ __global__ void printVector(const D_Array<T> &vector, int printCount) {
 }
 
 __global__ void printVector(const D_Array<int> &vector, int printCount) {
-    printf("Cannont print int yet\n");
+    printf("Printing D_Array<int> has not been implemented\n");
 }
 __global__ void printVector(const D_Array<D_Vector *> &vector, int printCount) {
-    printf("Cannont print D_Vector* yet\n");
+    printf("Printing D_Array<D_Vector *> has not been implemented\n");
+}
+__global__ void printVector(const D_Array<bool> &vector, int printCount) {
+    printf("Printing D_Array<bool> has not been implemented\n");
 }

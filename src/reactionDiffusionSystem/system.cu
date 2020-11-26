@@ -94,10 +94,10 @@ void System::IterateReaction(T dt, bool degradation) {
         species->Prune();
     }
     for (auto reaction : reactions) {
-        ConsumeReaction<decltype(reaction)>(state, reaction, dt);
+        ComputeReaction<decltype(reaction)>(state, reaction, dt);
     }
     for (auto reaction : this->mmreactions) {
-        ConsumeReaction<decltype(reaction)>(state, reaction, dt);
+        ComputeReaction<decltype(reaction)>(state, reaction, dt);
     }
 #ifndef NDEBUG_PROFILING
     profiler.End();

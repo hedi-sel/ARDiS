@@ -1,14 +1,15 @@
 #include <assert.h>
+#include <sstream>
 
 #include "dataStructures/helper/matrix_helper.h"
 #include "dataStructures/matrix_element.hpp"
 #include "dataStructures/sparse_matrix.hpp"
 #include "hd_data.hpp"
-#include "hediHelper/cuda/cuda_error_check.h"
-#include "hediHelper/cuda/cuda_reduction_operation.hpp"
-#include "hediHelper/cuda/cuda_thread_manager.hpp"
-#include "hediHelper/cuda/cusolverSP_error_check.h"
-#include "hediHelper/cuda/cusparse_error_check.h"
+#include "helper/cuda/cuda_error_check.h"
+#include "helper/cuda/cuda_reduction_operation.hpp"
+#include "helper/cuda/cuda_thread_manager.hpp"
+#include "helper/cuda/cusolverSP_error_check.h"
+#include "helper/cuda/cusparse_error_check.h"
 #include "matrixOperations/basic_operations.hpp"
 #include "matrixOperations/row_ordering.hpp"
 
@@ -105,6 +106,38 @@ __host__ void D_SparseMatrix::MemFree() {
             delete[] rowPtr;
             delete[] colPtr;
         }
+}
+
+__host__ std::string D_SparseMatrix::ToString() {
+    int printCount = 5;
+    std::stringstream strs;
+
+    char buffer[50];
+    sprintf(buffer, "Matrix :\n%i %i %i/%i isDev=%i format=", rows, cols,
+            loaded_elements, nnz, isDevice);
+    strs << std::string(buffer);
+
+    switch (type) {
+    case COO:
+        strs << "COO\n";
+        break;
+    case CSR:
+        strs << "CSR\n";
+        break;
+    case CSC:
+        strs << "CSC\n";
+        break;
+    }
+    for (MatrixElement elm(this); elm.HasNext(); elm.Next()) {
+        strs << elm.ToString();
+        printCount--;
+        if (printCount <= 0) {
+            if (elm.HasNext())
+                strs << "...\n";
+            break;
+        }
+    }
+    return strs.str();
 }
 
 __host__ __device__ void D_SparseMatrix::Print(int printCount) const {

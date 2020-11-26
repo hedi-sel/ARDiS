@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cuda_runtime.h>
+#include <string>
 
 #include "constants.hpp"
 #include "sparse_matrix.hpp"
@@ -23,6 +24,7 @@ class MatrixElement {
     __host__ __device__ void Jump(int hop);
 
     __host__ __device__ void Print() const;
+    __host__ std::string ToString() const;
 
     __host__ __device__ void updateIandJ();
 };

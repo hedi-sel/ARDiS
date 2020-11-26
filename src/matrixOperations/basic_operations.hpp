@@ -5,7 +5,7 @@
 #include "constants.hpp"
 #include "dataStructures/array.hpp"
 #include "dataStructures/sparse_matrix.hpp"
-#include "hediHelper/chrono_profiler.hpp"
+#include "helper/chrono_profiler.hpp"
 
 // cudaDataType T_Cuda;
 #ifdef USE_DOUBLE

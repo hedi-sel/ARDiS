@@ -22,6 +22,8 @@ D_Vector &State::GetSpecies(std::string name) {
     return *(data.at(names[name]));
 }
 
+int State::Size() { return size; }
+
 void State::Print(int i) {
     for (auto name : names) {
         std::cout << name.first << " : ";

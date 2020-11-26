@@ -5,6 +5,7 @@
 #include <cusolverSp.h>
 #include <cusparse.h>
 #include <cusparse_v2.h>
+#include <string>
 #include <utility>
 
 #include "constants.hpp"
@@ -39,6 +40,7 @@ class D_SparseMatrix {
 
     __host__ ~D_SparseMatrix();
 
+    __host__ std::string ToString();
     __host__ __device__ void Print(int printCount = 5) const;
 
     __host__ void SetNNZ(int);

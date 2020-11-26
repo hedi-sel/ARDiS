@@ -1,17 +1,17 @@
 #define GET_PROF
 
 #include "cuda_runtime.h"
-#include "include/hediHelper/cuda/cublas_error_check.h"
-#include "include/hediHelper/cuda/cusparse_error_check.h"
+#include "include/helper/cuda/cublas_error_check.h"
+#include "include/helper/cuda/cusparse_error_check.h"
 #include <assert.h>
 #include <stdio.h>
 
 #include "basic_operations.hpp"
 #include "dataStructures/hd_data.hpp"
 #include "dataStructures/matrix_element.hpp"
-#include "hediHelper/cuda/cuda_error_check.h"
-#include "hediHelper/cuda/cuda_reduction_operation.hpp"
-#include "hediHelper/cuda/cuda_thread_manager.hpp"
+#include "helper/cuda/cuda_error_check.h"
+#include "helper/cuda/cuda_reduction_operation.hpp"
+#include "helper/cuda/cuda_thread_manager.hpp"
 
 ChronoProfiler profDot;
 void PrintDotProfiler() { profDot.Print(); }

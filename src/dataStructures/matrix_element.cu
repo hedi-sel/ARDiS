@@ -1,9 +1,10 @@
+#include <dataStructures/hd_data.hpp>
 #include <dataStructures/matrix_element.hpp>
 #include <dataStructures/sparse_matrix.hpp>
 
 __host__ __device__ MatrixElement::MatrixElement(int k,
                                                  const D_SparseMatrix *matrix)
-    : k(k), matrix(matrix), val(&matrix->data[k]) {
+    : k(k), matrix(matrix), val(matrix->data + k) {
     updateIandJ();
 }
 __host__ __device__ MatrixElement::MatrixElement(const D_SparseMatrix *matrix)
@@ -23,7 +24,7 @@ __host__ __device__ void MatrixElement::Jump(int hop) {
             i = matrix->rows;
             j = matrix->cols;
         } else {
-            val = &val[hop];
+            val = val + hop;
             updateIandJ();
         }
 }
@@ -32,13 +33,56 @@ __host__ __device__ void MatrixElement::Print() const {
     printf("%i, %i: %f\n", i, j, *val);
 }
 
+__host__ std::string MatrixElement::ToString() const {
+    char buffer[50];
+    T *valHost = new T[1];
+    cudaMemcpy(valHost, val, sizeof(T),
+               (matrix->isDevice) ? cudaMemcpyDeviceToHost
+                                  : cudaMemcpyHostToHost);
+    sprintf(buffer, "%i, %i: %f\n", i, j, valHost[0]);
+    std::string ret_string = std::string(buffer);
+    delete[] valHost;
+    return ret_string;
+}
+
+__global__ void launchUpdateIandJ(const D_SparseMatrix *matrix, int *i, int *j,
+                                  int k) {
+    if (matrix->type == CSR) {
+        while (matrix->rowPtr[i[0] + 1] <= k)
+            i[0]++;
+    } else {
+        i[0] = matrix->rowPtr[k];
+    }
+
+    if (matrix->type == CSC) {
+        while (matrix->colPtr[j[0] + 1] <= k)
+            j[0]++;
+    } else {
+        j[0] = matrix->colPtr[k];
+    }
+}
+
 __host__ __device__ void MatrixElement::updateIandJ() {
+#ifndef __CUDA_ARCH__
+    if (matrix->isDevice) {
+        HDData<int> d_i(i);
+        HDData<int> d_j(j);
+        launchUpdateIandJ<<<1, 1>>>(matrix->_device, &d_i(true), &d_j(true), k);
+        cudaDeviceSynchronize();
+        d_i.SetHost();
+        d_j.SetHost();
+        i = d_i();
+        j = d_j();
+        return;
+    }
+#endif
     if (matrix->type == CSR) {
         while (matrix->rowPtr[i + 1] <= k)
             i++;
     } else {
         i = matrix->rowPtr[k];
     }
+
     if (matrix->type == CSC) {
         while (matrix->colPtr[j + 1] <= k)
             j++;

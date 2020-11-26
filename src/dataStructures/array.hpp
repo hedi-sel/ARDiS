@@ -5,9 +5,9 @@
 #include <nvfunctional>
 
 #include "constants.hpp"
-#include "hediHelper/cuda/cuda_error_check.h"
-#include "hediHelper/cuda/cuda_thread_manager.hpp"
-#include "hediHelper/cuda/cusparse_error_check.h"
+#include "helper/cuda/cuda_error_check.h"
+#include "helper/cuda/cuda_thread_manager.hpp"
+#include "helper/cuda/cusparse_error_check.h"
 
 template <typename C> class D_Array {
   public:
@@ -50,6 +50,7 @@ class D_Vector : public D_Array<T> {
   public:
     using D_Array<T>::D_Array;
     __host__ __device__ void Print(int printCount = 5);
+    __host__ std::string ToString();
     __host__ void Prune(T value = 0);
     __host__ void PruneUnder(T value = 0);
 };

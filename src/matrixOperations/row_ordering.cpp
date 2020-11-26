@@ -4,8 +4,8 @@
 #include <cusparse.h>
 
 #include "dataStructures/sparse_matrix.hpp"
-#include "hediHelper/cuda/cuda_error_check.h"
-#include "hediHelper/cuda/cusparse_error_check.h"
+#include "helper/cuda/cuda_error_check.h"
+#include "helper/cuda/cusparse_error_check.h"
 
 cusparseHandle_t rowOrdHandle = NULL;
 

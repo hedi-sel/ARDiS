@@ -3,7 +3,7 @@
 
 #include "conjugate_gradient_solver.hpp"
 #include "constants.hpp"
-#include "hediHelper/chrono_profiler.hpp"
+#include "helper/chrono_profiler.hpp"
 
 CGSolver::CGSolver(int n) : q(n), r(n), p(n) {}
 
