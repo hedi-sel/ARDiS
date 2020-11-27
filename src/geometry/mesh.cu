@@ -8,6 +8,6 @@ D_Mesh::D_Mesh(D_Vector &X, D_Vector &Y) : X(X), Y(Y) {
     // printf("Here\n");
 }
 
-__host__ __device__ int D_Mesh::Size() { return X.n; }
+__host__ __device__ int D_Mesh::size() { return X.n; }
 
 D_Mesh::~D_Mesh() {}

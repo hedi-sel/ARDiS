@@ -78,9 +78,8 @@ __global__ void PruneK(D_Vector **state, int size) {
 }
 
 void System::Prune(T value) {
-    auto tb = Make1DThreadBlock(state.size);
-    for (auto &vect : state.data)
-        vect->Prune(value);
+    for (auto &vect : state.vector_holder)
+        vect.Prune(value);
 }
 
 void System::IterateReaction(T dt, bool degradation) {
@@ -89,9 +88,9 @@ void System::IterateReaction(T dt, bool degradation) {
 #endif
     T drainXdt = drain * dt;
     auto drainLambda = [drainXdt] __device__(T & x) { x -= drainXdt; };
-    for (auto species : state.data) {
-        ApplyFunction(*species, drainLambda);
-        species->Prune();
+    for (auto &species : state.vector_holder) {
+        ApplyFunction(species, drainLambda);
+        species.Prune();
     }
     for (auto reaction : reactions) {
         ComputeReaction<decltype(reaction)>(state, reaction, dt);
@@ -119,17 +118,17 @@ bool System::IterateDiffusion(T dt) {
         printf("Done!\n");
         last_used_dt = dt;
     }
-    for (auto &species : state.data) {
+    for (auto &species : state.vector_holder) {
 #ifndef NDEBUG_PROFILING
         profiler.Start("Diffusion Initialization");
 #endif
-        Dot(*damp_mat, *species, b);
+        Dot(*damp_mat, species, b);
 #ifndef NDEBUG_PROFILING
         profiler.Start("Diffusion");
 #endif
-        if (!solver.CGSolve(diffusion_matrix, b, *species, epsilon)) {
+        if (!solver.CGSolve(diffusion_matrix, b, species, epsilon)) {
             printf("Warning: It did not converge at time %f\n", t);
-            species->Print(20);
+            species.Print(20);
             return false;
         }
     }
@@ -160,9 +159,4 @@ void System::Print(int printCount) {
 void System::SetEpsilon(T epsilon) { this->epsilon = epsilon; }
 void System::SetDrain(T drain) { this->drain = drain; }
 
-System::~System(){
-    // if (damp_mat != nullptr)
-    //     delete damp_mat;
-    // if (stiff_mat != nullptr)
-    //     delete stiff_mat;
-};
+System::~System(){};

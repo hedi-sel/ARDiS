@@ -7,7 +7,7 @@ class D_Mesh {
     D_Vector X;
     D_Vector Y;
 
-    __host__ __device__ int Size();
+    __host__ __device__ int size();
 
     D_Mesh(D_Vector &X, D_Vector &Y);
     ~D_Mesh();

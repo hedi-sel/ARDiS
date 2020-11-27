@@ -19,8 +19,8 @@ D_Array<bool> IsInsideArray(D_Mesh &mesh, RectangleZone &zone) {
     RectangleZone *zone2 = new RectangleZone();
     cudaMemcpy(zone2, d_zone, sizeof(zone), cudaMemcpyDeviceToHost);
 
-    D_Array<bool> is_inside(mesh.Size());
-    auto tb = Make1DThreadBlock(mesh.Size());
+    D_Array<bool> is_inside(mesh.size());
+    auto tb = Make1DThreadBlock(mesh.size());
 
     IsInsideArrayK<<<tb.block, tb.thread>>>(
         *(D_Vector *)mesh.X._device, *(D_Vector *)mesh.Y._device, *d_zone,
@@ -30,14 +30,14 @@ D_Array<bool> IsInsideArray(D_Mesh &mesh, RectangleZone &zone) {
 }
 
 void FillZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone, T value) {
-    assert(u.n == mesh.Size());
+    assert(u.n == mesh.size());
     auto setToVal = [value] __device__(T & a) { a = value; };
     auto is_inside = IsInsideArray(mesh, zone);
     ApplyFunctionConditional(u, is_inside, setToVal);
 }
 
 void FillOutsideZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone, T value) {
-    assert(u.n == mesh.Size());
+    assert(u.n == mesh.size());
     auto setToVal = [value] __device__(T & a) { a = value; };
     D_Vector is_outside(u.n);
     auto is_inside = IsInsideArray(mesh, zone);
@@ -47,7 +47,7 @@ void FillOutsideZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone, T value) {
 }
 
 T GetMinZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone) {
-    assert(u.n == mesh.Size());
+    assert(u.n == mesh.size());
     auto min = [] __device__(T & a, T & b) { return (a < b) ? a : b; };
     D_Vector u_copy(u);
     auto is_inside = IsInsideArray(mesh, zone);
@@ -58,7 +58,7 @@ T GetMinZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone) {
 };
 
 T GetMaxZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone) {
-    assert(u.n == mesh.Size());
+    assert(u.n == mesh.size());
     auto max = [] __device__(T & a, T & b) { return (a > b) ? a : b; };
     D_Vector u_copy(u);
     auto is_inside = IsInsideArray(mesh, zone);
@@ -69,7 +69,7 @@ T GetMaxZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone) {
 };
 
 T GetMeanZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone) {
-    assert(u.n == mesh.Size());
+    assert(u.n == mesh.size());
     D_Array<int> ones(u.n);
     ones.Fill(1);
     auto is_inside = IsInsideArray(mesh, zone);

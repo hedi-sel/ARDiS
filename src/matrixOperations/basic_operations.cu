@@ -39,7 +39,7 @@ void Dot(D_SparseMatrix &d_mat, D_Vector &x, D_Vector &result,
         cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, mat_descr,
         x_descr, &zero, res_descr, T_Cuda, CUSPARSE_MV_ALG_DEFAULT, &size));
     if (size > 0)
-        printf("Alert! Size >0 \n");
+        printf("Alert! size >0 \n");
     cudaMalloc(&buffer, size);
     cusparseErrchk(cusparseSpMV(
         cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, mat_descr,

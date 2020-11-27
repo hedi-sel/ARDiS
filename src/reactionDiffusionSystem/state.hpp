@@ -10,8 +10,9 @@
 class State {
   public:
     // Size of the concentration vectors
-    int size;
-    std::vector<D_Vector *> data;
+    int vector_size;
+    std::vector<D_Vector> vector_holder;
+    D_Array<D_Vector *> device_data;
     // Stores the names of the species corresponding to each vector
     std::map<std::string, int> names;
 
@@ -24,20 +25,10 @@ class State {
     // Uses the given vector as a concentration vector
     void SetSpecies(std::string name, D_Vector &sub_state);
 
-    int Size();
+    int size();
+    int n_species();
     // Give as input the number of elements of each vector to be printed
     void Print(int i = 5);
 
     ~State();
-
-    // Function used to get all the data as a device friendly pointer
-    bool deviceStateToBeUpdated = true;
-    D_Vector **deviceState = NULL;
-    D_Vector **GetDeviceState();
-
-    // Function used to transpose the date (so we can access teh concentrations
-    // of all species at one specific point)
-    bool mappingStateToBeUpdated = true;
-    T ***mappingState = nullptr;
-    T ***GetMappingState();
 };

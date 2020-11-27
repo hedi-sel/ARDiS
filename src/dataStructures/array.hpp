@@ -19,7 +19,7 @@ template <typename C> class D_Array {
     D_Array *_device;
 
     // Constructors
-    __host__ D_Array(int, bool = true);
+    __host__ D_Array(int = 0, bool = true);
     __host__ D_Array(const D_Array &, bool copyToOtherMem = false);
 
     // Manipulation
@@ -28,8 +28,8 @@ template <typename C> class D_Array {
     __host__ void Fill(C value);
 
     // Accessors
-    __host__ __device__ C &At(int i);
-    __host__ __device__ int Size();
+    __host__ __device__ C &at(int i);
+    __host__ __device__ int size();
     __host__ __device__ bool IsDevice();
     __host__ cusparseDnVecDescr_t MakeDescriptor();
 

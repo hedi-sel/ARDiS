@@ -37,7 +37,8 @@ PYBIND11_MODULE(ardisLib, m) {
                  }
                  return listSpecies;
              })
-        .def("__len__", &State::Size);
+        .def("__len__", &State::n_species)
+        .def("vector_size", &State::size);
     py::class_<System>(m, "System")
         .def(py::init<int>())
         .def("IterateDiffusion", &System::IterateDiffusion)
@@ -211,7 +212,7 @@ PYBIND11_MODULE(ardisLib, m) {
                                  cudaMemcpyHostToDevice));
             return std::move(vector);
         }))
-        .def("At", &D_Vector::At)
+        .def("at", &D_Vector::at)
         .def("Print", &D_Vector::Print, py::arg("printCount") = 5)
         .def("Norm",
              [](D_Vector &self) {
@@ -260,7 +261,7 @@ PYBIND11_MODULE(ardisLib, m) {
                  ScalarMult(self, d_alpha(true));
                  return self;
              })
-        .def("__len__", &D_Vector::Size)
+        .def("__len__", &D_Vector::size)
         .def("__str__", &D_Vector::ToString)
         .def_readonly("IsDevice", &D_Vector::isDevice);
 
@@ -339,7 +340,7 @@ PYBIND11_MODULE(ardisLib, m) {
                                  cudaMemcpyHostToDevice));
             return std::move(D_Mesh(d_X, d_Y));
         }))
-        .def("__len__", &D_Mesh::Size)
+        .def("__len__", &D_Mesh::size)
         .def_readonly("X", &D_Mesh::X)
         .def_readonly("Y", &D_Mesh::Y);
 

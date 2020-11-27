@@ -29,33 +29,32 @@ std::pair<int *, int> getRawCoeffs(State &state,
 }
 
 template <typename ReactionType>
-__global__ void ComputeReactionK(D_Vector **state, int n_species, int *reagents,
-                                 int n_reagents, int *products, int n_products,
-                                 T base_rate, ReactionType &rate) {
+__global__ void ComputeReactionK(D_Array<D_Vector *> &state, int n_species,
+                                 int *reagents, int n_reagents, int *products,
+                                 int n_products, T base_rate,
+                                 ReactionType &rate) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= state[0]->n)
+    if (i >= state.at(0)->n)
         return;
     T progress = base_rate;
     for (int k = 0; k < n_reagents; k++)
-        rate.Rate(state[reagents[k]]->At(i), progress);
+        rate.Rate(state.at(reagents[k])->at(i), progress);
     for (int k = 0; k < n_reagents; k++)
-        state[reagents[k]]->At(i) -= progress;
+        state.at(reagents[k])->at(i) -= progress;
     for (int k = 0; k < n_products; k++)
-        state[products[k]]->At(i) += progress;
+        state.at(products[k])->at(i) += progress;
     return;
 }
 
 template <typename ReactionType>
 void ComputeReaction(State &state, ReactionType &reaction, T dt) {
-    auto tb = Make1DThreadBlock(state.size);
-    auto d_state = state.GetDeviceState();
+    auto tb = Make1DThreadBlock(state.size());
     auto products = getRawCoeffs(state, reaction.Products);
     auto reagents = getRawCoeffs(state, reaction.Reagents);
     ComputeReactionK<<<tb.block, tb.thread>>>(
-        d_state, state.data.size(), reagents.first, reagents.second,
-        products.first, products.second, reaction.BaseRate(dt),
+        *state.device_data._device, state.n_species(), reagents.first,
+        reagents.second, products.first, products.second, reaction.BaseRate(dt),
         *reaction._device);
     gpuErrchk(cudaDeviceSynchronize());
     cudaFree(reagents.first);
-    // state.FreeDeviceState(d_state);
 }

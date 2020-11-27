@@ -39,11 +39,11 @@ template <typename C> __host__ void D_Array<C>::Resize(int n) {
     MemAlloc();
 }
 
-template <typename C> __host__ __device__ C &D_Array<C>::At(int i) {
+template <typename C> __host__ __device__ C &D_Array<C>::at(int i) {
     return data[i];
 }
 
-template <typename C> __host__ __device__ int D_Array<C>::Size() { return n; }
+template <typename C> __host__ __device__ int D_Array<C>::size() { return n; }
 template <typename C> __host__ __device__ bool D_Array<C>::IsDevice() {
     return isDevice;
 }

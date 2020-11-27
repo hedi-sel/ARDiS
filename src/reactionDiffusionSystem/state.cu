@@ -1,78 +1,39 @@
 #include <stdio.h>
 
+#include "helper/cuda/cuda_error_check.h"
 #include "state.hpp"
-
-State::State(int size) : size(size) {}
+State::State(int size) : vector_size(size) {}
 
 D_Vector &State::AddSpecies(std::string name) {
-    deviceStateToBeUpdated = true;
-    mappingStateToBeUpdated = true;
-    names[name] = data.size();
-    data.push_back(new D_Vector(size));
-    return *(data.at(data.size() - 1));
+    names[name] = n_species();
+    vector_holder.push_back(D_Vector(vector_size));
+    device_data = D_Array<D_Vector *>(n_species());
+    D_Vector *new_device_data[n_species()];
+    for (int i = 0; i < n_species(); i++)
+        new_device_data[i] = (D_Vector *)vector_holder.at(i)._device;
+    gpuErrchk(cudaMemcpy(device_data.data, new_device_data,
+                         sizeof(D_Vector *) * n_species(),
+                         cudaMemcpyHostToDevice));
+    return vector_holder.at(n_species() - 1);
 }
 
 D_Vector &State::GetSpecies(std::string name) {
     auto findRes = names.find(name);
     if (findRes == names.end()) {
-        std::cout << "\"" << name << "\""
-                  << "\n";
+        std::cout << "\"" << name << "\"\n";
         throw std::invalid_argument("^ This species is invalid\n");
     }
-    return *(data.at(names[name]));
+    return vector_holder.at(names[name]);
 }
 
-int State::Size() { return size; }
+int State::size() { return vector_size; }
+int State::n_species() { return vector_holder.size(); }
 
 void State::Print(int i) {
     for (auto name : names) {
         std::cout << name.first << " : ";
-        data.at(name.second)->Print(i);
+        vector_holder.at(name.second).Print(i);
     }
 }
 
-State::~State() {
-    for (auto arrPtr : data)
-        delete arrPtr;
-    if (deviceState != NULL)
-        cudaFree(deviceState);
-}
-
-D_Vector **State::GetDeviceState() {
-    if (deviceStateToBeUpdated) {
-        D_Vector **output = new D_Vector *[data.size()];
-        if (deviceState != NULL)
-            cudaFree(deviceState);
-        cudaMalloc(&deviceState, sizeof(D_Vector *) * data.size());
-        for (int i = 0; i < data.size(); i++) {
-            output[i] = (D_Vector *)data.at(i)->_device;
-        }
-        cudaMemcpy(deviceState, output, sizeof(D_Vector *) * data.size(),
-                   cudaMemcpyHostToDevice);
-        delete output;
-        deviceStateToBeUpdated = false;
-    }
-    return deviceState;
-}
-
-__global__ void GetMappingStateK(D_Vector **deviceState, T ***mappingState,
-                                 int nSpecies) {
-    int n = deviceState[0]->Size();
-    mappingState = new T **[n];
-    for (int i = 0; i < n; i++) {
-        mappingState[i] = new T *[nSpecies];
-        for (int j = 0; j < nSpecies; j++) {
-            mappingState[i][j] = &deviceState[j]->At(i);
-        }
-    }
-}
-
-T ***State::GetMappingState() {
-    if (mappingStateToBeUpdated) {
-        if (deviceState != nullptr)
-            cudaFree(deviceState);
-        GetMappingStateK<<<1, 1>>>(GetDeviceState(), mappingState, data.size());
-        mappingStateToBeUpdated = false;
-    }
-    return mappingState;
-}
+State::~State() {}

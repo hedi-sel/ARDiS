@@ -41,10 +41,10 @@ void ToCSV(D_Vector &array, std::string outputPath, std::string prefix = "",
 void ToCSV(State &state, std::string outputPath) {
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
-    fout << state.size << "\n";
+    fout << state.vector_size << "\n";
     fout.close();
     for (auto sp : state.names) {
-        ToCSV(*state.data.at(sp.second), outputPath, sp.first, "\n");
+        ToCSV(state.vector_holder.at(sp.second), outputPath, sp.first, "\n");
     }
 }
 
