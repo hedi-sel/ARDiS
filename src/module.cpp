@@ -65,7 +65,8 @@ PYBIND11_MODULE(ardisLib, m) {
                  std::vector<stochCoeff> output;
                  input.push_back(std::pair(reag, kr));
                  output.push_back(std::pair(prod, kp));
-                 self.AddReaction(ReactionMassAction(input, output, rate));
+                 self.AddReaction(
+                     ReactionMassAction(self.state.names, input, output, rate));
              })
         .def("AddReaction", [](System &self, std::string reaction,
                                T rate) { self.AddReaction(reaction, rate); })
@@ -272,7 +273,6 @@ PYBIND11_MODULE(ardisLib, m) {
           [](D_SparseMatrix *d_mat, D_Vector *b, D_Vector *x, T epsilon) {
               return CGSolver::StaticCGSolve(*d_mat, *b, *x, epsilon);
           });
-    m.def("CppExplore", &LabyrinthExplore);
     m.def("ReadFromFile", &ReadFromFile,
           py::return_value_policy::take_ownership);
     m.def("MatrixSum", [](D_SparseMatrix &a, D_SparseMatrix &b,

@@ -38,7 +38,7 @@ def LoadMatrixFromFile(path, readtype=Readtype.Normal):
             if (readtype == Readtype.Symetric and values[1] != values[0]):
                 mat[values[1] - 1, values[0] - 1] = values[2]
         else:
-            print(line)
+            print("Could not read the following line: ", line)
     return mat
 
 
@@ -52,6 +52,6 @@ def LoadMeshFromFile(path, readtype=Readtype.Normal):
             x.append(values[0])
             y.append(values[1])
         else:
-            print(line)
+            print("Could not read the following line: ", line)
 
     return tri.Triangulation(np.array(x), np.array(y))

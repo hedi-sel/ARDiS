@@ -49,8 +49,8 @@ __global__ void ComputeReactionK(D_Array<D_Vector *> &state, int n_species,
 template <typename ReactionType>
 void ComputeReaction(State &state, ReactionType &reaction, T dt) {
     auto tb = Make1DThreadBlock(state.size());
-    auto products = getRawCoeffs(state, reaction.Products);
-    auto reagents = getRawCoeffs(state, reaction.Reagents);
+    auto products = getRawCoeffs(state, reaction.holder.Products);
+    auto reagents = getRawCoeffs(state, reaction.holder.Reagents);
     ComputeReactionK<<<tb.block, tb.thread>>>(
         *state.device_data._device, state.n_species(), reagents.first,
         reagents.second, products.first, products.second, reaction.BaseRate(dt),

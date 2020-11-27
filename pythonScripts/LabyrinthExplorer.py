@@ -62,7 +62,6 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
     # stateName, nSpecies = lines.pop(0).split("\t")
     for i in range(0, len(lines) // stride):
         if (i % plotEvery == 0):
-            # print("Printing",i)
             fig, ax = plt.subplots()
             ax.set_aspect('equal')
             if dt == 0:

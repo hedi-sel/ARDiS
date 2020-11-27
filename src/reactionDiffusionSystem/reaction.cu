@@ -1,29 +1,39 @@
 #include "reaction.hpp"
 
-Reaction::Reaction(std::vector<stochCoeff> reag, std::vector<stochCoeff> prod)
+ReactionHolder::ReactionHolder(std::vector<stochCoeff> reag,
+                               std::vector<stochCoeff> prod)
     : Reagents(reag), Products(prod) {}
 
+Reaction::Reaction(std::map<std::string, int> names, ReactionHolder holder)
+    : holder(holder) {}
+
+Reaction::Reaction(std::map<std::string, int> names,
+                   std::vector<stochCoeff> reag, std::vector<stochCoeff> prod)
+    : Reaction(names, ReactionHolder(reag, prod)) {}
+
 void Reaction::Print() {
-    for (auto coeff : Reagents)
+    for (auto coeff : holder.Reagents)
         std::cout << coeff.second << "." << coeff.first << " + ";
     std::cout << "-> ";
-    for (auto coeff : Products)
+    for (auto coeff : holder.Products)
         std::cout << coeff.second << "." << coeff.first << " + ";
     std::cout << "\n";
 }
 
 /////// Mass Action
 
-ReactionMassAction::ReactionMassAction(std::vector<stochCoeff> reag,
+ReactionMassAction::ReactionMassAction(std::map<std::string, int> names,
+                                       std::vector<stochCoeff> reag,
                                        std::vector<stochCoeff> prod, T rate)
-    : Reaction(reag, prod), K(rate) {
+    : ReactionMassAction(names, ReactionHolder(reag, prod), rate) {}
+
+ReactionMassAction::ReactionMassAction(std::map<std::string, int> names,
+                                       ReactionHolder reac, T rate)
+    : Reaction(names, reac), K(rate) {
     gpuErrchk(cudaMalloc(&_device, sizeof(ReactionMassAction)));
     gpuErrchk(cudaMemcpy(_device, this, sizeof(ReactionMassAction),
                          cudaMemcpyHostToDevice));
 }
-
-ReactionMassAction::ReactionMassAction(Reaction reac, T rate)
-    : ReactionMassAction(reac.Reagents, reac.Products, rate) {}
 
 T ReactionMassAction::BaseRate(T dt) { return K * dt; }
 
@@ -38,22 +48,21 @@ void ReactionMassAction::Print() {
 
 /////// Michaleis Menten
 
-ReactionMichaelisMenten::ReactionMichaelisMenten(Reaction reac, T Vm, T Km)
-    : ReactionMichaelisMenten(reac.Reagents.at(0).first, reac.Products, Vm,
-                              Km) {}
-
-ReactionMichaelisMenten::ReactionMichaelisMenten(std::string reag,
-                                                 std::vector<stochCoeff> prod,
-                                                 T Vm, T Km)
-    : Reaction(std::vector<stochCoeff>{stochCoeff(reag, 1)}, prod), Vm(Vm),
-      Km(Km) {
-    // gpuErrchk(cudaMalloc(&d_Km, sizeof(T)));
-    // gpuErrchk(cudaMemcpy(d_Km, &Km, sizeof(T), cudaMemcpyHostToDevice));
-
+ReactionMichaelisMenten::ReactionMichaelisMenten(
+    std::map<std::string, int> names, ReactionHolder reac, T Vm, T Km)
+    : Reaction(names, reac), Vm(Vm), Km(Km) {
     gpuErrchk(cudaMalloc(&_device, sizeof(ReactionMichaelisMenten)));
     gpuErrchk(cudaMemcpy(_device, this, sizeof(ReactionMichaelisMenten),
                          cudaMemcpyHostToDevice));
 }
+
+ReactionMichaelisMenten::ReactionMichaelisMenten(
+    std::map<std::string, int> names, std::string reag,
+    std::vector<stochCoeff> prod, T Vm, T Km)
+    : ReactionMichaelisMenten(
+          names,
+          ReactionHolder(std::vector<stochCoeff>{stochCoeff(reag, 1)}, prod),
+          Vm, Km) {}
 
 T ReactionMichaelisMenten::BaseRate(T dt) { return Vm * dt; }
 

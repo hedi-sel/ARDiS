@@ -6,7 +6,7 @@
 
 System::System(int size) : state(size), solver(size), b(size){};
 
-void CheckReaction(System &sys, Reaction &reaction) {
+void CheckReaction(System &sys, ReactionHolder &reaction) {
     for (auto species : reaction.Reagents) {
         if (sys.state.names.find(species.first) == sys.state.names.end()) {
             std::cout << "\"" << species.first << "\""
@@ -25,7 +25,7 @@ void CheckReaction(System &sys, Reaction &reaction) {
 
 void System::AddReaction(const std::string &descriptor, T rate) {
     ReactionMassAction reaction =
-        ReactionMassAction(ParseReaction(descriptor), rate);
+        ReactionMassAction(state.names, ParseReaction(descriptor), rate);
     AddReaction(reaction);
 }
 void System::AddReaction(std::string reag, int kr, std::string prod, int kp,
@@ -34,10 +34,10 @@ void System::AddReaction(std::string reag, int kr, std::string prod, int kp,
     std::vector<stochCoeff> output;
     input.push_back(std::pair<std::string, int>(reag, kr));
     output.push_back(std::pair<std::string, int>(prod, kp));
-    AddReaction(ReactionMassAction(input, output, rate));
+    AddReaction(ReactionMassAction(state.names, input, output, rate));
 }
 void System::AddReaction(ReactionMassAction reaction) {
-    CheckReaction(*this, reaction);
+    CheckReaction(*this, reaction.holder);
     reactions.push_back(reaction);
 };
 
@@ -45,18 +45,18 @@ void System::AddMMReaction(std::string reag, std::string prod, int kp, T Vm,
                            T Km) {
     std::vector<stochCoeff> output;
     output.push_back(std::pair<std::string, int>(prod, kp));
-    AddMMReaction(ReactionMichaelisMenten(reag, output, Vm, Km));
+    AddMMReaction(ReactionMichaelisMenten(state.names, reag, output, Vm, Km));
 }
 void System::AddMMReaction(const std::string &descriptor, T Vm, T Km) {
-    Reaction reaction = ParseReaction(descriptor);
+    ReactionHolder reaction = ParseReaction(descriptor);
     if (reaction.Reagents.size() != 1 || reaction.Reagents.at(0).second != 1)
         throw std::invalid_argument(
             "A Michaelis-Menten reaction takes only one species as reagent\n");
-    AddMMReaction(ReactionMichaelisMenten(reaction.Reagents.at(0).first,
-                                          reaction.Products, Vm, Km));
+    AddMMReaction(ReactionMichaelisMenten(
+        state.names, reaction.Reagents.at(0).first, reaction.Products, Vm, Km));
 }
 void System::AddMMReaction(ReactionMichaelisMenten reaction) {
-    CheckReaction(*this, reaction);
+    CheckReaction(*this, reaction.holder);
     this->mmreactions.push_back(reaction);
 }
 
