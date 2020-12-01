@@ -4,22 +4,36 @@ import matplotlib.colors as colors
 import numpy as np
 import math
 
+color_list = [
+    [[0.8, 0.1, 0.2]],
+    [[0.2, 0.4, 0.6]],
+    [[0.2, 0.6, 0.2]],
+    [[0.8, 0.8, 0.8]]
+]
 
-def PlotState(state, mesh, title="", listSpecies=[], excludeSpecies=[]):
+
+def PlotState(state, mesh, title="no title", listSpecies=[], excludeSpecies=[], colors={}):
     scatterSize = math.sqrt((np.max(mesh.x) - np.min(mesh.x))
-                            * (np.max(mesh.y) - np.min(mesh.y)) * 1.0 / state.size)
-    if(len(listSpecies)):
+                            * (np.max(mesh.y) - np.min(mesh.y)) * 1.0 / state.vector_size())
+    if(len(listSpecies) == 0):
         listSpecies = state.ListSpecies()
 
-    ax = plt.subplots()
+    if (len(colors) == 0):
+        col_count = 0
+        for species in listSpecies:
+            if species in excludeSpecies:
+                continue
+            colors[species] = color_list[col_count]
+            col_count = (col_count+1) % len(color_list)
+
+    fig, ax = plt.subplots()
     ax.set_aspect('equal')
-    ax.set_title(title)
     plt.scatter(mesh.x, mesh.y, s=5 * scatterSize,
                 c=[[0, 0.1, 0.3]], vmin=0, vmax=1)
     for species in listSpecies:
         if species in excludeSpecies:
             continue
         vect = state.GetSpecies(species).ToNumpyArray()
-        plt.scatter(mesh.x, mesh.y, s=2 * vect *
-                    scatterSize,  vmin=0, vmax=1)
-    return plt
+        ax.scatter(mesh.x, mesh.y, s=2 * vect *
+                   scatterSize, vmin=0, vmax=1, c=colors[species])
+    return fig
