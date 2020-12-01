@@ -54,11 +54,9 @@ class System {
     void AddReaction(std::string reag, int kr, std::string prod, int kp,
                      T rate);
     void AddReaction(const std::string &reaction, T rate);
-    void AddReaction(ReactionMassAction reaction);
 
     void AddMMReaction(std::string reag, std::string prod, int kp, T Vm, T Km);
     void AddMMReaction(const std::string &reaction, T Vm, T Km);
-    void AddMMReaction(ReactionMichaelisMenten reaction);
 
     // Get the memory location of the dampness and stiffness matrices
     void LoadDampnessMatrix(D_SparseMatrix &damp_mat);

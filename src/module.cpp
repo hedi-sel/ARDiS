@@ -48,26 +48,22 @@ PYBIND11_MODULE(ardisLib, m) {
             "AddSpecies",
             [](System &self, std::string name) { self.state.AddSpecies(name); })
         .def("SetSpecies",
-             [](System &self, std::string name, D_Vector sub_state) {
-                 self.state.GetSpecies(name) = sub_state;
+             [](System &self, std::string name, D_Vector &sub_state) {
+                 assert(sub_state.size() == self.state.size());
+                 gpuErrchk(cudaMemcpy(
+                     self.state.GetSpecies(name).data, sub_state.data,
+                     sizeof(T) * sub_state.size(), cudaMemcpyDeviceToDevice));
              })
         .def("SetSpecies",
              [](System &self, std::string name, py::array_t<T> &sub_state) {
+                 assert(sub_state.size() == self.state.size());
                  gpuErrchk(cudaMemcpy(
                      self.state.GetSpecies(name).data, sub_state.data(),
                      sizeof(T) * sub_state.size(), cudaMemcpyHostToDevice));
-                 self.state.GetSpecies(name).Print();
              })
         .def("AddReaction",
              [](System &self, std::string reag, int kr, std::string prod,
-                int kp, T rate) {
-                 std::vector<stochCoeff> input;
-                 std::vector<stochCoeff> output;
-                 input.push_back(std::pair(reag, kr));
-                 output.push_back(std::pair(prod, kp));
-                 self.AddReaction(
-                     ReactionMassAction(self.state.names, input, output, rate));
-             })
+                int kp, T rate) { self.AddReaction(reag, kr, prod, kp, rate); })
         .def("AddReaction", [](System &self, std::string reaction,
                                T rate) { self.AddReaction(reaction, rate); })
         .def("AddMMReaction",
@@ -330,16 +326,18 @@ PYBIND11_MODULE(ardisLib, m) {
 
     py::class_<D_Mesh>(d_geometry, "D_Mesh")
         .def(py::init<D_Vector &, D_Vector &>())
-        .def(py::init([](py::array_t<T> x, py::array_t<T> y) {
-            assert(x.size() == y.size());
-            auto d_X = D_Vector(x.size());
-            auto d_Y = D_Vector(y.size());
-            gpuErrchk(cudaMemcpy(d_X.data, x.data(), sizeof(T) * x.size(),
-                                 cudaMemcpyHostToDevice));
-            gpuErrchk(cudaMemcpy(d_Y.data, y.data(), sizeof(T) * x.size(),
-                                 cudaMemcpyHostToDevice));
-            return std::move(D_Mesh(d_X, d_Y));
-        }))
+        .def(py::init([](py::array_t<T> &x, py::array_t<T> &y) {
+                 assert(x.size() == y.size());
+                 auto mesh = D_Mesh(x.size());
+                 gpuErrchk(cudaMemcpy(mesh.X.data, x.data(),
+                                      sizeof(T) * x.size(),
+                                      cudaMemcpyHostToDevice));
+                 gpuErrchk(cudaMemcpy(mesh.Y.data, y.data(),
+                                      sizeof(T) * x.size(),
+                                      cudaMemcpyHostToDevice));
+                 return std::move(mesh);
+             }),
+             py::return_value_policy::move)
         .def("__len__", &D_Mesh::size)
         .def_readonly("X", &D_Mesh::X)
         .def_readonly("Y", &D_Mesh::Y);

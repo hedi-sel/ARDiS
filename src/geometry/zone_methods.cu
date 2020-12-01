@@ -16,9 +16,6 @@ D_Array<bool> IsInsideArray(D_Mesh &mesh, RectangleZone &zone) {
     cudaMalloc(&d_zone, sizeof(RectangleZone));
     cudaMemcpy(d_zone, &zone, sizeof(zone), cudaMemcpyHostToDevice);
 
-    RectangleZone *zone2 = new RectangleZone();
-    cudaMemcpy(zone2, d_zone, sizeof(zone), cudaMemcpyDeviceToHost);
-
     D_Array<bool> is_inside(mesh.size());
     auto tb = Make1DThreadBlock(mesh.size());
 

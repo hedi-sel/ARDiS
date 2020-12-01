@@ -38,12 +38,12 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
 #endif
     Dot(d_mat, x, q, true);
 
-    r = b; // Copy b into r
+    r = D_Vector(b); // Copy b into r
     alpha() = -1.0;
     alpha.SetDevice();
     VectorSum(r, q, alpha(true), r);
 
-    p = r; // copy r into p
+    p = D_Vector(r); // copy r into p
     beta() = 0.0;
     beta.SetDevice();
     value() = 0.0;

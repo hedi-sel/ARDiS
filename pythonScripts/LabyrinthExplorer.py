@@ -58,7 +58,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
     os.system("mkdir " + printFolder + "/" + name + " 2> ./null")
 
     k = 0
-    stride = 1 + 3  # 1 + number of species
+    stride = 1 + 2  # 1 + number of species
     # stateName, nSpecies = lines.pop(0).split("\t")
     for i in range(0, len(lines) // stride):
         if (i % plotEvery == 0):
@@ -80,7 +80,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
             plt.scatter(Mesh.x, Mesh.y, s=U*2 * math.sqrt(Surface *
                                                           1.0 / N), c=[[0.8, 0.1, 0.2]], alpha=1, vmin=0, vmax=1)
 
-            line = lines[i*stride+3].split("\t")
+            line = lines[i*stride+2].split("\t")
             line.pop(0)
             U = np.array(line, dtype=np.float32)
             # for j in range(0, len(U)):
@@ -232,18 +232,19 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     system.Drain = drain
     system.Epsilon = epsilon
 
-    MeshX = D_Vector(Mesh.x)
-    MeshY = D_Vector(Mesh.y)
     n = len(Mesh.x)
 
     U = D_Vector(n)
     U.FillValue(0)
-    dg.FillZone(U, dg.D_Mesh(MeshX, MeshY), startZone, 1)
+    Mesh = dg.D_Mesh(Mesh.x, Mesh.y)
+    dg.FillZone(U, Mesh, startZone, 1)
+
+    print(U)
 
     system.AddSpecies("N")
     system.SetSpecies("N", U)
-    system.AddSpecies("NP")
-    system.SetSpecies("NP", np.array([0] * len(U)))
+    # system.AddSpecies("NP")
+    # system.SetSpecies("NP", np.array([0] * len(U)))
     system.AddSpecies("P")
     system.SetSpecies("P", U)
 
@@ -251,8 +252,9 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     system.LoadDampnessMatrix(d_D)
 
     system.AddMMReaction(" N -> 2 N", reaction, 1)
-    system.AddReaction(" N+P -> NP", reaction)
-    system.AddMMReaction(" NP -> 2P", reaction, 1)
+    # system.AddReaction(" N+P -> NP", reaction)
+    # system.AddMMReaction(" NP -> 2P", reaction, 1)
+    system.AddReaction("N+P-> 2P", reaction)
     # system.AddReaction(" N -> 2 N", reaction)
     # system.AddReaction(" 2N -> N", reaction)
 
@@ -262,10 +264,6 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, output=OutputType.NONE, retu
     if (DoRecordResult):
         FinishZone = RectangleZone(0, 0, 0.5, 500)
         FinishTime = -1
-        d_MeshX = D_Vector(len(Mesh.x))
-        d_MeshX.Fill(Mesh.x)
-        d_MeshY = D_Vector(len(Mesh.y))
-        d_MeshY.Fill(Mesh.y)
 
     for i in range(0, Nit):
         system.IterateDiffusion(dt)

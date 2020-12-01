@@ -7,7 +7,7 @@ State::State(int size) : vector_size(size) {}
 D_Vector &State::AddSpecies(std::string name) {
     names[name] = n_species();
     vector_holder.push_back(D_Vector(vector_size));
-    device_data = D_Array<D_Vector *>(n_species());
+    device_data.Resize(n_species());
     D_Vector *new_device_data[n_species()];
     for (int i = 0; i < n_species(); i++)
         new_device_data[i] = (D_Vector *)vector_holder.at(i)._device;
