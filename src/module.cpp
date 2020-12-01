@@ -62,17 +62,17 @@ PYBIND11_MODULE(ardisLib, m) {
                      sizeof(T) * sub_state.size(), cudaMemcpyHostToDevice));
              })
         .def("AddReaction",
-             [](System &self, std::string reag, int kr, std::string prod,
-                int kp, T rate) { self.AddReaction(reag, kr, prod, kp, rate); })
-        .def("AddReaction", [](System &self, std::string reaction,
-                               T rate) { self.AddReaction(reaction, rate); })
+             static_cast<void (System::*)(std::string, int, std::string, int,
+                                          T)>(&System::AddReaction))
+        .def("AddReaction",
+             static_cast<void (System::*)(const std::string &, T)>(
+                 &System::AddReaction))
         .def("AddMMReaction",
-             [](System &self, std::string reaction, T Vm, T Km) {
-                 self.AddMMReaction(reaction, Vm, Km);
-             })
+             static_cast<void (System::*)(const std::string &, T, T)>(
+                 &System::AddMMReaction))
         .def("AddMMReaction",
-             [](System &self, std::string reag, std::string prod, int kp, T Vm,
-                T Km) { self.AddMMReaction(reag, prod, kp, Vm, Km); })
+             static_cast<void (System::*)(std::string, std::string, int, T, T)>(
+                 &System::AddMMReaction))
         .def(
             "GetSpecies",
             [](System &self, std::string name) {
@@ -95,7 +95,7 @@ PYBIND11_MODULE(ardisLib, m) {
         .def_readwrite("State", &System::state,
                        py::return_value_policy::reference)
         .def_property(
-            "Epsilon",
+            "epsilon",
             [](System &self) { // Getter
                 return self.epsilon;
             },
@@ -103,7 +103,7 @@ PYBIND11_MODULE(ardisLib, m) {
                 self.epsilon = value;
             })
         .def_property(
-            "Drain",
+            "drain",
             [](System &self) { // Getter
                 return self.drain;
             },
@@ -298,19 +298,19 @@ PYBIND11_MODULE(ardisLib, m) {
         .def(py::init<>())
         .def(py::init<float, float, float, float>())
         .def(py::init<Point2D, Point2D>())
-        .def("IsInside", [](RectangleZone &self, float x,
-                            float y) { return self.IsInside(x, y); })
-        .def("IsInside",
-             [](RectangleZone &self, Point2D p) { return self.IsInside(p); });
+        .def("IsInside", static_cast<bool (RectangleZone::*)(T, T)>(
+                             &RectangleZone::IsInside))
 
+        .def("IsInside", static_cast<bool (RectangleZone::*)(Point2D)>(
+                             &RectangleZone::IsInside));
     py::class_<TriangleZone, Zone>(geometry, "TriangleZone")
         .def(py::init<>())
         .def(py::init<float, float, float, float, float, float>())
         .def(py::init<Point2D, Point2D, Point2D>())
-        .def("IsInside", [](TriangleZone &self, float x,
-                            float y) { return self.IsInside(x, y); })
         .def("IsInside",
-             [](TriangleZone &self, Point2D p) { return self.IsInside(p); });
+             static_cast<bool (TriangleZone::*)(T, T)>(&TriangleZone::IsInside))
+        .def("IsInside", static_cast<bool (TriangleZone::*)(Point2D)>(
+                             &TriangleZone::IsInside));
 
     py::class_<Point2D>(geometry, "Point2D")
         .def(py::init<T, T>())

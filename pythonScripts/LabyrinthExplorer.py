@@ -129,8 +129,8 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, storeEvery=1, dt=1e-2, epsil
     print("Dampness matrix loaded ...")
 
     system = System(d_D.Cols)
-    system.Drain = drain
-    system.Epsilon = epsilon
+    system.drain = drain
+    system.epsilon = epsilon
 
     n = len(Mesh.x)
 
