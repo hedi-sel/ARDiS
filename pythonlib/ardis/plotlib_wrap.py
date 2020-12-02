@@ -16,7 +16,7 @@ def PlotState(state, mesh, title="no title", listSpecies=[], excludeSpecies=[], 
     scatterSize = math.sqrt((np.max(mesh.x) - np.min(mesh.x))
                             * (np.max(mesh.y) - np.min(mesh.y)) * 1.0 / state.vector_size())
     if(len(listSpecies) == 0):
-        listSpecies = state.ListSpecies()
+        listSpecies = state.list_species()
 
     if (len(colors) == 0):
         col_count = 0
@@ -33,7 +33,7 @@ def PlotState(state, mesh, title="no title", listSpecies=[], excludeSpecies=[], 
     for species in listSpecies:
         if species in excludeSpecies:
             continue
-        vect = state.GetSpecies(species).ToNumpyArray()
+        vect = state.get_species(species).toarray()
         ax.scatter(mesh.x, mesh.y, s=2 * vect *
                    scatterSize, vmin=0, vmax=1, c=colors[species])
     return fig

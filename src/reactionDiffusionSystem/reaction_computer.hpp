@@ -1,3 +1,3 @@
-#include "system.hpp"
+#include "simulation.hpp"
 
-void ComputeReaction(State &state, ReactionMassAction &reaction, T rate);
+void compute_reaction(state &state, reaction_mass_action &reaction, T rate);

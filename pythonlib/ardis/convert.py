@@ -2,17 +2,17 @@ from .ardisLib import *
 from .read_mtx import *
 
 
-def ToD_SparseMatrix(matrix, m_type=MatrixType.COO):
-    if (m_type == MatrixType.CSR):
+def ToD_SparseMatrix(matrix, m_type=matrix_type.COO):
+    if (m_type == matrix_type.CSR):
         matrix = matrix.tocsr()
-        d_matrix = D_SparseMatrix(
+        d_matrix = d_spmatrix(
             matrix.shape[0], matrix.shape[1], matrix.indptr, matrix.indices, matrix.data, m_type)
-    elif (m_type == MatrixType.COO):
+    elif (m_type == matrix_type.COO):
         matrix = matrix.tocoo()
-        d_matrix = D_SparseMatrix(
+        d_matrix = d_spmatrix(
             matrix.shape[0], matrix.shape[1], matrix.rows, matrix.cols, matrix.data, m_type)
-    elif (m_type == MatrixType.CSC):
+    elif (m_type == matrix_type.CSC):
         matrix = matrix.tocsc()
-        d_matrix.D_SparseMatrix(
+        d_matrix.d_spmatrix(
             matrix.shape[0], matrix.shape[1], matrix.indices, matrix.indptr, matrix.data, m_type)
     return d_matrix

@@ -3,9 +3,8 @@
 #include "dataStructures/matrix_element.hpp"
 #include "dataStructures/sparse_matrix.hpp"
 
-__device__ __host__ void convertArrayBody(D_SparseMatrix *matrix,
-                                          int *toOrderArray, int *newArray,
-                                          int newSize) {
+__device__ __host__ void convertArrayBody(d_spmatrix *matrix, int *toOrderArray,
+                                          int *newArray, int newSize) {
     newArray[0] = 0;
     int it = 0;
     for (int k = 1; k < newSize; k++) {
@@ -17,7 +16,7 @@ __device__ __host__ void convertArrayBody(D_SparseMatrix *matrix,
     }
 }
 
-__global__ void convertArray(D_SparseMatrix *matrix, int *toOrderArray,
+__global__ void convertArray(d_spmatrix *matrix, int *toOrderArray,
                              int *newArray, int newSize) {
     convertArrayBody(matrix, toOrderArray, newArray, newSize);
 }
@@ -34,7 +33,7 @@ __global__ void checkOrdered(int *array, int size, bool *_isOK) {
     checkOrderedBody(array, size, _isOK);
 }
 
-__device__ __host__ inline void printMatrixBody(const D_SparseMatrix *matrix,
+__device__ __host__ inline void printMatrixBody(const d_spmatrix *matrix,
                                                 int printCount = 0) {
     printf("Matrix :\n%i %i %i/%i isDev=%i format=", matrix->rows, matrix->cols,
            matrix->loaded_elements, matrix->nnz, matrix->isDevice);
@@ -50,7 +49,7 @@ __device__ __host__ inline void printMatrixBody(const D_SparseMatrix *matrix,
         break;
     }
     for (MatrixElement elm(matrix); elm.HasNext(); elm.Next()) {
-        elm.Print();
+        elm.print();
         if (printCount > 0 && !(elm.k < printCount - 1)) {
             printf("... \n");
             return;
@@ -58,11 +57,11 @@ __device__ __host__ inline void printMatrixBody(const D_SparseMatrix *matrix,
     }
 }
 
-__global__ void printMatrix(const D_SparseMatrix *matrix, int printCount) {
+__global__ void printMatrix(const d_spmatrix *matrix, int printCount) {
     printMatrixBody(matrix, printCount);
 }
 
-__device__ __host__ void IsSymetricBody(const D_SparseMatrix *matrix,
+__device__ __host__ void IsSymetricBody(const d_spmatrix *matrix,
                                         bool *_return) {
     *_return = true;
     for (MatrixElement elm(matrix); elm.HasNext(); elm.Next()) {
@@ -74,12 +73,11 @@ __device__ __host__ void IsSymetricBody(const D_SparseMatrix *matrix,
     return;
 }
 
-__global__ void IsSymetricKernel(const D_SparseMatrix *matrix, bool *_return) {
+__global__ void IsSymetricKernel(const d_spmatrix *matrix, bool *_return) {
     IsSymetricBody(matrix, _return);
 }
 
-__device__ __host__ void AddElementBody(D_SparseMatrix *m, int i, int j,
-                                        T &val) {
+__device__ __host__ void AddElementBody(d_spmatrix *m, int i, int j, T &val) {
     if (m->loaded_elements >= m->nnz) {
         printf("Error! The Sparse Matrix exceeded its memory allocation! At:"
                " i=%i j=%i val=%f\n",
@@ -104,11 +102,11 @@ __device__ __host__ void AddElementBody(D_SparseMatrix *m, int i, int j,
     m->loaded_elements++;
 }
 
-__global__ void AddElementK(D_SparseMatrix *m, int i, int j, T &val) {
+__global__ void AddElementK(d_spmatrix *m, int i, int j, T &val) {
     AddElementBody(m, i, j, val);
 }
 
-__global__ void GetDataWidthK(D_SparseMatrix &d_mat, D_Vector &width) {
+__global__ void GetDataWidthK(d_spmatrix &d_mat, d_vector &width) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= d_mat.rows)
         return;
@@ -120,8 +118,8 @@ __global__ void GetDataWidthK(D_SparseMatrix &d_mat, D_Vector &width) {
     } while (it.i == i && it.HasNext());
 }
 
-__device__ __host__ bool isEqualBody(const D_SparseMatrix &m1,
-                                     const D_SparseMatrix &m2) {
+__device__ __host__ bool isEqualBody(const d_spmatrix &m1,
+                                     const d_spmatrix &m2) {
     if (m1.nnz != m2.nnz || m1.cols != m2.cols || m1.rows != m2.rows ||
         m1.type != m2.type || m1.isDevice != m2.isDevice) {
         printf("debut");
@@ -152,7 +150,7 @@ __device__ __host__ bool isEqualBody(const D_SparseMatrix &m1,
     return true;
 }
 
-__global__ void isEqual(const D_SparseMatrix &m1, const D_SparseMatrix &m2,
+__global__ void isEqual(const d_spmatrix &m1, const d_spmatrix &m2,
                         bool &result) {
     result = isEqualBody(m1, m2);
 }

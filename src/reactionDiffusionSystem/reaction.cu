@@ -3,13 +3,13 @@
 #include "reaction.hpp"
 
 #include "reactionHelper.h"
-ReactionHolder::ReactionHolder(std::vector<stochCoeff> reag,
-                               std::vector<stochCoeff> prod)
+reaction_holder::reaction_holder(std::vector<stochCoeff> reag,
+                                 std::vector<stochCoeff> prod)
     : Reagents(reag), Products(prod) {}
 
-Reaction::Reaction(std::map<std::string, int> &names, ReactionHolder holder,
+reaction::reaction(std::map<std::string, int> &names, reaction_holder holder,
                    long unsigned size)
-    : holder(holder), Reagents(holder.Reagents.size()),
+    : Holder(holder), Reagents(holder.Reagents.size()),
       ReagentsCoeff(holder.Reagents.size()), Products(holder.Products.size()),
       ProductsCoeff(holder.Products.size()) {
     int reag_size = holder.Reagents.size();
@@ -40,49 +40,49 @@ Reaction::Reaction(std::map<std::string, int> &names, ReactionHolder holder,
     // gpuErrchk(cudaMemcpy(_device, this, size, cudaMemcpyHostToDevice));
 }
 
-Reaction::Reaction(std::map<std::string, int> &names,
+reaction::reaction(std::map<std::string, int> &names,
                    std::vector<stochCoeff> reag, std::vector<stochCoeff> prod,
                    long unsigned size)
-    : Reaction(names, ReactionHolder(reag, prod), size) {}
+    : reaction(names, reaction_holder(reag, prod), size) {}
 
-__device__ __host__ void Reaction::Print() const {
+__device__ __host__ void reaction::print() const {
 #ifndef __CUDA_ARCH__
-    for (auto coeff : holder.Reagents)
+    for (auto coeff : Holder.Reagents)
         std::cout << coeff.second << "." << coeff.first << " + ";
     std::cout << "-> ";
-    for (auto coeff : holder.Products)
+    for (auto coeff : Holder.Products)
         std::cout << coeff.second << "." << coeff.first << " + ";
     std::cout << "\n";
 #else
-    printf("Warning: Print has been called in base class Reaction \n");
+    printf("Warning: print has been called in base class reaction \n");
 #endif
 }
 
-Reaction::Reaction(Reaction &&other)
-    : holder(other.holder), Reagents(std::move(other.Reagents)),
+reaction::reaction(reaction &&other)
+    : Holder(other.Holder), Reagents(std::move(other.Reagents)),
       ReagentsCoeff(std::move(other.ReagentsCoeff)),
       Products(std::move(other.Products)),
       ProductsCoeff(std::move(other.ProductsCoeff)) {}
 
 /////// Mass Action
 
-ReactionMassAction::ReactionMassAction(std::map<std::string, int> &names,
-                                       std::vector<stochCoeff> reag,
-                                       std::vector<stochCoeff> prod, T rate)
-    : ReactionMassAction(names, ReactionHolder(reag, prod), rate) {}
+reaction_mass_action::reaction_mass_action(std::map<std::string, int> &names,
+                                           std::vector<stochCoeff> reag,
+                                           std::vector<stochCoeff> prod, T rate)
+    : reaction_mass_action(names, reaction_holder(reag, prod), rate) {}
 
-ReactionMassAction::ReactionMassAction(std::map<std::string, int> &names,
-                                       ReactionHolder reac, T rate)
-    : Reaction(names, reac, sizeof(ReactionMassAction)), K(rate) {
-    gpuErrchk(cudaMalloc(&_device, sizeof(ReactionMassAction)));
-    gpuErrchk(cudaMemcpy(_device, this, sizeof(ReactionMassAction),
+reaction_mass_action::reaction_mass_action(std::map<std::string, int> &names,
+                                           reaction_holder reac, T rate)
+    : reaction(names, reac, sizeof(reaction_mass_action)), K(rate) {
+    gpuErrchk(cudaMalloc(&_device, sizeof(reaction_mass_action)));
+    gpuErrchk(cudaMemcpy(_device, this, sizeof(reaction_mass_action),
                          cudaMemcpyHostToDevice));
     gpuErrchk(cudaDeviceSynchronize());
 }
 
-__host__ __device__ void ReactionMassAction::Print() const {
+__host__ __device__ void reaction_mass_action::print() const {
 #ifndef __CUDA_ARCH__
-    Reaction::Print();
+    reaction::print();
     std::cout << "k=" << K << "\n";
 #else
     PrintBody(*this);
@@ -91,30 +91,30 @@ __host__ __device__ void ReactionMassAction::Print() const {
 
 /////// Michaleis Menten
 
-ReactionMichaelisMenten::ReactionMichaelisMenten(
-    std::map<std::string, int> &names, ReactionHolder reac, T Vm, T Km)
-    : Reaction(names, reac, sizeof(ReactionMichaelisMenten)), Vm(Vm), Km(Km) {
-    gpuErrchk(cudaMalloc(&_device, sizeof(ReactionMichaelisMenten)));
-    gpuErrchk(cudaMemcpy(_device, this, sizeof(ReactionMichaelisMenten),
+reaction_michaelis_menten::reaction_michaelis_menten(
+    std::map<std::string, int> &names, reaction_holder reac, T Vm, T Km)
+    : reaction(names, reac, sizeof(reaction_michaelis_menten)), Vm(Vm), Km(Km) {
+    gpuErrchk(cudaMalloc(&_device, sizeof(reaction_michaelis_menten)));
+    gpuErrchk(cudaMemcpy(_device, this, sizeof(reaction_michaelis_menten),
                          cudaMemcpyHostToDevice));
     gpuErrchk(cudaDeviceSynchronize());
 }
 
-ReactionMichaelisMenten::ReactionMichaelisMenten(
+reaction_michaelis_menten::reaction_michaelis_menten(
     std::map<std::string, int> &names, std::string reag,
     std::vector<stochCoeff> prod, T Vm, T Km)
-    : ReactionMichaelisMenten(
+    : reaction_michaelis_menten(
           names,
-          ReactionHolder(std::vector<stochCoeff>{stochCoeff(reag, 1)}, prod),
+          reaction_holder(std::vector<stochCoeff>{stochCoeff(reag, 1)}, prod),
           Vm, Km) {}
 
-__host__ __device__ void ReactionMichaelisMenten::Print() const {
+__host__ __device__ void reaction_michaelis_menten::print() const {
 #ifndef __CUDA_ARCH__
-    Reaction::Print();
+    reaction::print();
     std::cout << "Vm = " << Vm << " ; Km = " << Km << "\n";
 #else
     PrintBody(*this);
 #endif
 }
 
-Reaction::~Reaction() {}
+reaction::~reaction() {}

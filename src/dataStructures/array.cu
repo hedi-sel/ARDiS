@@ -16,13 +16,13 @@ __device__ __host__ void CallError(AccessError error) {
 }
 
 template <typename C>
-__host__ D_Array<C>::D_Array(int n, bool isDevice) : n(n), isDevice(isDevice) {
+__host__ d_array<C>::d_array(int n, bool isDevice) : n(n), isDevice(isDevice) {
     MemAlloc();
 }
 
 template <typename C>
-__host__ D_Array<C>::D_Array(const D_Array<C> &m, bool copyToOtherMem)
-    : D_Array<C>(m.n, m.isDevice ^ copyToOtherMem) {
+__host__ d_array<C>::d_array(const d_array<C> &m, bool copyToOtherMem)
+    : d_array<C>(m.n, m.isDevice ^ copyToOtherMem) {
     cudaMemcpyKind memCpy =
         (m.isDevice)
             ? (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
@@ -31,12 +31,12 @@ __host__ D_Array<C>::D_Array(const D_Array<C> &m, bool copyToOtherMem)
 }
 
 template <typename C>
-__host__ D_Array<C>::D_Array(D_Array<C> &&other) : D_Array(0, other.isDevice) {
+__host__ d_array<C>::d_array(d_array<C> &&other) : d_array(0, other.isDevice) {
     *this = other;
 }
 
 template <typename C>
-__host__ void D_Array<C>::operator=(const D_Array<C> &other) {
+__host__ void d_array<C>::operator=(const d_array<C> &other) {
     if (isDevice != other.isDevice)
         if (isDevice)
             throw("You cannot move an array host array into a device array");
@@ -51,22 +51,22 @@ __host__ void D_Array<C>::operator=(const D_Array<C> &other) {
         _device = other._device;
 }
 
-template <typename C> __host__ void D_Array<C>::Resize(int n) {
+template <typename C> __host__ void d_array<C>::Resize(int n) {
     MemFree();
     this->n = n;
     MemAlloc();
 }
 
-template <typename C> __host__ D_Array<C>::~D_Array<C>() { MemFree(); }
+template <typename C> __host__ d_array<C>::~d_array<C>() { MemFree(); }
 
-template <typename C> __host__ void D_Array<C>::MemAlloc() {
+template <typename C> __host__ void d_array<C>::MemAlloc() {
     if (n > 0) {
         n_dataholders = new int[1];
         *n_dataholders = 1;
         if (isDevice) {
             gpuErrchk(cudaMalloc(&data, n * sizeof(T)));
-            gpuErrchk(cudaMalloc(&_device, sizeof(D_Array<C>)));
-            gpuErrchk(cudaMemcpy(_device, this, sizeof(D_Array<C>),
+            gpuErrchk(cudaMalloc(&_device, sizeof(d_array<C>)));
+            gpuErrchk(cudaMemcpy(_device, this, sizeof(d_array<C>),
                                  cudaMemcpyHostToDevice));
         } else {
             data = new C[n];
@@ -74,7 +74,7 @@ template <typename C> __host__ void D_Array<C>::MemAlloc() {
     }
 }
 
-template <typename C> __host__ void D_Array<C>::MemFree() {
+template <typename C> __host__ void d_array<C>::MemFree() {
     if (n > 0) {
         *n_dataholders -= 1;
         if (*n_dataholders == 0) {
@@ -90,7 +90,7 @@ template <typename C> __host__ void D_Array<C>::MemFree() {
 }
 
 template <typename C>
-__host__ __device__ void D_Array<C>::Print(int printCount) const {
+__host__ __device__ void d_array<C>::print(int printCount) const {
 #ifndef __CUDA_ARCH__
     if (isDevice) {
         gpuErrchk(cudaDeviceSynchronize());
@@ -105,7 +105,7 @@ __host__ __device__ void D_Array<C>::Print(int printCount) const {
         printVectorBody(*this, printCount);
 }
 
-template <typename C> __host__ __device__ C &D_Array<C>::at(int i) {
+template <typename C> __host__ __device__ C &d_array<C>::at(int i) {
 #ifndef __CUDA_ARCH__
     if (isDevice)
         CallError(AccessDeviceOnHost);
@@ -117,33 +117,33 @@ template <typename C> __host__ __device__ C &D_Array<C>::at(int i) {
     return data[i];
 }
 
-template <typename C> __host__ __device__ int D_Array<C>::size() { return n; }
-template <typename C> __host__ __device__ bool D_Array<C>::IsDevice() {
+template <typename C> __host__ __device__ int d_array<C>::size() { return n; }
+template <typename C> __host__ __device__ bool d_array<C>::IsDevice() {
     return isDevice;
 }
 
 template <typename C>
-__host__ cusparseDnVecDescr_t D_Array<C>::MakeDescriptor() {
+__host__ cusparseDnVecDescr_t d_array<C>::MakeDescriptor() {
     cusparseDnVecDescr_t descr;
     cusparseErrchk(cusparseCreateDnVec(&descr, n, data, T_Cuda));
     return descr;
 }
 
-template <typename C> __host__ void D_Array<C>::Fill(C value) {
+template <typename C> __host__ void d_array<C>::Fill(C value) {
     auto setTo = [value] __device__(C & a) { a = value; };
     ApplyFunction(*this, setTo);
 }
 
 #define quote(x) #x
 
-__host__ void D_Vector::Prune(T value) {
+__host__ void d_vector::prune(T value) {
     auto setTo = [value] __device__(T & a) {
         if (a < value)
             a = value;
     };
     ApplyFunction(*this, setTo);
 }
-__host__ void D_Vector::PruneUnder(T value) {
+__host__ void d_vector::prune_under(T value) {
     auto setTo = [value] __device__(T & a) {
         if (a > value)
             a = value;
@@ -151,7 +151,7 @@ __host__ void D_Vector::PruneUnder(T value) {
     ApplyFunction(*this, setTo);
 }
 
-__host__ std::string D_Vector::ToString() {
+__host__ std::string d_vector::ToString() {
     int printCount = 5;
     std::stringstream strs;
     strs << "[ ";

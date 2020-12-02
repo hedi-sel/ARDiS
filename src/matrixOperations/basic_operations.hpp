@@ -13,21 +13,19 @@ const cudaDataType T_Cuda = CUDA_R_64F;
 #else
 const cudaDataType T_Cuda = CUDA_R_32F;
 #endif
-void Dot(D_SparseMatrix &d_mat, D_Vector &x, D_Vector &y,
-         bool synchronize = true);
-void Dot(D_Vector &x, D_Vector &y, T &result, bool synchronize = true);
+void dot(d_spmatrix &d_mat, d_vector &x, d_vector &y, bool synchronize = true);
+void dot(d_vector &x, d_vector &y, T &result, bool synchronize = true);
 
 // Computes C = A + alpha*B
-void VectorSum(D_Vector &a, D_Vector &b, T &alpha, D_Vector &c,
-               bool synchronize = true);
+void vector_sum(d_vector &a, d_vector &b, T &alpha, d_vector &c,
+                bool synchronize = true);
 // Computes C = A + B
-void VectorSum(D_Vector &a, D_Vector &b, D_Vector &c, bool synchronize = true);
+void vector_sum(d_vector &a, d_vector &b, d_vector &c, bool synchronize = true);
 
-void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, T &alpha,
-               D_SparseMatrix &c);
-void MatrixSum(D_SparseMatrix &a, D_SparseMatrix &b, D_SparseMatrix &c);
+void matrix_sum(d_spmatrix &a, d_spmatrix &b, T &alpha, d_spmatrix &c);
+void matrix_sum(d_spmatrix &a, d_spmatrix &b, d_spmatrix &c);
 
-void ScalarMult(D_SparseMatrix &a, T &alpha);
-void ScalarMult(D_Vector &a, T &alpha);
+void scalar_mult(d_spmatrix &a, T &alpha);
+void scalar_mult(d_vector &a, T &alpha);
 
 void PrintDotProfiler();

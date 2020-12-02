@@ -10,9 +10,9 @@
 
 #include "constants.hpp"
 
-enum MatrixType { COO, CSR, CSC };
+enum matrix_type { COO, CSR, CSC };
 
-class D_SparseMatrix {
+class d_spmatrix {
   public:
     int nnz;
     int rows;
@@ -21,27 +21,26 @@ class D_SparseMatrix {
     int loaded_elements = 0;
     int dataWidth = -1;
 
-    MatrixType type;
+    matrix_type type;
     const bool isDevice;
     // cusparseMatDescr_t descr = NULL;
 
     T *data;
     int *rowPtr;
     int *colPtr;
-    D_SparseMatrix *_device;
+    d_spmatrix *_device;
 
-    __host__ D_SparseMatrix();
-    __host__ D_SparseMatrix(int rows, int cols, int nnz = 0, MatrixType = COO,
-                            bool isDevice = true);
-    __host__ D_SparseMatrix(const D_SparseMatrix &,
-                            bool copyToOtherMem = false);
-    __host__ void operator=(const D_SparseMatrix &);
-    __host__ bool operator==(const D_SparseMatrix &);
+    __host__ d_spmatrix();
+    __host__ d_spmatrix(int rows, int cols, int nnz = 0, matrix_type = COO,
+                        bool isDevice = true);
+    __host__ d_spmatrix(const d_spmatrix &, bool copyToOtherMem = false);
+    __host__ void operator=(const d_spmatrix &);
+    __host__ bool operator==(const d_spmatrix &);
 
-    __host__ ~D_SparseMatrix();
+    __host__ ~d_spmatrix();
 
     __host__ std::string ToString();
-    __host__ __device__ void Print(int printCount = 5) const;
+    __host__ __device__ void print(int printCount = 5) const;
 
     __host__ void SetNNZ(int);
 
@@ -61,10 +60,10 @@ class D_SparseMatrix {
     __host__ __device__ T Lookup(int i, int j) const;
 
     // Turn the matrix to CSC or CSR type
-    __host__ void ToCompressedDataType(MatrixType = COO);
-    __host__ bool IsConvertibleTo(MatrixType) const;
+    __host__ void ToCompressedDataType(matrix_type = COO);
+    __host__ bool IsConvertibleTo(matrix_type) const;
 
-    __host__ void ConvertMatrixToCSR();
+    __host__ void to_csr();
 
     __host__ bool IsSymetric();
 

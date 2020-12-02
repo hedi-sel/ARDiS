@@ -8,26 +8,26 @@
 #include "dataStructures/sparse_matrix.hpp"
 #include "matrixOperations/basic_operations.hpp"
 
-class CGSolver {
+class cg_solver {
   public:
     int n;
-    D_Vector q;
-    D_Vector r;
-    D_Vector p;
+    d_vector q;
+    d_vector r;
+    d_vector p;
 
-    HDData<T> value;
-    HDData<T> alpha;
-    HDData<T> beta;
-    HDData<T> diff;
+    hd_data<T> value;
+    hd_data<T> alpha;
+    hd_data<T> beta;
+    hd_data<T> diff;
 
 #ifndef NDEBUG_PROFILING
     ChronoProfiler profiler;
 #endif
 
-    CGSolver(int n);
-    bool CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &y, T epsilon,
+    cg_solver(int n);
+    bool CGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &y, T epsilon,
                  std::string str = "");
     int n_iter_last = 0;
-    static bool StaticCGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &y,
+    static bool StaticCGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &y,
                               T epsilon); // TODO FactorizeCode
 };

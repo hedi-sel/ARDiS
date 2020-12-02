@@ -5,4 +5,4 @@
 #include "constants.hpp"
 #include "reaction.hpp"
 
-ReactionHolder ParseReaction(const std::string &descriptor);
+reaction_holder ParseReaction(const std::string &descriptor);

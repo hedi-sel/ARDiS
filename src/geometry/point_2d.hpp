@@ -2,8 +2,8 @@
 
 #include <constants.hpp>
 
-struct Point2D {
+struct point2d {
     T x, y;
-    Point2D();
-    Point2D(T x, T y);
+    point2d();
+    point2d(T x, T y);
 };

@@ -4,12 +4,12 @@
 #include "zone.hpp"
 #include <dataStructures/array.hpp>
 
-void FillZone(D_Vector &u, D_Mesh &mesh, RectangleZone &RectangleZone, T value);
+void fill_zone(d_vector &u, d_mesh &mesh, rect_zone &rect_zone, T value);
 
-void FillOutsideZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone, T value);
+void fill_outside_zone(d_vector &u, d_mesh &mesh, rect_zone &zone, T value);
 
-T GetMinZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone);
+T GetMinZone(d_vector &u, d_mesh &mesh, rect_zone &zone);
 
-T GetMaxZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone);
+T GetMaxZone(d_vector &u, d_mesh &mesh, rect_zone &zone);
 
-T GetMeanZone(D_Vector &u, D_Mesh &mesh, RectangleZone &zone);
+T GetMeanZone(d_vector &u, d_mesh &mesh, rect_zone &zone);

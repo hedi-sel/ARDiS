@@ -10,4 +10,4 @@ for step in stepSizes:
     os.system(
         "./wolframScripts/ImageToMatrixControlPrecision.wls precision=" + step + " " + step)
     ExploreLabyrinth("precision="+step, storeEvery=1, max_time=100, diffusion=1, reaction=1,
-                     dt=1e-1, drain=1e-8, epsilon=1e-3, plot_dt=1, startZone=dg.RectangleZone(0, 0, 500, 10))
+                     dt=1e-1, drain=1e-8, epsilon=1e-3, plot_dt=1, startZone=dg.rect_zone(0, 0, 500, 10))

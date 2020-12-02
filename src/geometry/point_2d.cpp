@@ -1,4 +1,4 @@
 #include "point_2d.hpp"
 
-Point2D::Point2D() : Point2D(0, 0){};
-Point2D::Point2D(T x, T y) : x(x), y(y){};
+point2d::point2d() : point2d(0, 0){};
+point2d::point2d(T x, T y) : x(x), y(y){};

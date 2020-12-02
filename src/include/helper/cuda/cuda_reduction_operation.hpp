@@ -9,6 +9,6 @@
 
 enum OpType { sum, maximum };
 
-T ReductionOperation(D_Vector &A, OpType op);
+T ReductionOperation(d_vector &A, OpType op);
 
 T ReductionIncreasing(int *A, int n);

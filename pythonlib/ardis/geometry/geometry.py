@@ -8,15 +8,15 @@ def Sign(x0, y0, x1, y1, x2, y2):
     return (x0 - x2) * (y1 - y2) - (x1 - x2) * (y0 - y2)
 
 
-def FillZone(U, Mesh, Zone, value):
+def fill_zone(U, Mesh, zone, value):
     for i in range(0, len(U)):
-        if Zone.IsInside(Mesh.x[i], Mesh.y[i]):
+        if zone.is_inside(Mesh.x[i], Mesh.y[i]):
             U[i] = value
 
 
-def FillOutsideZone(U, Mesh, Zone, value):
+def fill_outside_zone(U, Mesh, zone, value):
     for i in range(0, len(U)):
-        if not Zone.IsInside(Mesh.x[i], Mesh.y[i]):
+        if not zone.is_inside(Mesh.x[i], Mesh.y[i]):
             U[i] = value
 
 
@@ -25,27 +25,27 @@ def Fill(U, Mesh, value):
         U[i] = value
 
 
-def GetMinZone(U, Mesh, Zone):
+def GetMinZone(U, Mesh, zone):
     Min = float('inf')
     for i in range(0, len(U)):
-        if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] < Min:
+        if zone.is_inside(Mesh.x[i], Mesh.y[i]) and U[i] < Min:
             Min = U[i]
     return Min
 
 
-def GetMaxZone(U, Mesh, Zone):
+def GetMaxZone(U, Mesh, zone):
     Max = float('-inf')
     for i in range(0, len(U)):
-        if Zone.IsInside(Mesh.x[i], Mesh.y[i]) and U[i] > Max:
+        if zone.is_inside(Mesh.x[i], Mesh.y[i]) and U[i] > Max:
             Max = U[i]
     return Max
 
 
-def GetMeanZone(U, Mesh, Zone):
+def GetMeanZone(U, Mesh, zone):
     Sum = 0
     N = 0
     for i in range(0, len(U)):
-        if Zone.IsInside(Mesh.x[i], Mesh.y[i]):
+        if zone.is_inside(Mesh.x[i], Mesh.y[i]):
             Sum += U[i]
             N += 1
     return Sum/N

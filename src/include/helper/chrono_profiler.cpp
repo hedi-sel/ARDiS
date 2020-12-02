@@ -24,7 +24,7 @@ void ChronoProfiler::End() {
     current = -1;
 }
 
-void ChronoProfiler::Print() {
+void ChronoProfiler::print() {
     CountTime();
     for (auto name = names.begin(); name != names.end(); name++) {
         std::cout << name->first << " :\n" << chronos[name->second] << "\n";

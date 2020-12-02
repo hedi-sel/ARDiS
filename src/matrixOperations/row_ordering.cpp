@@ -9,7 +9,7 @@
 
 cusparseHandle_t rowOrdHandle = NULL;
 
-void RowOrdering(D_SparseMatrix &d_mat) {
+void RowOrdering(d_spmatrix &d_mat) {
     assert(d_mat.isDevice);
     if (rowOrdHandle == NULL) {
         cusparseErrchk(cusparseCreate(&rowOrdHandle));

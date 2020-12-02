@@ -108,7 +108,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
 
 
 def ExploreLabyrinth(name, diffusion=1, reaction=5, storeEvery=1, dt=1e-2, epsilon=1e-3, max_time=3, plot_dt=1e-1, drain=1e-13, guess=float(0),
-                     threashold=0.9, startZone=dg.RectangleZone(0, 0, 500, 0.2)):
+                     threashold=0.9, startZone=dg.rect_zone(0, 0, 500, 0.2)):
 
     print("Starting exploration on experiment :", name)
 
@@ -122,41 +122,41 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, storeEvery=1, dt=1e-2, epsil
     os.system("rm -f "+csvFolder+"/"+name+".csv")
 
     d_S = ToD_SparseMatrix(LoadMatrixFromFile(
-        stiffnessPath, Readtype.Symetric), MatrixType.CSR)
+        stiffnessPath, Readtype.Symetric), matrix_type.CSR)
     print("Stiffness matrix loaded ...")
     d_D = ToD_SparseMatrix(LoadMatrixFromFile(
-        dampingPath, Readtype.Symetric), MatrixType.CSR)
+        dampingPath, Readtype.Symetric), matrix_type.CSR)
     print("Dampness matrix loaded ...")
 
-    system = System(d_D.Cols)
-    system.drain = drain
-    system.epsilon = epsilon
+    simu = simulation(d_D.shape[0])
+    simu.drain = drain
+    simu.epsilon = epsilon
 
     n = len(Mesh.x)
 
-    U = D_Vector(n)
-    U.FillValue(0)
-    d_Mesh = dg.D_Mesh(Mesh.x, Mesh.y)
-    dg.FillZone(U, d_Mesh, startZone, 1)
+    U = d_vector(n)
+    U.fill_value(0)
+    d_Mesh = dg.d_mesh(Mesh.x, Mesh.y)
+    dg.fill_zone(U, d_Mesh, startZone, 1)
 
     print(U)
 
-    system.AddSpecies("N")
-    system.SetSpecies("N", U)
-    # system.AddSpecies("NP")
-    # system.SetSpecies("NP", np.array([0] * len(U)))
-    system.AddSpecies("P")
-    system.SetSpecies("P", U)
+    simu.add_species("N")
+    simu.set_species("N", U)
+    # simu.add_species("NP")
+    # simu.set_species("NP", np.array([0] * len(U)))
+    simu.add_species("P")
+    simu.set_species("P", U)
 
-    system.LoadStiffnessMatrix(d_S)
-    system.LoadDampnessMatrix(d_D)
+    simu.load_stiffness_matrix(d_S)
+    simu.load_dampness_matrix(d_D)
 
-    system.AddMMReaction(" N -> 2 N", reaction, 1)
-    # system.AddReaction(" N+P -> NP", reaction)
-    # system.AddMMReaction(" NP -> 2P", reaction, 1)
-    system.AddReaction("N+P-> 2P", reaction)
-    # system.AddReaction(" N -> 2 N", reaction)
-    # system.AddReaction(" 2N -> N", reaction)
+    simu.add_mm_reaction(" N -> 2 N", reaction, 1)
+    # simu.add_reaction(" N+P -> NP", reaction)
+    # simu.add_mm_reaction(" NP -> 2P", reaction, 1)
+    simu.add_reaction("N+P-> 2P", reaction)
+    # simu.add_reaction(" N -> 2 N", reaction)
+    # simu.add_reaction(" 2N -> N", reaction)
 
     Nit = int(max_time / dt)
     k = 0
@@ -168,13 +168,13 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, storeEvery=1, dt=1e-2, epsil
     #     "P": [[0.2, 0.4, 0.6]]
     # }
     for i in range(0, Nit):
-        system.IterateDiffusion(dt)
-        system.Prune()
-        system.IterateReaction(dt, True)
+        simu.iterate_diffusion(dt)
+        simu.prune()
+        simu.iterate_reaction(dt, True)
 
         if (i * dt > plot_dt * plotcount):
             plotcount += 1
-            fig = PlotState(system.State, Mesh)
+            fig = PlotState(simu.state, Mesh)
             fig.savefig(
                 printFolder + "/"+name+"/" + str(i) + ".png")
             plt.close(fig)

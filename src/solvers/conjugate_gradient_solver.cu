@@ -5,14 +5,12 @@
 #include "constants.hpp"
 #include "helper/chrono_profiler.hpp"
 
-CGSolver::CGSolver(int n) : q(n), r(n), p(n) {}
+cg_solver::cg_solver(int n) : q(n), r(n), p(n) {}
 
-void ToCSV(D_Vector &array, std::string outputPath, std::string label = "") {
+void ToCSV(d_vector &array, std::string outputPath, std::string label = "") {
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
-    // fout << stateName << "\t" << state.data.size() << "\n";
-    D_Vector h_Arr(array, true);
-    // fout << species.first ;
+    d_vector h_Arr(array, true);
     fout << label;
     for (size_t j = 0; j < h_Arr.n; j++)
         fout << ((j == 0) ? "" : "\t") << h_Arr.data[j];
@@ -20,38 +18,34 @@ void ToCSV(D_Vector &array, std::string outputPath, std::string label = "") {
     fout.close();
 }
 
-void ToCSV(HDData<T> &val, std::string outputPath, std::string label = "") {
+void ToCSV(hd_data<T> &val, std::string outputPath, std::string label = "") {
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
-    // fout << stateName << "\t" << state.data.size() << "\n";
-    // fout << species.first ;
     fout << label;
     fout << val();
     fout << "\n";
     fout.close();
 }
 
-bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
-                       T epsilon, std::string outputPath) {
+bool cg_solver::CGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x, T epsilon,
+                        std::string outputPath) {
 #ifndef NDEBUG_PROFILING
     profiler.Start("Preparing Data");
 #endif
-    Dot(d_mat, x, q, true);
+    dot(d_mat, x, q, true);
 
-    r = D_Vector(b); // Copy b into r
+    r = d_vector(b); // Copy b into r
     alpha() = -1.0;
     alpha.SetDevice();
-    VectorSum(r, q, alpha(true), r);
+    vector_sum(r, q, alpha(true), r);
 
-    p = D_Vector(r); // copy r into p
+    p = d_vector(r); // copy r into p
     beta() = 0.0;
     beta.SetDevice();
     value() = 0.0;
     value.SetDevice();
-    Dot(r, r, diff(true), true);
+    dot(r, r, diff(true), true);
     diff.SetHost();
-
-    // printf("values %f %f %f\n", alpha(), beta(), diff());
 
     T diff0 = diff();
 
@@ -61,11 +55,11 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
 #ifndef NDEBUG_PROFILING
         profiler.Start("MatMult");
 #endif
-        Dot(d_mat, p, q, true);
+        dot(d_mat, p, q, true);
 #ifndef NDEBUG_PROFILING
         profiler.Start("VectorDot");
 #endif
-        Dot(q, p, value(true), true);
+        dot(q, p, value(true), true);
 
         value.SetHost();
         if (value() != 0)
@@ -76,24 +70,24 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
         }
         alpha.SetDevice();
 #ifndef NDEBUG_PROFILING
-        profiler.Start("VectorSum");
+        profiler.Start("vector_sum");
 #endif
-        VectorSum(x, p, alpha(true), x, true);
+        vector_sum(x, p, alpha(true), x, true);
 
         value() = -alpha();
         value.SetDevice();
 
 #ifndef NDEBUG_PROFILING
-        profiler.Start("VectorSum");
+        profiler.Start("vector_sum");
 #endif
-        VectorSum(r, q, value(true), r, true);
+        vector_sum(r, q, value(true), r, true);
 
         value.Set(&diff());
 
 #ifndef NDEBUG_PROFILING
         profiler.Start("VectorDot");
 #endif
-        Dot(r, r, diff(true), true);
+        dot(r, r, diff(true), true);
 
         diff.SetHost();
         if (diff() != 0)
@@ -105,9 +99,9 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
         beta.SetDevice();
 
 #ifndef NDEBUG_PROFILING
-        profiler.Start("VectorSum");
+        profiler.Start("vector_sum");
 #endif
-        VectorSum(r, p, beta(true), p, true);
+        vector_sum(r, p, beta(true), p, true);
     } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);
 #ifndef NDEBUG_PROFILING
     profiler.End();
@@ -121,21 +115,21 @@ bool CGSolver::CGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
     return !(diff() > epsilon * epsilon * diff0);
 }
 
-bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
-                             T epsilon) {
-    D_Vector q(b.n, true);
-    Dot(d_mat, x, q, true);
+bool cg_solver::StaticCGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x,
+                              T epsilon) {
+    d_vector q(b.n, true);
+    dot(d_mat, x, q, true);
 
-    D_Vector r(b);
-    HDData<T> alpha(-1.0);
-    VectorSum(r, q, alpha(true), r);
+    d_vector r(b);
+    hd_data<T> alpha(-1.0);
+    vector_sum(r, q, alpha(true), r);
 
-    D_Vector p(r);
-    HDData<T> value;
-    HDData<T> beta(0.0);
+    d_vector p(r);
+    hd_data<T> value;
+    hd_data<T> beta(0.0);
 
-    HDData<T> diff(0.0);
-    Dot(r, r, diff(true), true);
+    hd_data<T> diff(0.0);
+    dot(r, r, diff(true), true);
     diff.SetHost();
 
     T diff0 = diff();
@@ -143,9 +137,9 @@ bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
     int n_iter = 0;
     do {
         n_iter++;
-        Dot(d_mat, p, q, true);
+        dot(d_mat, p, q, true);
 
-        Dot(q, p, value(true), true);
+        dot(q, p, value(true), true);
         value.SetHost();
         if (value() != 0)
             alpha() = diff() / value();
@@ -153,14 +147,14 @@ bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
             alpha() = 0;
         alpha.SetDevice();
 
-        VectorSum(x, p, alpha(true), x, true);
+        vector_sum(x, p, alpha(true), x, true);
 
         value() = -alpha();
         value.SetDevice();
-        VectorSum(r, q, value(true), r, true);
+        vector_sum(r, q, value(true), r, true);
 
         value.Set(&diff());
-        Dot(r, r, diff(true), true);
+        dot(r, r, diff(true), true);
         diff.SetHost();
         if (value() != 0)
             beta() = diff() / value();
@@ -168,7 +162,7 @@ bool CGSolver::StaticCGSolve(D_SparseMatrix &d_mat, D_Vector &b, D_Vector &x,
             beta() = 0;
         beta.SetDevice();
 
-        VectorSum(r, p, beta(true), p, true);
+        vector_sum(r, p, beta(true), p, true);
     } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);
 
     if (diff() > epsilon * epsilon * diff0)

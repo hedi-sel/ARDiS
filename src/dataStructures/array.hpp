@@ -9,22 +9,22 @@
 #include "helper/cuda/cuda_thread_manager.hpp"
 #include "helper/cuda/cusparse_error_check.h"
 
-template <typename C> class D_Array {
+template <typename C> class d_array {
   public:
     int n;
     const bool isDevice;
 
     C *data;
 
-    D_Array *_device;
+    d_array *_device;
 
     // Constructors
-    __host__ D_Array(int = 0, bool = true);
-    __host__ D_Array(const D_Array &, bool copyToOtherMem = false);
-    __host__ D_Array(D_Array<C> &&);
+    __host__ d_array(int = 0, bool = true);
+    __host__ d_array(const d_array &, bool copyToOtherMem = false);
+    __host__ d_array(d_array<C> &&);
 
     // Manipulation
-    __host__ void operator=(const D_Array &);
+    __host__ void operator=(const d_array &);
     __host__ void Resize(int);
     __host__ void Fill(C value);
 
@@ -33,9 +33,9 @@ template <typename C> class D_Array {
     __host__ __device__ int size();
     __host__ __device__ bool IsDevice();
     __host__ cusparseDnVecDescr_t MakeDescriptor();
-    __host__ __device__ void Print(int printCount = 5) const;
+    __host__ __device__ void print(int printCount = 5) const;
 
-    __host__ ~D_Array();
+    __host__ ~d_array();
 
   private:
     __host__ void MemAlloc();
@@ -43,20 +43,20 @@ template <typename C> class D_Array {
     int *n_dataholders = nullptr;
 };
 
-// typedef D_Array<T> D_Vector;
+// typedef d_array<T> d_vector;
 
-template class D_Array<T>;
-template class D_Array<bool>;
-template class D_Array<int>;
+template class d_array<T>;
+template class d_array<bool>;
+template class d_array<int>;
 
-class D_Vector : public D_Array<T> {
+class d_vector : public d_array<T> {
   public:
-    using D_Array<T>::D_Array;
+    using d_array<T>::d_array;
     __host__ std::string ToString();
-    __host__ void Prune(T value = 0);
-    __host__ void PruneUnder(T value = 0);
+    __host__ void prune(T value = 0);
+    __host__ void prune_under(T value = 0);
 };
 
-template class D_Array<D_Vector *>;
+template class d_array<d_vector *>;
 
 enum AccessError { AccessHostOnDevice, AccessDeviceOnHost };

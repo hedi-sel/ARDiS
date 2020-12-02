@@ -9,49 +9,49 @@
 #include "dataStructures/sparse_matrix.hpp"
 #include "matrixOperations/basic_operations.hpp"
 
-class State;
+class state;
 
 typedef std::pair<std::string, int> stochCoeff;
 
-struct ReactionHolder {
-    ReactionHolder(std::vector<stochCoeff>, std::vector<stochCoeff>);
+struct reaction_holder {
+    reaction_holder(std::vector<stochCoeff>, std::vector<stochCoeff>);
     std::vector<stochCoeff> Reagents;
     std::vector<stochCoeff> Products;
 };
 
-class Reaction {
+class reaction {
   public:
-    ReactionHolder holder;
+    reaction_holder Holder;
 
-    D_Array<int> Reagents;
-    D_Array<int> ReagentsCoeff;
-    D_Array<int> Products;
-    D_Array<int> ProductsCoeff;
+    d_array<int> Reagents;
+    d_array<int> ReagentsCoeff;
+    d_array<int> Products;
+    d_array<int> ProductsCoeff;
 
-    // Reaction *_device;
+    // reaction *_device;
 
-    Reaction(std::map<std::string, int> &names, std::vector<stochCoeff>,
+    reaction(std::map<std::string, int> &names, std::vector<stochCoeff>,
              std::vector<stochCoeff>, long unsigned size);
-    Reaction(std::map<std::string, int> &names, ReactionHolder,
+    reaction(std::map<std::string, int> &names, reaction_holder,
              long unsigned size);
-    Reaction(Reaction &&);
+    reaction(reaction &&);
 
-    __host__ __device__ void Print() const;
+    __host__ __device__ void print() const;
 
-    ~Reaction();
+    ~reaction();
 };
 
-class ReactionMassAction : public Reaction {
+class reaction_mass_action : public reaction {
   public:
     T K;
 
-    ReactionMassAction *_device;
+    reaction_mass_action *_device;
 
-    ReactionMassAction(std::map<std::string, int> &names, ReactionHolder, T);
-    ReactionMassAction(std::map<std::string, int> &names,
-                       std::vector<stochCoeff>, std::vector<stochCoeff>, T);
+    reaction_mass_action(std::map<std::string, int> &names, reaction_holder, T);
+    reaction_mass_action(std::map<std::string, int> &names,
+                         std::vector<stochCoeff>, std::vector<stochCoeff>, T);
 
-    inline __device__ void ApplyReaction(D_Array<D_Vector *> &state, int i,
+    inline __device__ void ApplyReaction(d_array<d_vector *> &state, int i,
                                          float dt) {
         T progress = K * dt;
         for (int k = 0; k < Reagents.size(); k++)
@@ -63,21 +63,21 @@ class ReactionMassAction : public Reaction {
             state.at(Products.at(k))->at(i) += progress * ProductsCoeff.at(k);
     }
 
-    __host__ __device__ void Print() const;
+    __host__ __device__ void print() const;
 };
 
-class ReactionMichaelisMenten : public Reaction {
+class reaction_michaelis_menten : public reaction {
   public:
     T Vm;
     T Km;
 
-    ReactionMichaelisMenten *_device;
+    reaction_michaelis_menten *_device;
 
-    ReactionMichaelisMenten(std::map<std::string, int> &names, ReactionHolder,
-                            T, T);
-    ReactionMichaelisMenten(std::map<std::string, int> &names, std::string,
-                            std::vector<stochCoeff>, T, T);
-    __device__ void inline ApplyReaction(D_Array<D_Vector *> &state, int i,
+    reaction_michaelis_menten(std::map<std::string, int> &names,
+                              reaction_holder, T, T);
+    reaction_michaelis_menten(std::map<std::string, int> &names, std::string,
+                              std::vector<stochCoeff>, T, T);
+    __device__ void inline ApplyReaction(d_array<d_vector *> &state, int i,
                                          float dt) {
         T progress = Km * dt / (Vm + state.at(Reagents.at(0))->at(i));
         for (int k = 0; k < Reagents.size(); k++)
@@ -90,5 +90,5 @@ class ReactionMichaelisMenten : public Reaction {
         return;
     }
 
-    __host__ __device__ void Print() const;
+    __host__ __device__ void print() const;
 };

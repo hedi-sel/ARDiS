@@ -1,8 +1,8 @@
-#include "parseReaction.hpp"
-#include "reactionDiffusionSystem/system.hpp"
+#include "parse_reaction.hpp"
+#include "reactionDiffusionSystem/simulation.hpp"
 
 std::string arrowStr = "->";
-ReactionHolder ParseReaction(const std::string &descriptor) {
+reaction_holder ParseReaction(const std::string &descriptor) {
     auto arrowPos = descriptor.find(arrowStr);
     if (arrowPos == std::string::npos) {
         throw std::invalid_argument("the descriptor must contain an arrow "
@@ -58,5 +58,5 @@ ReactionHolder ParseReaction(const std::string &descriptor) {
     getReactionSide(lhs, input);
     getReactionSide(rhs, output);
 
-    return ReactionHolder(input, output);
+    return reaction_holder(input, output);
 }

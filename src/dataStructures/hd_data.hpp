@@ -6,16 +6,18 @@
 #include "constants.hpp"
 #include <helper/cuda/cuda_error_check.h>
 
-template <typename DataType> class HDData {
+template <typename DataType> class hd_data {
   public:
     DataType *_host;
     DataType *_device;
-    HDData() {
+    hd_data() {
         cudaMalloc(&_device, sizeof(DataType));
         _host = new DataType();
     };
-    HDData(DataType *data, bool itsDevice) : HDData() { Set(data, itsDevice); }
-    HDData(DataType data) : HDData() { Set(&data, false); }
+    hd_data(DataType *data, bool itsDevice) : hd_data() {
+        Set(data, itsDevice);
+    }
+    hd_data(DataType data) : hd_data() { Set(&data, false); }
 
     __host__ __device__ DataType &operator()(bool device = false) {
         if (device)
@@ -51,7 +53,7 @@ template <typename DataType> class HDData {
         SetDevice(data, itsDevice);
     }
 
-    ~HDData() {
+    ~hd_data() {
         cudaFree(_device);
         delete _host;
     }

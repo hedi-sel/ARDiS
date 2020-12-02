@@ -3,11 +3,11 @@
 #include <dataStructures/sparse_matrix.hpp>
 
 __host__ __device__ MatrixElement::MatrixElement(int k,
-                                                 const D_SparseMatrix *matrix)
+                                                 const d_spmatrix *matrix)
     : k(k), matrix(matrix), val(matrix->data + k) {
     updateIandJ();
 }
-__host__ __device__ MatrixElement::MatrixElement(const D_SparseMatrix *matrix)
+__host__ __device__ MatrixElement::MatrixElement(const d_spmatrix *matrix)
     : MatrixElement(0, matrix) {}
 
 __host__ __device__ bool MatrixElement::HasNext() {
@@ -29,7 +29,7 @@ __host__ __device__ void MatrixElement::Jump(int hop) {
         }
 }
 
-__host__ __device__ void MatrixElement::Print() const {
+__host__ __device__ void MatrixElement::print() const {
     printf("%i, %i: %f\n", i, j, *val);
 }
 
@@ -45,7 +45,7 @@ __host__ std::string MatrixElement::ToString() const {
     return ret_string;
 }
 
-__global__ void launchUpdateIandJ(const D_SparseMatrix *matrix, int *i, int *j,
+__global__ void launchUpdateIandJ(const d_spmatrix *matrix, int *i, int *j,
                                   int k) {
     if (matrix->type == CSR) {
         while (matrix->rowPtr[i[0] + 1] <= k)
@@ -65,8 +65,8 @@ __global__ void launchUpdateIandJ(const D_SparseMatrix *matrix, int *i, int *j,
 __host__ __device__ void MatrixElement::updateIandJ() {
 #ifndef __CUDA_ARCH__
     if (matrix->isDevice) {
-        HDData<int> d_i(i);
-        HDData<int> d_j(j);
+        hd_data<int> d_i(i);
+        hd_data<int> d_j(j);
         launchUpdateIandJ<<<1, 1>>>(matrix->_device, &d_i(true), &d_j(true), k);
         cudaDeviceSynchronize();
         d_i.SetHost();

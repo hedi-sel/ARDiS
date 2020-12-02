@@ -1,18 +1,18 @@
 #include "reaction.hpp"
 
-__device__ void PrintBody(const Reaction &reac) {
+__device__ void PrintBody(const reaction &reac) {
     printf("Reaction Data:\n\t");
-    reac.Reagents.Print();
+    reac.Reagents.print();
     printf("\t");
-    reac.ReagentsCoeff.Print();
+    reac.ReagentsCoeff.print();
     printf("\t");
-    reac.Products.Print();
+    reac.Products.print();
     printf("\t");
-    reac.ProductsCoeff.Print();
+    reac.ProductsCoeff.print();
 }
 
 ///////////
 /// Debug puropse
 //
-__global__ void PrintK(ReactionMassAction &reac) { PrintBody(reac); }
-__global__ void PrintK(ReactionMichaelisMenten &reac) { PrintBody(reac); }
+__global__ void PrintK(reaction_mass_action &reac) { PrintBody(reac); }
+__global__ void PrintK(reaction_michaelis_menten &reac) { PrintBody(reac); }

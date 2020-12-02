@@ -1,21 +1,23 @@
 #include "dataStructures/helper/apply_operation.h"
-#include "parseReaction.hpp"
+#include "parse_reaction.hpp"
 #include "reaction_computer.h"
-#include "system.hpp"
+#include "simulation.hpp"
 #include <fstream>
 
-System::System(int size) : state(size), solver(size), b(size){};
+simulation::simulation(int size) : current_state(size), solver(size), b(size){};
 
-void CheckReaction(System &sys, ReactionHolder &reaction) {
+void check_reaction(simulation &sys, reaction_holder &reaction) {
     for (auto species : reaction.Reagents) {
-        if (sys.state.names.find(species.first) == sys.state.names.end()) {
+        if (sys.current_state.names.find(species.first) ==
+            sys.current_state.names.end()) {
             std::cout << "\"" << species.first << "\""
                       << "\n";
             throw std::invalid_argument("^ This species is invalid\n");
         }
     }
     for (auto species : reaction.Products) {
-        if (sys.state.names.find(species.first) == sys.state.names.end()) {
+        if (sys.current_state.names.find(species.first) ==
+            sys.current_state.names.end()) {
             std::cout << "\"" << species.first << "\""
                       << "\n";
             throw std::invalid_argument("^ This species is invalid\n");
@@ -23,9 +25,10 @@ void CheckReaction(System &sys, ReactionHolder &reaction) {
     }
 }
 
-void CheckReaction(System &sys, std::vector<std::string> &names) {
+void check_reaction(simulation &sys, std::vector<std::string> &names) {
     for (auto species : names) {
-        if (sys.state.names.find(species) == sys.state.names.end()) {
+        if (sys.current_state.names.find(species) ==
+            sys.current_state.names.end()) {
             std::cout << "\"" << species << "\""
                       << "\n";
             throw std::invalid_argument("^ This species is invalid\n");
@@ -33,55 +36,55 @@ void CheckReaction(System &sys, std::vector<std::string> &names) {
     }
 }
 
-void System::AddReaction(const std::string &descriptor, T rate) {
+void simulation::add_reaction(const std::string &descriptor, T rate) {
     auto holder = ParseReaction(descriptor);
-    CheckReaction(*this, holder);
-    reactions.emplace_back(state.names, holder, rate);
+    check_reaction(*this, holder);
+    reactions.emplace_back(current_state.names, holder, rate);
 }
-void System::AddReaction(std::string reag, int kr, std::string prod, int kp,
-                         T rate) {
+void simulation::add_reaction(std::string reag, int kr, std::string prod,
+                              int kp, T rate) {
     auto names = std::vector<std::string>();
     names.push_back(reag);
     names.push_back(prod);
-    CheckReaction(*this, names);
+    check_reaction(*this, names);
 
     std::vector<stochCoeff> input;
     std::vector<stochCoeff> output;
     input.push_back(std::pair<std::string, int>(reag, kr));
     output.push_back(std::pair<std::string, int>(prod, kp));
-    reactions.emplace_back(state.names, input, output, rate);
+    reactions.emplace_back(current_state.names, input, output, rate);
 }
 
-void System::AddMMReaction(std::string reag, std::string prod, int kp, T Vm,
-                           T Km) {
+void simulation::add_mm_reaction(std::string reag, std::string prod, int kp,
+                                 T Vm, T Km) {
     auto names = std::vector<std::string>();
     names.push_back(reag);
     names.push_back(prod);
-    CheckReaction(*this, names);
+    check_reaction(*this, names);
 
     std::vector<stochCoeff> output;
     output.push_back(std::pair<std::string, int>(prod, kp));
 
-    mmreactions.emplace_back(state.names, reag, output, Vm, Km);
+    mmreactions.emplace_back(current_state.names, reag, output, Vm, Km);
 }
-void System::AddMMReaction(const std::string &descriptor, T Vm, T Km) {
-    ReactionHolder reaction = ParseReaction(descriptor);
+void simulation::add_mm_reaction(const std::string &descriptor, T Vm, T Km) {
+    reaction_holder reaction = ParseReaction(descriptor);
     if (reaction.Reagents.size() != 1 || reaction.Reagents.at(0).second != 1)
         throw std::invalid_argument(
             "A Michaelis-Menten reaction takes only one species as reagent\n");
-    CheckReaction(*this, reaction);
-    mmreactions.emplace_back(state.names, reaction.Reagents.at(0).first,
+    check_reaction(*this, reaction);
+    mmreactions.emplace_back(current_state.names, reaction.Reagents.at(0).first,
                              reaction.Products, Vm, Km);
 }
 
-void System::LoadDampnessMatrix(D_SparseMatrix &damp_mat) {
+void simulation::load_dampness_matrix(d_spmatrix &damp_mat) {
     this->damp_mat = &damp_mat;
 }
-void System::LoadStiffnessMatrix(D_SparseMatrix &stiff_mat) {
+void simulation::load_stiffness_matrix(d_spmatrix &stiff_mat) {
     this->stiff_mat = &stiff_mat;
 }
 
-__global__ void PruneK(D_Vector **state, int size) {
+__global__ void PruneK(d_vector **state, int size) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= state[0]->n)
         return;
@@ -91,33 +94,33 @@ __global__ void PruneK(D_Vector **state, int size) {
     }
 }
 
-void System::Prune(T value) {
-    for (auto &vect : state.vector_holder)
-        vect.Prune(value);
+void simulation::prune(T value) {
+    for (auto &vect : current_state.vector_holder)
+        vect.prune(value);
 }
 
-void System::IterateReaction(T dt, bool degradation) {
+void simulation::iterate_reaction(T dt, bool degradation) {
 #ifndef NDEBUG_PROFILING
     profiler.Start("Reaction");
 #endif
     T drainXdt = drain * dt;
     auto drainLambda = [drainXdt] __device__(T & x) { x -= drainXdt; };
-    for (auto &species : state.vector_holder) {
+    for (auto &species : current_state.vector_holder) {
         ApplyFunction(species, drainLambda);
-        species.Prune();
+        species.prune();
     }
     for (auto &reaction : reactions) {
-        ComputeReaction<decltype(reaction)>(state, reaction, dt);
+        compute_reaction<decltype(reaction)>(current_state, reaction, dt);
     }
     for (auto &reaction : this->mmreactions) {
-        ComputeReaction<decltype(reaction)>(state, reaction, dt);
+        compute_reaction<decltype(reaction)>(current_state, reaction, dt);
     }
 #ifndef NDEBUG_PROFILING
     profiler.End();
 #endif
 }
 
-bool System::IterateDiffusion(T dt) {
+bool simulation::iterate_diffusion(T dt) {
 #ifndef NDEBUG_PROFILING
     profiler.Start("Diffusion Initialization");
 #endif
@@ -127,22 +130,22 @@ bool System::IterateDiffusion(T dt) {
     }
     if (last_used_dt != dt) {
         printf("Building a diffusion matrix for dt = %f ... ", dt);
-        HDData<T> m(-dt);
-        MatrixSum(*damp_mat, *stiff_mat, m(true), diffusion_matrix);
+        hd_data<T> m(-dt);
+        matrix_sum(*damp_mat, *stiff_mat, m(true), diffusion_matrix);
         printf("Done!\n");
         last_used_dt = dt;
     }
-    for (auto &species : state.vector_holder) {
+    for (auto &species : current_state.vector_holder) {
 #ifndef NDEBUG_PROFILING
         profiler.Start("Diffusion Initialization");
 #endif
-        Dot(*damp_mat, species, b);
+        dot(*damp_mat, species, b);
 #ifndef NDEBUG_PROFILING
         profiler.Start("Diffusion");
 #endif
         if (!solver.CGSolve(diffusion_matrix, b, species, epsilon)) {
             printf("Warning: It did not converge at time %f\n", t);
-            species.Print(20);
+            species.print(20);
             return false;
         }
     }
@@ -154,23 +157,23 @@ bool System::IterateDiffusion(T dt) {
     return true;
 }
 
-void System::Print(int printCount) {
-    state.Print(printCount);
+void simulation::print(int printCount) {
+    current_state.print(printCount);
     for (auto &reaction : reactions) {
-        reaction.Print();
+        reaction.print();
     }
     for (auto &reaction : this->mmreactions) {
-        reaction.Print();
+        reaction.print();
     }
 #ifndef NDEBUG_PROFILING
     std::cout << "Global Profiler : \n";
-    profiler.Print();
+    profiler.print();
     std::cout << "Operation Profiler : \n";
-    solver.profiler.Print();
+    solver.profiler.print();
 #endif
 }
 
-void System::SetEpsilon(T epsilon) { this->epsilon = epsilon; }
-void System::SetDrain(T drain) { this->drain = drain; }
+void simulation::SetEpsilon(T epsilon) { this->epsilon = epsilon; }
+void simulation::SetDrain(T drain) { this->drain = drain; }
 
-System::~System(){};
+simulation::~simulation(){};

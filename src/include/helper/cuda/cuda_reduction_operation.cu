@@ -1,6 +1,6 @@
 #include "cuda_reduction_operation.hpp"
 
-__global__ void ReductionK(D_Vector &A, int nValues, int shift, int op) {
+__global__ void ReductionK(d_vector &A, int nValues, int shift, int op) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= nValues)
         return;
@@ -20,14 +20,14 @@ __global__ void ReductionK(D_Vector &A, int nValues, int shift, int op) {
     }
 };
 
-T ReductionOperation(D_Vector &A, OpType op) {
+T ReductionOperation(d_vector &A, OpType op) {
     int nValues = A.n;
     dim3Pair threadblock;
     int shift = 1;
     do {
         threadblock = Make1DThreadBlock(nValues);
         ReductionK<<<threadblock.block.x, threadblock.thread.x>>>(
-            *(D_Vector *)A._device, nValues, shift, static_cast<int>(op));
+            *(d_vector *)A._device, nValues, shift, static_cast<int>(op));
         gpuErrchk(cudaDeviceSynchronize());
         nValues = int((nValues - 1) / threadblock.thread.x) + 1;
         shift *= threadblock.thread.x;

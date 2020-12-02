@@ -2,15 +2,15 @@
 
 #include "dataStructures/array.hpp"
 
-class D_Mesh {
+class d_mesh {
   public:
-    D_Vector X;
-    D_Vector Y;
+    d_vector X;
+    d_vector Y;
 
     __host__ __device__ int size();
 
-    D_Mesh(int n);
-    D_Mesh(int n, T *x, T *y); // Initialize from a host pointer
-    D_Mesh(D_Vector &X, D_Vector &Y);
-    ~D_Mesh();
+    d_mesh(int n);
+    d_mesh(int n, T *x, T *y); // Initialize from a host pointer
+    d_mesh(d_vector &X, d_vector &Y);
+    ~d_mesh();
 };

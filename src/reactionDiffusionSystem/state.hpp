@@ -7,28 +7,28 @@
 #include "dataStructures/array.hpp"
 #include "dataStructures/sparse_matrix.hpp"
 
-class State {
+class state {
   public:
     // Size of the concentration vectors
     int vector_size;
-    std::vector<D_Vector> vector_holder;
-    D_Array<D_Vector *> device_data;
+    std::vector<d_vector> vector_holder;
+    d_array<d_vector *> device_data;
     // Stores the names of the species corresponding to each vector
     std::map<std::string, int> names;
 
-    State(int size);
+    state(int size);
 
     // Adds a new species (doesn't allocate memory)
-    D_Vector &AddSpecies(std::string name);
-    D_Vector &GetSpecies(std::string name);
+    d_vector &add_species(std::string name);
+    d_vector &get_species(std::string name);
 
     // Uses the given vector as a concentration vector
-    void SetSpecies(std::string name, D_Vector &sub_state);
+    void set_species(std::string name, d_vector &sub_state);
 
     int size();
     int n_species();
     // Give as input the number of elements of each vector to be printed
-    void Print(int i = 5);
+    void print(int i = 5);
 
-    ~State();
+    ~state();
 };

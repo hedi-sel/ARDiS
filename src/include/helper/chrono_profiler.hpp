@@ -15,7 +15,7 @@ class ChronoProfiler {
     ChronoProfiler();
     int Start(std::string name);
     void End();
-    void Print();
+    void print();
 
   private:
     clock_t time;

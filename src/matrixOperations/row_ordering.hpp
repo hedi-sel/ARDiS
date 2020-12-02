@@ -4,4 +4,4 @@
 
 #include "dataStructures/sparse_matrix.hpp"
 
-void RowOrdering(D_SparseMatrix &d_mat);
+void RowOrdering(d_spmatrix &d_mat);
