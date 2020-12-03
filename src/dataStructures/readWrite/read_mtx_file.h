@@ -6,6 +6,9 @@
 
 #include "dataStructures/sparse_matrix.hpp"
 
+/// Deprecated code
+//
+
 enum Readtype { Normal, Symetric };
 
 Readtype readtype = Symetric;
@@ -33,7 +36,7 @@ __host__ d_spmatrix read_file(const std::string filepath/* ,
     n_elts = (readtype == Normal) ? n_lines : n_lines * 2 - i;
 
     d_spmatrix matrix(i, j, n_elts, COO, false);
-    matrix.StartFilling();
+    matrix.start_filling();
 
     for (int k = 0; k < n_lines; k++) {
         do {
@@ -47,9 +50,9 @@ __host__ d_spmatrix read_file(const std::string filepath/* ,
             i--;
             j--;
             assert(i >= 0 && i < matrix.rows && j >= 0 && j < matrix.cols);
-            matrix.AddElement(i, j, val);
+            matrix.add_element(i, j, val);
             if (i != j) {
-                matrix.AddElement(j, i, val);
+                matrix.add_element(j, i, val);
             }
         }
     }

@@ -7,45 +7,25 @@
 
 cg_solver::cg_solver(int n) : q(n), r(n), p(n) {}
 
-void ToCSV(d_vector &array, std::string outputPath, std::string label = "") {
-    std::ofstream fout;
-    fout.open(outputPath, std::ios_base::app);
-    d_vector h_Arr(array, true);
-    fout << label;
-    for (size_t j = 0; j < h_Arr.n; j++)
-        fout << ((j == 0) ? "" : "\t") << h_Arr.data[j];
-    fout << "\n";
-    fout.close();
-}
-
-void ToCSV(hd_data<T> &val, std::string outputPath, std::string label = "") {
-    std::ofstream fout;
-    fout.open(outputPath, std::ios_base::app);
-    fout << label;
-    fout << val();
-    fout << "\n";
-    fout.close();
-}
-
-bool cg_solver::CGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x, T epsilon,
-                        std::string outputPath) {
+bool cg_solver::cg_solve(d_spmatrix &d_mat, d_vector &b, d_vector &x, T epsilon,
+                         std::string outputPath) {
 #ifndef NDEBUG_PROFILING
-    profiler.Start("Preparing Data");
+    profiler.start("Preparing Data");
 #endif
     dot(d_mat, x, q, true);
 
     r = d_vector(b); // Copy b into r
     alpha() = -1.0;
-    alpha.SetDevice();
+    alpha.update_dev();
     vector_sum(r, q, alpha(true), r);
 
     p = d_vector(r); // copy r into p
     beta() = 0.0;
-    beta.SetDevice();
+    beta.update_dev();
     value() = 0.0;
-    value.SetDevice();
+    value.update_dev();
     dot(r, r, diff(true), true);
-    diff.SetHost();
+    diff.update_host();
 
     T diff0 = diff();
 
@@ -53,58 +33,58 @@ bool cg_solver::CGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x, T epsilon,
     do {
         n_iter++;
 #ifndef NDEBUG_PROFILING
-        profiler.Start("MatMult");
+        profiler.start("MatMult");
 #endif
         dot(d_mat, p, q, true);
 #ifndef NDEBUG_PROFILING
-        profiler.Start("VectorDot");
+        profiler.start("VectorDot");
 #endif
         dot(q, p, value(true), true);
 
-        value.SetHost();
+        value.update_host();
         if (value() != 0)
             alpha() = diff() / value();
         else {
             n_iter_last = n_iter;
             return true;
         }
-        alpha.SetDevice();
+        alpha.update_dev();
 #ifndef NDEBUG_PROFILING
-        profiler.Start("vector_sum");
+        profiler.start("vector_sum");
 #endif
         vector_sum(x, p, alpha(true), x, true);
 
         value() = -alpha();
-        value.SetDevice();
+        value.update_dev();
 
 #ifndef NDEBUG_PROFILING
-        profiler.Start("vector_sum");
+        profiler.start("vector_sum");
 #endif
         vector_sum(r, q, value(true), r, true);
 
-        value.Set(&diff());
+        value.set(&diff());
 
 #ifndef NDEBUG_PROFILING
-        profiler.Start("VectorDot");
+        profiler.start("VectorDot");
 #endif
         dot(r, r, diff(true), true);
 
-        diff.SetHost();
+        diff.update_host();
         if (diff() != 0)
             beta() = diff() / value();
         else {
             n_iter_last = n_iter;
             return true;
         }
-        beta.SetDevice();
+        beta.update_dev();
 
 #ifndef NDEBUG_PROFILING
-        profiler.Start("vector_sum");
+        profiler.start("vector_sum");
 #endif
         vector_sum(r, p, beta(true), p, true);
     } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);
 #ifndef NDEBUG_PROFILING
-    profiler.End();
+    profiler.end();
 #endif
 
     n_iter_last = n_iter;
@@ -115,8 +95,8 @@ bool cg_solver::CGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x, T epsilon,
     return !(diff() > epsilon * epsilon * diff0);
 }
 
-bool cg_solver::StaticCGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x,
-                              T epsilon) {
+bool cg_solver::st_cg_solve(d_spmatrix &d_mat, d_vector &b, d_vector &x,
+                            T epsilon) {
     d_vector q(b.n, true);
     dot(d_mat, x, q, true);
 
@@ -130,7 +110,7 @@ bool cg_solver::StaticCGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x,
 
     hd_data<T> diff(0.0);
     dot(r, r, diff(true), true);
-    diff.SetHost();
+    diff.update_host();
 
     T diff0 = diff();
 
@@ -140,27 +120,27 @@ bool cg_solver::StaticCGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &x,
         dot(d_mat, p, q, true);
 
         dot(q, p, value(true), true);
-        value.SetHost();
+        value.update_host();
         if (value() != 0)
             alpha() = diff() / value();
         else
             alpha() = 0;
-        alpha.SetDevice();
+        alpha.update_dev();
 
         vector_sum(x, p, alpha(true), x, true);
 
         value() = -alpha();
-        value.SetDevice();
+        value.update_dev();
         vector_sum(r, q, value(true), r, true);
 
-        value.Set(&diff());
+        value.set(&diff());
         dot(r, r, diff(true), true);
-        diff.SetHost();
+        diff.update_host();
         if (value() != 0)
             beta() = diff() / value();
         else
             beta() = 0;
-        beta.SetDevice();
+        beta.update_dev();
 
         vector_sum(r, p, beta(true), p, true);
     } while (diff() > epsilon * epsilon * diff0 && n_iter < 1000);

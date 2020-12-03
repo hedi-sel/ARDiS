@@ -7,7 +7,7 @@
 #include "constants.hpp"
 #include "sparse_matrix.hpp"
 
-class MatrixElement {
+class matrix_elm {
   public:
     const d_spmatrix *matrix;
     int k;
@@ -15,16 +15,16 @@ class MatrixElement {
     int j = 0;
     T *val;
 
-    __host__ __device__ MatrixElement(int k, const d_spmatrix *matrix);
-    __host__ __device__ MatrixElement(const d_spmatrix *matrix);
-    // __host__ __device__ MatrixElement() : matrix(nullptr) {}
+    __host__ __device__ matrix_elm(int k, const d_spmatrix *matrix);
+    __host__ __device__ matrix_elm(const d_spmatrix *matrix);
+    // __host__ __device__ matrix_elm() : matrix(nullptr) {}
 
-    __host__ __device__ bool HasNext();
-    __host__ __device__ void Next();
-    __host__ __device__ void Jump(int hop);
+    __host__ __device__ bool has_next();
+    __host__ __device__ void next();
+    __host__ __device__ void jump(int hop);
 
     __host__ __device__ void print() const;
-    __host__ std::string ToString() const;
+    __host__ std::string to_string() const;
 
     __host__ __device__ void updateIandJ();
 };

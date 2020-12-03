@@ -17,7 +17,7 @@ struct dim3Pair {
              int threadZ);
 };
 
-dim3Pair Make1DThreadBlock(int computeSize,
+dim3Pair make1DThreadBlock(int computeSize,
                            int blockSize = BLOCK_SIZE * BLOCK_SIZE);
 
 dim3Pair MakeWide1DThreadBlock(int computeSize, int width,

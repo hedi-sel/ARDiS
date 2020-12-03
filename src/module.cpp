@@ -5,11 +5,11 @@
 
 #include "dataStructures/array.hpp"
 #include "dataStructures/hd_data.hpp"
+#include "dataStructures/readWrite/read_write.h"
 #include "dataStructures/sparse_matrix.hpp"
 #include "geometry/mesh.hpp"
 #include "geometry/zone.hpp"
 #include "geometry/zone_methods.hpp"
-#include "main.h"
 #include "matrixOperations/basic_operations.hpp"
 #include "reactionDiffusionSystem/simulation.hpp"
 
@@ -191,7 +191,7 @@ PYBIND11_MODULE(ardisLib, m) {
                 return c;
             },
             py::return_value_policy::take_ownership)
-        .def("__str__", &d_spmatrix::ToString)
+        .def("__str__", &d_spmatrix::to_string)
         .def("__len__", [](d_spmatrix &self) { return self.nnz; })
         .def_property_readonly("shape",
                                [](d_spmatrix &self) {
@@ -215,17 +215,17 @@ PYBIND11_MODULE(ardisLib, m) {
              [](d_vector &self) {
                  hd_data<T> norm;
                  dot(self, self, norm(true));
-                 norm.SetHost();
+                 norm.update_host();
                  return sqrt(norm());
              })
-        .def("fill_value", &d_vector::Fill)
+        .def("fill_value", &d_vector::fill)
         .def("prune", &d_vector::prune, py::arg("value") = 0)
         .def("prune_under", &d_vector::prune_under, py::arg("value") = 0)
         .def("dot",
              [](d_vector &self, d_vector &b) {
                  hd_data<T> res;
                  dot(self, b, res(true));
-                 res.SetHost();
+                 res.update_host();
                  return res();
              })
         .def("toarray",
@@ -259,20 +259,9 @@ PYBIND11_MODULE(ardisLib, m) {
                  return self;
              })
         .def("__len__", &d_vector::size)
-        .def("__str__", &d_vector::ToString);
+        .def("__str__", &d_vector::to_string);
 
     m.doc() = "Sparse Linear Equation solving API"; // optional module docstring
-
-    ///////
-    /// Deprecated
-    ///
-    // m.def("solve_cholesky", &solve_cholesky,
-    //       py::return_value_policy::take_ownership);
-    // m.def("SolveConjugateGradientRawData",
-    //       [](d_spmatrix *d_mat, d_vector *b, d_vector *x, T epsilon) {
-    //           return cg_solver::StaticCGSolve(*d_mat, *b, *x, epsilon);
-    //       });
-    // m.def("read_file", &read_file, py::return_value_policy::take_ownership);
 
     m.def("matrix_sum", [](d_spmatrix &a, d_spmatrix &b, d_spmatrix &c) {
         matrix_sum(a, b, c);
@@ -282,17 +271,17 @@ PYBIND11_MODULE(ardisLib, m) {
               hd_data<T> d_alpha(alpha);
               matrix_sum(a, b, d_alpha(true), c);
           });
-    m.def("ToCSV", [](state &state, const std::string &path) {
-        return ToCSV(state, path);
+    m.def("write_file", [](state &state, const std::string &path) {
+        return write_file(state, path);
     });
-    m.def("ToCSV", [](d_vector &array, std::string &path) {
-        return ToCSV(array, path);
+    m.def("write_file", [](d_vector &array, std::string &path) {
+        return write_file(array, path);
     });
-    m.def("ToCSV", [](py::array_t<T> &array, std::string &path) {
+    m.def("write_file", [](py::array_t<T> &array, std::string &path) {
         d_vector arrayContainer(array.size(), false);
         cudaMemcpy(arrayContainer.data, array.data(),
                    sizeof(T) * arrayContainer.n, cudaMemcpyHostToHost);
-        return ToCSV(arrayContainer, path);
+        return write_file(arrayContainer, path);
     });
 
     py::module geometry = m.def_submodule("geometry");
@@ -324,9 +313,9 @@ PYBIND11_MODULE(ardisLib, m) {
 
     d_geometry.def("fill_zone", &fill_zone);
     d_geometry.def("fill_outside_zone", &fill_outside_zone);
-    d_geometry.def("GetMinZone", &GetMinZone);
-    d_geometry.def("GetMaxZone", &GetMaxZone);
-    d_geometry.def("GetMeanZone", &GetMeanZone);
+    d_geometry.def("min_zone", &min_zone);
+    d_geometry.def("max_zone", &max_zone);
+    d_geometry.def("mean_zone", &mean_zone);
 
     py::class_<d_mesh>(d_geometry, "d_mesh")
         .def(py::init<d_vector &, d_vector &>())

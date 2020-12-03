@@ -17,7 +17,7 @@ d_array<bool> IsInsideArray(d_mesh &mesh, rect_zone &zone) {
     cudaMemcpy(d_zone, &zone, sizeof(zone), cudaMemcpyHostToDevice);
 
     d_array<bool> is_inside(mesh.size());
-    auto tb = Make1DThreadBlock(mesh.size());
+    auto tb = make1DThreadBlock(mesh.size());
 
     IsInsideArrayK<<<tb.block, tb.thread>>>(
         *(d_vector *)mesh.X._device, *(d_vector *)mesh.Y._device, *d_zone,
@@ -30,7 +30,7 @@ void fill_zone(d_vector &u, d_mesh &mesh, rect_zone &zone, T value) {
     assert(u.n == mesh.size());
     auto setToVal = [value] __device__(T & a) { a = value; };
     auto is_inside = IsInsideArray(mesh, zone);
-    ApplyFunctionConditional(u, is_inside, setToVal);
+    apply_func_cond(u, is_inside, setToVal);
 }
 
 void fill_outside_zone(d_vector &u, d_mesh &mesh, rect_zone &zone, T value) {
@@ -39,42 +39,42 @@ void fill_outside_zone(d_vector &u, d_mesh &mesh, rect_zone &zone, T value) {
     d_vector is_outside(u.n);
     auto is_inside = IsInsideArray(mesh, zone);
     hd_data<T> m1(-1);
-    ApplyFunction(is_inside, [] __device__(bool &a) { a = !a; });
-    ApplyFunctionConditional(u, is_inside, setToVal);
+    apply_func(is_inside, [] __device__(bool &a) { a = !a; });
+    apply_func_cond(u, is_inside, setToVal);
 }
 
-T GetMinZone(d_vector &u, d_mesh &mesh, rect_zone &zone) {
+T min_zone(d_vector &u, d_mesh &mesh, rect_zone &zone) {
     assert(u.n == mesh.size());
     auto min = [] __device__(T & a, T & b) { return (a < b) ? a : b; };
     d_vector u_copy(u);
     auto is_inside = IsInsideArray(mesh, zone);
-    ReductionFunctionConditional(u_copy, is_inside, min);
+    reduction_func_cond(u_copy, is_inside, min);
     T result = -1;
     cudaMemcpy(&result, u_copy.data, sizeof(T), cudaMemcpyDeviceToHost);
     return result;
 };
 
-T GetMaxZone(d_vector &u, d_mesh &mesh, rect_zone &zone) {
+T max_zone(d_vector &u, d_mesh &mesh, rect_zone &zone) {
     assert(u.n == mesh.size());
     auto max = [] __device__(T & a, T & b) { return (a > b) ? a : b; };
     d_vector u_copy(u);
     auto is_inside = IsInsideArray(mesh, zone);
-    ReductionFunctionConditional(u_copy, is_inside, max);
+    reduction_func_cond(u_copy, is_inside, max);
     T result = -1;
     cudaMemcpy(&result, u_copy.data, sizeof(T), cudaMemcpyDeviceToHost);
     return result;
 };
 
-T GetMeanZone(d_vector &u, d_mesh &mesh, rect_zone &zone) {
+T mean_zone(d_vector &u, d_mesh &mesh, rect_zone &zone) {
     assert(u.n == mesh.size());
     d_array<int> ones(u.n);
-    ones.Fill(1);
+    ones.fill(1);
     auto is_inside = IsInsideArray(mesh, zone);
-    ReductionFunctionConditional(
-        ones, is_inside, [] __device__(int &a, int &b) { return a + b; });
+    reduction_func_cond(ones, is_inside,
+                        [] __device__(int &a, int &b) { return a + b; });
     hd_data<int> n_vals(ones.data, true);
-    ReductionFunctionConditional(u, is_inside,
-                                 [] __device__(T & a, T & b) { return a + b; });
+    reduction_func_cond(u, is_inside,
+                        [] __device__(T & a, T & b) { return a + b; });
     hd_data<T> total_sum(u.data, true);
     return total_sum() / n_vals();
 };

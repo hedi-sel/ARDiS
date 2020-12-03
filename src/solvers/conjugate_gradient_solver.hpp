@@ -21,13 +21,13 @@ class cg_solver {
     hd_data<T> diff;
 
 #ifndef NDEBUG_PROFILING
-    ChronoProfiler profiler;
+    chrono_profiler profiler;
 #endif
 
     cg_solver(int n);
-    bool CGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &y, T epsilon,
-                 std::string str = "");
+    bool cg_solve(d_spmatrix &d_mat, d_vector &b, d_vector &y, T epsilon,
+                  std::string str = "");
     int n_iter_last = 0;
-    static bool StaticCGSolve(d_spmatrix &d_mat, d_vector &b, d_vector &y,
-                              T epsilon); // TODO FactorizeCode
+    static bool st_cg_solve(d_spmatrix &d_mat, d_vector &b, d_vector &y,
+                            T epsilon); // TODO FactorizeCode
 };

@@ -12,7 +12,7 @@ color_list = [
 ]
 
 
-def PlotState(state, mesh, title="no title", listSpecies=[], excludeSpecies=[], colors={}):
+def plot_state(state, mesh, title="no title", listSpecies=[], excludeSpecies=[], colors={}):
     scatterSize = math.sqrt((np.max(mesh.x) - np.min(mesh.x))
                             * (np.max(mesh.y) - np.min(mesh.y)) * 1.0 / state.vector_size())
     if(len(listSpecies) == 0):

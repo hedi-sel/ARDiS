@@ -25,7 +25,7 @@ T ReductionOperation(d_vector &A, OpType op) {
     dim3Pair threadblock;
     int shift = 1;
     do {
-        threadblock = Make1DThreadBlock(nValues);
+        threadblock = make1DThreadBlock(nValues);
         ReductionK<<<threadblock.block.x, threadblock.thread.x>>>(
             *(d_vector *)A._device, nValues, shift, static_cast<int>(op));
         gpuErrchk(cudaDeviceSynchronize());
@@ -69,7 +69,7 @@ T ReductionIncreasing(int *A, int n) {
     dim3Pair threadblock;
     int shift = 1;
     do {
-        threadblock = Make1DThreadBlock(n);
+        threadblock = make1DThreadBlock(n);
         ReductionIncreasing1K<<<threadblock.block.x, threadblock.thread.x>>>(
             A, n, shift);
         cudaDeviceSynchronize();

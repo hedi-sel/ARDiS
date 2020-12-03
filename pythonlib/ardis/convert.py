@@ -1,8 +1,8 @@
 from .ardisLib import *
-from .read_mtx import *
+from .read_write import *
 
 
-def ToD_SparseMatrix(matrix, m_type=matrix_type.COO):
+def to_d_spmatrix(matrix, m_type=matrix_type.COO):
     if (m_type == matrix_type.CSR):
         matrix = matrix.tocsr()
         d_matrix = d_spmatrix(

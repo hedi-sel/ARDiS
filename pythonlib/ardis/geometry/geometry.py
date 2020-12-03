@@ -4,7 +4,7 @@ import math
 from ..ardisLib.geometry import *
 
 
-def Sign(x0, y0, x1, y1, x2, y2):
+def sign(x0, y0, x1, y1, x2, y2):
     return (x0 - x2) * (y1 - y2) - (x1 - x2) * (y0 - y2)
 
 
@@ -20,12 +20,12 @@ def fill_outside_zone(U, Mesh, zone, value):
             U[i] = value
 
 
-def Fill(U, Mesh, value):
+def fill(U, Mesh, value):
     for i in range(0, len(U)):
         U[i] = value
 
 
-def GetMinZone(U, Mesh, zone):
+def min_zone(U, Mesh, zone):
     Min = float('inf')
     for i in range(0, len(U)):
         if zone.is_inside(Mesh.x[i], Mesh.y[i]) and U[i] < Min:
@@ -33,7 +33,7 @@ def GetMinZone(U, Mesh, zone):
     return Min
 
 
-def GetMaxZone(U, Mesh, zone):
+def max_zone(U, Mesh, zone):
     Max = float('-inf')
     for i in range(0, len(U)):
         if zone.is_inside(Mesh.x[i], Mesh.y[i]) and U[i] > Max:
@@ -41,7 +41,7 @@ def GetMaxZone(U, Mesh, zone):
     return Max
 
 
-def GetMeanZone(U, Mesh, zone):
+def mean_zone(U, Mesh, zone):
     Sum = 0
     N = 0
     for i in range(0, len(U)):

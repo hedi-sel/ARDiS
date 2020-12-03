@@ -1,6 +1,6 @@
 from .cg_solve import *
 from .convert import *
-from .read_mtx import *
+from .read_write import *
 from .plotlib_wrap import *
 from .ardisLib import *
 

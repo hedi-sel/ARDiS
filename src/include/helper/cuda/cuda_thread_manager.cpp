@@ -9,7 +9,7 @@ dim3Pair::dim3Pair(int blockX, int blockY, int blockZ, int threadX, int threadY,
                    int threadZ)
     : block(blockX, blockY, blockZ), thread(threadX, threadY, threadZ){};
 
-dim3Pair Make1DThreadBlock(int computeSize, int blockSize) {
+dim3Pair make1DThreadBlock(int computeSize, int blockSize) {
     return MakeWide1DThreadBlock(computeSize, 1, blockSize);
 }
 

@@ -22,7 +22,7 @@ class d_spmatrix {
     int dataWidth = -1;
 
     matrix_type type;
-    const bool isDevice;
+    const bool is_device;
     // cusparseMatDescr_t descr = NULL;
 
     T *data;
@@ -32,54 +32,52 @@ class d_spmatrix {
 
     __host__ d_spmatrix();
     __host__ d_spmatrix(int rows, int cols, int nnz = 0, matrix_type = COO,
-                        bool isDevice = true);
+                        bool is_device = true);
     __host__ d_spmatrix(const d_spmatrix &, bool copyToOtherMem = false);
     __host__ void operator=(const d_spmatrix &);
     __host__ bool operator==(const d_spmatrix &);
 
     __host__ ~d_spmatrix();
 
-    __host__ std::string ToString();
+    __host__ std::string to_string();
     __host__ __device__ void print(int printCount = 5) const;
 
-    __host__ void SetNNZ(int);
+    __host__ void set_nnz(int);
 
     // Add an element at index k
-    __host__ void StartFilling();
-    __host__ __device__ void AddElement(int i, int j, T);
+    __host__ void start_filling();
+    __host__ __device__ void add_element(int i, int j, T);
 
-    // __host__ __device__ MatrixElement Start() const;
+    // __host__ __device__ matrix_elm start() const;
 
     // Get the value at index k of the sparse matrix
-    __host__ __device__ const T &Get(int k) const;
-    __host__ __device__ const T &GetLine(int i) const;
+    __host__ __device__ const T &get(int k) const;
+    __host__ __device__ const T &get_line(int i) const;
 
-    // Set the element at index k of the matrix
-    __host__ __device__ void Set(int k, const T);
     // Get the element at position (i, j) in the matrix, if it is defined
-    __host__ __device__ T Lookup(int i, int j) const;
+    __host__ __device__ T lookup(int i, int j) const;
 
     // Turn the matrix to CSC or CSR type
-    __host__ void ToCompressedDataType(matrix_type = COO);
-    __host__ bool IsConvertibleTo(matrix_type) const;
+    __host__ void to_compress_dtype(matrix_type = COO);
+    __host__ bool is_convertible_to(matrix_type) const;
 
     __host__ void to_csr();
 
-    __host__ bool IsSymetric();
+    __host__ bool is_symetric();
 
-    __host__ cusparseMatDescr_t MakeDescriptor();
-    __host__ cusparseSpMatDescr_t MakeSpDescriptor();
+    __host__ cusparseMatDescr_t make_descriptor();
+    __host__ cusparseSpMatDescr_t make_sp_descriptor();
 
-    __host__ void OperationCuSparse(void *function, cusparseHandle_t &,
-                                    bool addValues = false, void * = NULL,
-                                    void * = NULL);
-    __host__ void OperationCuSolver(void *function, cusolverSpHandle_t &,
-                                    cusparseMatDescr_t, T *b = NULL,
-                                    T *xOut = NULL, int *singularOut = NULL);
+    __host__ void operation_cusparse(void *function, cusparseHandle_t &,
+                                     bool addValues = false, void * = NULL,
+                                     void * = NULL);
+    __host__ void operation_cusolver(void *function, cusolverSpHandle_t &,
+                                     cusparseMatDescr_t, T *b = NULL,
+                                     T *xOut = NULL, int *singularOut = NULL);
 
-    __host__ void MakeDataWidth();
+    __host__ void make_datawidth();
 
   private:
-    __host__ void MemAlloc();
-    __host__ void MemFree();
+    __host__ void mem_alloc();
+    __host__ void mem_free();
 };

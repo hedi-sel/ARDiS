@@ -9,20 +9,22 @@ matMult = 0
 vectSum = 0
 vectDot = 0
 
+
 def PrintProf():
     print("Profiling diffusion")
     print("prepData\n", prepData)
     print("matMult\n", matMult)
     print("vectSum\n", vectSum)
     print("vectDot\n", vectDot)
-    
-def CGNaiveSolve(M, b, x, epsilon=1e-1):
+
+
+def cg_solve_cpu(M, b, x, epsilon=1e-1):
     global prepData
-    global matMult 
-    global vectSum 
-    global vectDot 
+    global matMult
+    global vectSum
+    global vectDot
     time3 = time.time()
-    
+
     r = b-M.dot(x)
     p = r.copy()
     diff = abs(r.dot(p))
@@ -30,11 +32,11 @@ def CGNaiveSolve(M, b, x, epsilon=1e-1):
     if (diff <= 0):
         return 0
     nIter = 0
-    
+
     prepData += time.time() - time3
 
     while diff >= epsilon*epsilon*diff0 and nIter < 10000:
-    # last_nIter
+        # last_nIter
         time3 = time.time()
 
         q = M.dot(p)

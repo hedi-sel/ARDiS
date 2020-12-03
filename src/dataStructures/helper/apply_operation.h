@@ -2,14 +2,14 @@
 
 #include "dataStructures/array.hpp"
 
-// typedef nvstd::function<T &> Apply;
+// typedef nvstd::function<T &> apply;
 // template <typename T1, typename T2> __global__ void inserter(T1 *f, T2 l) {
 //     *f = l;
 // }
 // typedef void (*FunctionDev)(...);
 
-template <typename Apply, typename C>
-__global__ void ApplyFunctionK(d_array<C> &vector, Apply func) {
+template <typename apply, typename C>
+__global__ void apply_functionK(d_array<C> &vector, apply func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= vector.n)
         return;
@@ -17,15 +17,15 @@ __global__ void ApplyFunctionK(d_array<C> &vector, Apply func) {
     return;
 }
 
-template <typename Apply, typename C>
-__host__ void ApplyFunction(d_array<C> &vector, Apply func) {
-    auto tb = Make1DThreadBlock(vector.n);
-    ApplyFunctionK<<<tb.block, tb.thread>>>(*vector._device, func);
+template <typename apply, typename C>
+__host__ void apply_func(d_array<C> &vector, apply func) {
+    auto tb = make1DThreadBlock(vector.n);
+    apply_functionK<<<tb.block, tb.thread>>>(*vector._device, func);
 };
 
-template <typename Apply, typename C>
-__global__ void ApplyFunctionConditionalK(d_array<C> &vector,
-                                          d_array<bool> &booleans, Apply func) {
+template <typename apply, typename C>
+__global__ void apply_func_condK(d_array<C> &vector, d_array<bool> &booleans,
+                                 apply func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= vector.n)
         return;
@@ -34,17 +34,17 @@ __global__ void ApplyFunctionConditionalK(d_array<C> &vector,
     return;
 }
 
-template <typename Apply, typename C>
-__host__ void ApplyFunctionConditional(d_array<C> &vector,
-                                       d_array<bool> &booleans, Apply func) {
-    auto tb = Make1DThreadBlock(vector.n);
-    ApplyFunctionConditionalK<<<tb.block, tb.thread>>>(*vector._device,
-                                                       *booleans._device, func);
+template <typename apply, typename C>
+__host__ void apply_func_cond(d_array<C> &vector, d_array<bool> &booleans,
+                              apply func) {
+    auto tb = make1DThreadBlock(vector.n);
+    apply_func_condK<<<tb.block, tb.thread>>>(*vector._device,
+                                              *booleans._device, func);
 };
 
 template <typename Reduction, typename C>
-__global__ void ReductionFunctionK(d_array<C> &A, int nValues, int shift,
-                                   Reduction func) {
+__global__ void reduction_funcK(d_array<C> &A, int nValues, int shift,
+                                Reduction func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= nValues)
         return;
@@ -59,12 +59,12 @@ __global__ void ReductionFunctionK(d_array<C> &A, int nValues, int shift,
 };
 
 template <typename Reduction, typename C>
-C ReductionFunction(d_array<C> &A, Reduction func) {
+C reduction_func(d_array<C> &A, Reduction func) {
     int nValues = A.n;
     dim3Pair threadblock;
     int shift = 1;
     do {
-        threadblock = Make1DThreadBlock(nValues);
+        threadblock = make1DThreadBlock(nValues);
         ReductionK<<<threadblock.block.x, threadblock.thread.x>>>(
             *A._device, nValues, shift, func);
         gpuErrchk(cudaDeviceSynchronize());
@@ -75,9 +75,8 @@ C ReductionFunction(d_array<C> &A, Reduction func) {
 }
 
 template <typename Reduction, typename C>
-__global__ void
-ReductionFunctionConditionalK(d_array<C> &A, d_array<bool> &booleans,
-                              int nValues, int shift, Reduction func) {
+__global__ void reduction_func_condK(d_array<C> &A, d_array<bool> &booleans,
+                                     int nValues, int shift, Reduction func) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= nValues)
         return;
@@ -99,15 +98,13 @@ ReductionFunctionConditionalK(d_array<C> &A, d_array<bool> &booleans,
 };
 
 template <typename Reduction, typename C>
-C ReductionFunctionConditional(d_array<C> &A, d_array<bool> &booleans,
-                               Reduction func) {
+C reduction_func_cond(d_array<C> &A, d_array<bool> &booleans, Reduction func) {
     int nValues = A.n;
     dim3Pair threadblock;
     int shift = 1;
     do {
-        threadblock = Make1DThreadBlock(nValues);
-        ReductionFunctionConditionalK<<<threadblock.block.x,
-                                        threadblock.thread.x>>>(
+        threadblock = make1DThreadBlock(nValues);
+        reduction_func_condK<<<threadblock.block.x, threadblock.thread.x>>>(
             *A._device, *booleans._device, nValues, shift, func);
         gpuErrchk(cudaDeviceSynchronize());
         nValues = int((nValues - 1) / threadblock.thread.x) + 1;

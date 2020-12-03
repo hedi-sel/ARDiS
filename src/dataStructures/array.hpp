@@ -12,7 +12,7 @@
 template <typename C> class d_array {
   public:
     int n;
-    const bool isDevice;
+    const bool is_device;
 
     C *data;
 
@@ -25,21 +25,20 @@ template <typename C> class d_array {
 
     // Manipulation
     __host__ void operator=(const d_array &);
-    __host__ void Resize(int);
-    __host__ void Fill(C value);
+    __host__ void resize(int);
+    __host__ void fill(C value);
 
     // Accessors
     __host__ __device__ C &at(int i);
     __host__ __device__ int size();
-    __host__ __device__ bool IsDevice();
-    __host__ cusparseDnVecDescr_t MakeDescriptor();
+    __host__ cusparseDnVecDescr_t make_descriptor();
     __host__ __device__ void print(int printCount = 5) const;
 
     __host__ ~d_array();
 
   private:
-    __host__ void MemAlloc();
-    __host__ void MemFree();
+    __host__ void mem_alloc();
+    __host__ void mem_free();
     int *n_dataholders = nullptr;
 };
 
@@ -52,7 +51,7 @@ template class d_array<int>;
 class d_vector : public d_array<T> {
   public:
     using d_array<T>::d_array;
-    __host__ std::string ToString();
+    __host__ std::string to_string();
     __host__ void prune(T value = 0);
     __host__ void prune_under(T value = 0);
 };

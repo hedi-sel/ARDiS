@@ -43,7 +43,7 @@ class simulation {
 
 #ifndef NDEBUG_PROFILING
     // Profiler
-    ChronoProfiler profiler;
+    chrono_profiler profiler;
 #endif
 
     // Give as input the size of the concentration vectors

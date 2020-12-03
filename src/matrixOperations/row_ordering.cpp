@@ -10,7 +10,7 @@
 cusparseHandle_t rowOrdHandle = NULL;
 
 void RowOrdering(d_spmatrix &d_mat) {
-    assert(d_mat.isDevice);
+    assert(d_mat.is_device);
     if (rowOrdHandle == NULL) {
         cusparseErrchk(cusparseCreate(&rowOrdHandle));
     }
@@ -20,8 +20,8 @@ void RowOrdering(d_spmatrix &d_mat) {
     void *pBuffer = NULL;
 
     /* step 1: ?? */
-    d_mat.OperationCuSparse((void *)cusparseXcoosort_bufferSizeExt,
-                            rowOrdHandle, false, &pBufferSizeInBytes);
+    d_mat.operation_cusparse((void *)cusparseXcoosort_bufferSizeExt,
+                             rowOrdHandle, false, &pBufferSizeInBytes);
 
     /* step 2: allocate buffer */
     gpuErrchk(cudaMalloc(&d_P, sizeof(int) * d_mat.nnz));
@@ -34,8 +34,8 @@ void RowOrdering(d_spmatrix &d_mat) {
         cusparseCreateIdentityPermutation(rowOrdHandle, d_mat.nnz, d_P));
 
     /* step 4: sort COO format by Row */
-    d_mat.OperationCuSparse((void *)cusparseXcoosortByRow, rowOrdHandle, false,
-                            d_P, pBuffer);
+    d_mat.operation_cusparse((void *)cusparseXcoosortByRow, rowOrdHandle, false,
+                             d_P, pBuffer);
 
     // /* step 5: gather sorted cooVals */
 #ifdef USE_DOUBLE

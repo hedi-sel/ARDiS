@@ -8,8 +8,8 @@ void fill_zone(d_vector &u, d_mesh &mesh, rect_zone &rect_zone, T value);
 
 void fill_outside_zone(d_vector &u, d_mesh &mesh, rect_zone &zone, T value);
 
-T GetMinZone(d_vector &u, d_mesh &mesh, rect_zone &zone);
+T min_zone(d_vector &u, d_mesh &mesh, rect_zone &zone);
 
-T GetMaxZone(d_vector &u, d_mesh &mesh, rect_zone &zone);
+T max_zone(d_vector &u, d_mesh &mesh, rect_zone &zone);
 
-T GetMeanZone(d_vector &u, d_mesh &mesh, rect_zone &zone);
+T mean_zone(d_vector &u, d_mesh &mesh, rect_zone &zone);

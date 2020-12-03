@@ -85,7 +85,7 @@ __host__ __device__ void reaction_mass_action::print() const {
     reaction::print();
     std::cout << "k=" << K << "\n";
 #else
-    PrintBody(*this);
+    printBody(*this);
 #endif
 }
 
@@ -113,7 +113,7 @@ __host__ __device__ void reaction_michaelis_menten::print() const {
     reaction::print();
     std::cout << "Vm = " << Vm << " ; Km = " << Km << "\n";
 #else
-    PrintBody(*this);
+    printBody(*this);
 #endif
 }
 

@@ -1,6 +1,7 @@
 from ardis import *
 
 import ardis.d_geometry as dg
+import ardis.geometry as geo
 
 from scipy.sparse import *
 import scipy.sparse.linalg as spLnal
@@ -43,7 +44,7 @@ def PrintLabyrinth(name, verbose=True, plotEvery=1, dt=0, meshPath=""):
 
     if(meshPath == ""):
         meshPath = matrixFolder + "/mesh_" + name + ".dat"
-    Mesh = LoadMeshFromFile(meshPath)
+    Mesh = dg.read_mesh(meshPath)
 
     Surface = (np.max(Mesh.x) - np.min(Mesh.x)) * \
         (np.max(Mesh.y) - np.min(Mesh.y))
@@ -116,15 +117,15 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, storeEvery=1, dt=1e-2, epsil
     stiffnessPath = matrixFolder+"/stiffness_"+name+".mtx"
     meshPath = matrixFolder + "/mesh_" + name + ".dat"
 
-    Mesh = LoadMeshFromFile(meshPath)
+    Mesh = dg.read_mesh(meshPath)
 
     # Remove csv file from previous calculations
     os.system("rm -f "+csvFolder+"/"+name+".csv")
 
-    d_S = ToD_SparseMatrix(LoadMatrixFromFile(
+    d_S = to_d_spmatrix(read_spmatrix(
         stiffnessPath, Readtype.Symetric), matrix_type.CSR)
     print("Stiffness matrix loaded ...")
-    d_D = ToD_SparseMatrix(LoadMatrixFromFile(
+    d_D = to_d_spmatrix(read_spmatrix(
         dampingPath, Readtype.Symetric), matrix_type.CSR)
     print("Dampness matrix loaded ...")
 
@@ -174,7 +175,7 @@ def ExploreLabyrinth(name, diffusion=1, reaction=5, storeEvery=1, dt=1e-2, epsil
 
         if (i * dt > plot_dt * plotcount):
             plotcount += 1
-            fig = PlotState(simu.state, Mesh)
+            fig = plot_state(simu.state, Mesh)
             fig.savefig(
                 printFolder + "/"+name+"/" + str(i) + ".png")
             plt.close(fig)

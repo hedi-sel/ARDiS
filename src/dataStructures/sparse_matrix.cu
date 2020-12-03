@@ -16,20 +16,20 @@
 __host__ d_spmatrix::d_spmatrix() : d_spmatrix(0, 0){};
 
 __host__ d_spmatrix::d_spmatrix(int rows, int cols, int nnz, matrix_type type,
-                                bool isDevice)
-    : nnz(nnz), rows(rows), cols(cols), isDevice(isDevice), type(type),
+                                bool is_device)
+    : nnz(nnz), rows(rows), cols(cols), is_device(is_device), type(type),
       loaded_elements(nnz) {
-    MemAlloc();
+    mem_alloc();
 }
 
 __host__ d_spmatrix::d_spmatrix(const d_spmatrix &m, bool copyToOtherMem)
-    : d_spmatrix(m.rows, m.cols, m.nnz, m.type, m.isDevice ^ copyToOtherMem) {
+    : d_spmatrix(m.rows, m.cols, m.nnz, m.type, m.is_device ^ copyToOtherMem) {
     loaded_elements = m.loaded_elements;
     assert(m.loaded_elements == m.nnz);
     cudaMemcpyKind memCpy =
-        (m.isDevice)
-            ? (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
-            : (isDevice) ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost;
+        (m.is_device)
+            ? (is_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost
+            : (is_device) ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost;
     gpuErrchk(cudaMemcpy(data, m.data, sizeof(T) * nnz, memCpy));
     gpuErrchk(cudaMemcpy(colPtr, m.colPtr,
                          sizeof(int) * ((type == CSC) ? cols + 1 : nnz),
@@ -40,16 +40,16 @@ __host__ d_spmatrix::d_spmatrix(const d_spmatrix &m, bool copyToOtherMem)
 }
 
 __host__ void d_spmatrix::operator=(const d_spmatrix &other) {
-    assert(isDevice == isDevice);
-    MemFree();
+    assert(is_device == is_device);
+    mem_free();
     nnz = other.nnz;
     rows = other.rows;
     cols = other.cols;
     loaded_elements = other.loaded_elements;
     type = other.type;
-    MemAlloc();
+    mem_alloc();
     cudaMemcpyKind memCpy =
-        (isDevice) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToHost;
+        (is_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToHost;
     gpuErrchk(cudaMemcpy(data, other.data, sizeof(T) * nnz, memCpy));
     gpuErrchk(cudaMemcpy(colPtr, other.colPtr,
                          sizeof(int) * ((type == CSC) ? cols + 1 : nnz),
@@ -60,22 +60,22 @@ __host__ void d_spmatrix::operator=(const d_spmatrix &other) {
 }
 
 __host__ bool d_spmatrix::operator==(const d_spmatrix &other) {
-    if (isDevice) {
+    if (is_device) {
         hd_data<bool> result(true);
-        isEqual<<<1, 1>>>(*(this->_device), *(other._device), result(true));
-        result.SetHost();
+        is_equalK<<<1, 1>>>(*(this->_device), *(other._device), result(true));
+        result.update_host();
         return result();
         gpuErrchk(cudaDeviceSynchronize());
     } else
-        return isEqualBody(*this, other);
+        return is_equalBody(*this, other);
 }
 
-__host__ void d_spmatrix::MemAlloc() {
+__host__ void d_spmatrix::mem_alloc() {
     if (nnz == 0)
         return;
     int rowPtrSize = (type == CSR) ? rows + 1 : nnz;
     int colPtrSize = (type == CSC) ? cols + 1 : nnz;
-    if (isDevice) {
+    if (is_device) {
         gpuErrchk(cudaMalloc(&data, nnz * sizeof(T)));
         gpuErrchk(cudaMalloc(&rowPtr, rowPtrSize * sizeof(int)));
         gpuErrchk(cudaMalloc(&colPtr, colPtrSize * sizeof(int)));
@@ -92,9 +92,9 @@ __host__ void d_spmatrix::MemAlloc() {
             colPtr[i] = 0;
     }
 }
-__host__ void d_spmatrix::MemFree() {
+__host__ void d_spmatrix::mem_free() {
     if (nnz > 0)
-        if (isDevice) {
+        if (is_device) {
             gpuErrchk(cudaFree(data));
             gpuErrchk(cudaFree(rowPtr));
             gpuErrchk(cudaFree(colPtr));
@@ -106,13 +106,13 @@ __host__ void d_spmatrix::MemFree() {
         }
 }
 
-__host__ std::string d_spmatrix::ToString() {
+__host__ std::string d_spmatrix::to_string() {
     int printCount = 5;
     std::stringstream strs;
 
     char buffer[50];
     sprintf(buffer, "Matrix :\n%i %i %i/%i isDev=%i format=", rows, cols,
-            loaded_elements, nnz, isDevice);
+            loaded_elements, nnz, is_device);
     strs << std::string(buffer);
 
     switch (type) {
@@ -126,11 +126,11 @@ __host__ std::string d_spmatrix::ToString() {
         strs << "CSC\n";
         break;
     }
-    for (MatrixElement elm(this); elm.HasNext(); elm.Next()) {
-        strs << elm.ToString();
+    for (matrix_elm elm(this); elm.has_next(); elm.next()) {
+        strs << elm.to_string();
         printCount--;
         if (printCount <= 0) {
-            if (elm.HasNext())
+            if (elm.has_next())
                 strs << "...\n";
             break;
         }
@@ -140,24 +140,24 @@ __host__ std::string d_spmatrix::ToString() {
 
 __host__ __device__ void d_spmatrix::print(int printCount) const {
 #ifndef __CUDA_ARCH__
-    if (isDevice) {
-        printMatrix<<<1, 1>>>(_device, printCount);
+    if (is_device) {
+        print_matrixK<<<1, 1>>>(_device, printCount);
         gpuErrchk(cudaDeviceSynchronize());
     } else
 #endif
-        printMatrixBody(this, printCount);
+        print_matrixBody(this, printCount);
 }
 
-__host__ void d_spmatrix::SetNNZ(int nnz) {
-    MemFree();
+__host__ void d_spmatrix::set_nnz(int nnz) {
+    mem_free();
     this->nnz = nnz;
     this->loaded_elements = nnz;
-    MemAlloc();
+    mem_alloc();
 }
 
-__host__ void d_spmatrix::StartFilling() {
+__host__ void d_spmatrix::start_filling() {
     loaded_elements = 0;
-    if (isDevice) {
+    if (is_device) {
         gpuErrchk(cudaFree(_device));
         gpuErrchk(cudaMalloc(&_device, sizeof(d_spmatrix)));
         gpuErrchk(cudaMemcpy(_device, this, sizeof(d_spmatrix),
@@ -166,56 +166,56 @@ __host__ void d_spmatrix::StartFilling() {
     }
 }
 
-__host__ __device__ void d_spmatrix::AddElement(int i, int j, T val) {
+__host__ __device__ void d_spmatrix::add_element(int i, int j, T val) {
 #ifndef __CUDA_ARCH__
-    if (isDevice) {
-        AddElementK<<<1, 1>>>(_device, i, j, val);
+    if (is_device) {
+        add_elementK<<<1, 1>>>(_device, i, j, val);
         gpuErrchk(cudaDeviceSynchronize());
     } else
 #endif
-        AddElementBody(this, i, j, val);
+        add_elementBody(this, i, j, val);
 }
 
 // Get the value at index k of the sparse matrix
-__host__ __device__ const T &d_spmatrix::Get(int k) const { return data[k]; }
-__host__ __device__ const T &d_spmatrix::GetLine(int i) const {
+__host__ __device__ const T &d_spmatrix::get(int k) const { return data[k]; }
+__host__ __device__ const T &d_spmatrix::get_line(int i) const {
     if (type != CSR) {
         printf("Error! Doesn't work with other type than CSR");
     }
     return data[rowPtr[i]];
 }
 
-__host__ __device__ T d_spmatrix::Lookup(int i, int j) const {
-    for (MatrixElement elm(this); elm.HasNext(); elm.Next())
+__host__ __device__ T d_spmatrix::lookup(int i, int j) const {
+    for (matrix_elm elm(this); elm.has_next(); elm.next())
         if (elm.i == i && elm.j == j)
             return *elm.val;
     return 0;
 }
 
-__host__ void d_spmatrix::ToCompressedDataType(matrix_type toType) {
+__host__ void d_spmatrix::to_compress_dtype(matrix_type toType) {
     if (toType == COO) {
-        if (IsConvertibleTo(CSR))
+        if (is_convertible_to(CSR))
             toType = CSR;
-        else if (IsConvertibleTo(CSC))
+        else if (is_convertible_to(CSC))
             toType = CSC;
         else {
             printf("Not convertible to any type!\n");
             return;
         }
     } else {
-        assert(IsConvertibleTo(toType));
+        assert(is_convertible_to(toType));
     }
     int newSize = (toType == CSR) ? rows + 1 : cols + 1;
     int *newArray;
-    if (isDevice) {
+    if (is_device) {
         gpuErrchk(cudaMalloc(&newArray, newSize * sizeof(int)));
-        convertArray<<<1, 1>>>(_device, (toType == CSR) ? rowPtr : colPtr,
-                               newArray, newSize);
+        convert_arrayK<<<1, 1>>>(_device, (toType == CSR) ? rowPtr : colPtr,
+                                 newArray, newSize);
         cudaFree((toType == CSR) ? rowPtr : colPtr);
     } else {
         newArray = new int[newSize];
-        convertArrayBody(this, (toType == CSR) ? rowPtr : colPtr, newArray,
-                         newSize);
+        convert_arrayBody(this, (toType == CSR) ? rowPtr : colPtr, newArray,
+                          newSize);
         if (toType == CSR)
             delete[] rowPtr;
         else
@@ -226,7 +226,7 @@ __host__ void d_spmatrix::ToCompressedDataType(matrix_type toType) {
     else
         colPtr = newArray;
     type = toType;
-    if (isDevice) {
+    if (is_device) {
         loaded_elements = nnz; // Warning!! There is no assert to protect this!
         gpuErrchk(cudaMemcpy(_device, this, sizeof(d_spmatrix),
                              cudaMemcpyHostToDevice));
@@ -234,7 +234,7 @@ __host__ void d_spmatrix::ToCompressedDataType(matrix_type toType) {
     }
 }
 
-__host__ bool d_spmatrix::IsConvertibleTo(matrix_type toType) const {
+__host__ bool d_spmatrix::is_convertible_to(matrix_type toType) const {
     assert(toType != type);
     if (toType == COO)
         return true;
@@ -242,7 +242,7 @@ __host__ bool d_spmatrix::IsConvertibleTo(matrix_type toType) const {
         return false;
     int *analyzedArray = (toType == CSR) ? rowPtr : colPtr;
     bool isOK = true;
-    if (isDevice) {
+    if (is_device) {
         bool *_isOK;
         gpuErrchk(cudaMalloc(&_isOK, sizeof(bool)));
         checkOrdered<<<1, 1>>>(analyzedArray, nnz, _isOK);
@@ -251,7 +251,7 @@ __host__ bool d_spmatrix::IsConvertibleTo(matrix_type toType) const {
         gpuErrchk(cudaFree(_isOK));
         gpuErrchk(cudaDeviceSynchronize());
     } else {
-        checkOrderedBody(analyzedArray, nnz, &isOK);
+        check_orderedBody(analyzedArray, nnz, &isOK);
     }
     return isOK;
 }
@@ -261,15 +261,15 @@ __host__ void d_spmatrix::to_csr() {
         throw("Error! Already CSR type \n");
     if (type == CSC)
         throw("Error! Already CSC type \n");
-    if (!IsConvertibleTo(CSR)) {
+    if (!is_convertible_to(CSR)) {
         RowOrdering(*this);
     }
-    assert(IsConvertibleTo(CSR));
-    ToCompressedDataType(CSR);
+    assert(is_convertible_to(CSR));
+    to_compress_dtype(CSR);
     assert(type == CSR);
 }
 
-__host__ cusparseMatDescr_t d_spmatrix::MakeDescriptor() {
+__host__ cusparseMatDescr_t d_spmatrix::make_descriptor() {
     cusparseMatDescr_t descr;
     cusparseErrchk(cusparseCreateMatDescr(&descr));
     cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -277,7 +277,7 @@ __host__ cusparseMatDescr_t d_spmatrix::MakeDescriptor() {
     return descr;
 }
 
-__host__ cusparseSpMatDescr_t d_spmatrix::MakeSpDescriptor() {
+__host__ cusparseSpMatDescr_t d_spmatrix::make_sp_descriptor() {
     cusparseSpMatDescr_t descr;
     cusparseErrchk(cusparseCreateCsr(
         &descr, rows, cols, nnz, rowPtr, colPtr, data, CUSPARSE_INDEX_32I,
@@ -285,28 +285,28 @@ __host__ cusparseSpMatDescr_t d_spmatrix::MakeSpDescriptor() {
     return std::move(descr);
 }
 
-__host__ bool d_spmatrix::IsSymetric() {
+__host__ bool d_spmatrix::is_symetric() {
     bool *_return = new bool;
-    if (isDevice) {
+    if (is_device) {
         bool *_returnGpu;
         gpuErrchk(cudaMalloc(&_returnGpu, sizeof(bool)));
-        IsSymetricKernel<<<1, 1>>>(_device, _returnGpu);
+        is_symetricK<<<1, 1>>>(_device, _returnGpu);
         gpuErrchk(cudaDeviceSynchronize());
         gpuErrchk(cudaMemcpy(_return, _returnGpu, sizeof(bool),
                              cudaMemcpyDeviceToHost));
         gpuErrchk(cudaFree(_returnGpu));
         gpuErrchk(cudaDeviceSynchronize());
     } else {
-        IsSymetricBody(this, _return);
+        is_symetricBody(this, _return);
     }
     return *_return;
 }
 
 typedef cusparseStatus_t (*FuncSpar)(...);
-__host__ void d_spmatrix::OperationCuSparse(void *function,
-                                            cusparseHandle_t &handle,
-                                            bool addValues, void *pointer1,
-                                            void *pointer2) {
+__host__ void d_spmatrix::operation_cusparse(void *function,
+                                             cusparseHandle_t &handle,
+                                             bool addValues, void *pointer1,
+                                             void *pointer2) {
     if (addValues) {
         printf("This function is not complete\n");
     } else {
@@ -325,21 +325,21 @@ __host__ void d_spmatrix::OperationCuSparse(void *function,
 }
 
 typedef cusolverStatus_t (*FuncSolv)(...);
-__host__ void d_spmatrix::OperationCuSolver(void *function,
-                                            cusolverSpHandle_t &handle,
-                                            cusparseMatDescr_t descr, T *b,
-                                            T *xOut, int *singularOut) {
+__host__ void d_spmatrix::operation_cusolver(void *function,
+                                             cusolverSpHandle_t &handle,
+                                             cusparseMatDescr_t descr, T *b,
+                                             T *xOut, int *singularOut) {
     cusolverErrchk(((FuncSolv)function)(handle, rows, nnz, descr, data, rowPtr,
                                         colPtr, b, 0.0, 0, xOut, singularOut));
     // TODO : SymOptimization
 }
 
-__host__ void d_spmatrix::MakeDataWidth() {
+__host__ void d_spmatrix::make_datawidth() {
     if (dataWidth >= 0)
         printf("Warning! Data width has already been computed.\n");
-    dim3Pair threadblock = Make1DThreadBlock(rows);
+    dim3Pair threadblock = make1DThreadBlock(rows);
     d_vector width(rows);
-    GetDataWidthK<<<threadblock.block, threadblock.thread>>>(
+    get_datawidthK<<<threadblock.block, threadblock.thread>>>(
         *_device, *(d_vector *)width._device);
     ReductionOperation(width, maximum);
     T dataWidthFloat;
@@ -347,4 +347,4 @@ __host__ void d_spmatrix::MakeDataWidth() {
     dataWidth = (int)dataWidthFloat;
 }
 
-__host__ d_spmatrix::~d_spmatrix() { MemFree(); }
+__host__ d_spmatrix::~d_spmatrix() { mem_free(); }

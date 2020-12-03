@@ -1,10 +1,10 @@
 #include "chrono_profiler.hpp"
 #include <assert.h>
 
-ChronoProfiler::ChronoProfiler() { time = clock(); }
+chrono_profiler::chrono_profiler() { time = clock(); }
 
-int ChronoProfiler::Start(std::string name) {
-    CountTime();
+int chrono_profiler::start(std::string name) {
+    count_time();
 
     auto currentElement = names.find(name);
 
@@ -19,21 +19,21 @@ int ChronoProfiler::Start(std::string name) {
     return current;
 }
 
-void ChronoProfiler::End() {
-    CountTime();
+void chrono_profiler::end() {
+    count_time();
     current = -1;
 }
 
-void ChronoProfiler::print() {
-    CountTime();
+void chrono_profiler::print() {
+    count_time();
     for (auto name = names.begin(); name != names.end(); name++) {
         std::cout << name->first << " :\n" << chronos[name->second] << "\n";
     }
 }
 
-void ChronoProfiler::CountTime() {
+void chrono_profiler::count_time() {
     if (current >= 0) {
-        chronos.at(current) += (FLOAT)(clock() - time) / CLOCKS_PER_SEC;
+        chronos.at(current) += (double)(clock() - time) / CLOCKS_PER_SEC;
     }
     time = clock();
 }

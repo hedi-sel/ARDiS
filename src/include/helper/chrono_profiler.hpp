@@ -8,22 +8,20 @@
 
 #define NCHRONO
 
-typedef double FLOAT;
-
-class ChronoProfiler {
+class chrono_profiler {
   public:
-    ChronoProfiler();
-    int Start(std::string name);
-    void End();
+    chrono_profiler();
+    int start(std::string name);
+    void end();
     void print();
 
   private:
     clock_t time;
 
     std::map<std::string, int> names;
-    std::vector<FLOAT> chronos;
+    std::vector<double> chronos;
 
     int current = -1;
 
-    void CountTime();
+    void count_time();
 };

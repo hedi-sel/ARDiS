@@ -37,7 +37,7 @@ void check_reaction(simulation &sys, std::vector<std::string> &names) {
 }
 
 void simulation::add_reaction(const std::string &descriptor, T rate) {
-    auto holder = ParseReaction(descriptor);
+    auto holder = parse_reaction(descriptor);
     check_reaction(*this, holder);
     reactions.emplace_back(current_state.names, holder, rate);
 }
@@ -68,7 +68,7 @@ void simulation::add_mm_reaction(std::string reag, std::string prod, int kp,
     mmreactions.emplace_back(current_state.names, reag, output, Vm, Km);
 }
 void simulation::add_mm_reaction(const std::string &descriptor, T Vm, T Km) {
-    reaction_holder reaction = ParseReaction(descriptor);
+    reaction_holder reaction = parse_reaction(descriptor);
     if (reaction.Reagents.size() != 1 || reaction.Reagents.at(0).second != 1)
         throw std::invalid_argument(
             "A Michaelis-Menten reaction takes only one species as reagent\n");
@@ -101,12 +101,12 @@ void simulation::prune(T value) {
 
 void simulation::iterate_reaction(T dt, bool degradation) {
 #ifndef NDEBUG_PROFILING
-    profiler.Start("Reaction");
+    profiler.start("Reaction");
 #endif
     T drainXdt = drain * dt;
     auto drainLambda = [drainXdt] __device__(T & x) { x -= drainXdt; };
     for (auto &species : current_state.vector_holder) {
-        ApplyFunction(species, drainLambda);
+        apply_func(species, drainLambda);
         species.prune();
     }
     for (auto &reaction : reactions) {
@@ -116,13 +116,13 @@ void simulation::iterate_reaction(T dt, bool degradation) {
         compute_reaction<decltype(reaction)>(current_state, reaction, dt);
     }
 #ifndef NDEBUG_PROFILING
-    profiler.End();
+    profiler.end();
 #endif
 }
 
 bool simulation::iterate_diffusion(T dt) {
 #ifndef NDEBUG_PROFILING
-    profiler.Start("Diffusion Initialization");
+    profiler.start("Diffusion Initialization");
 #endif
     if (damp_mat == nullptr || stiff_mat == nullptr) {
         printf("Error! Stiffness and Dampness matrices not loaded\n");
@@ -137,20 +137,20 @@ bool simulation::iterate_diffusion(T dt) {
     }
     for (auto &species : current_state.vector_holder) {
 #ifndef NDEBUG_PROFILING
-        profiler.Start("Diffusion Initialization");
+        profiler.start("Diffusion Initialization");
 #endif
         dot(*damp_mat, species, b);
 #ifndef NDEBUG_PROFILING
-        profiler.Start("Diffusion");
+        profiler.start("Diffusion");
 #endif
-        if (!solver.CGSolve(diffusion_matrix, b, species, epsilon)) {
+        if (!solver.cg_solve(diffusion_matrix, b, species, epsilon)) {
             printf("Warning: It did not converge at time %f\n", t);
             species.print(20);
             return false;
         }
     }
 #ifndef NDEBUG_PROFILING
-    profiler.End();
+    profiler.end();
 #endif
 
     t += dt;

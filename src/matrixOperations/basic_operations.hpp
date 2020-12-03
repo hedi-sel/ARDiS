@@ -28,4 +28,4 @@ void matrix_sum(d_spmatrix &a, d_spmatrix &b, d_spmatrix &c);
 void scalar_mult(d_spmatrix &a, T &alpha);
 void scalar_mult(d_vector &a, T &alpha);
 
-void PrintDotProfiler();
+void print_dotprofiler();
