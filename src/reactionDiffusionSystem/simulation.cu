@@ -5,6 +5,10 @@
 #include <fstream>
 
 simulation::simulation(int size) : current_state(size), solver(size), b(size){};
+simulation::simulation(state &imp_state) : simulation(std::move(imp_state)){};
+simulation::simulation(state &&imp_state)
+    : current_state(std::move(imp_state)), solver(imp_state.vector_size),
+      b(imp_state.vector_size){};
 
 void check_reaction(simulation &sys, reaction_holder &reaction) {
     for (auto species : reaction.Reagents) {

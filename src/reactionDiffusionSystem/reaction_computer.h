@@ -20,7 +20,7 @@ __global__ void compute_reactionK(d_array<d_vector *> &state, T dt,
 template <typename ReactionType>
 void compute_reaction(state &state, ReactionType &reaction, T dt) {
     auto tb = make1DThreadBlock(state.size());
-    compute_reactionK<<<tb.block, tb.thread>>>(*state.device_data._device, dt,
-                                               *reaction._device);
+    compute_reactionK<<<tb.block, tb.thread>>>(*state.get_device_data()._device,
+                                               dt, *reaction._device);
     gpuErrchk(cudaDeviceSynchronize());
 }

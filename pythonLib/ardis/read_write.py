@@ -1,12 +1,14 @@
+from .ardisLib import state
+
 import numpy as np
 from scipy.sparse import *
 import matplotlib.tri as tri
 from enum import Enum
 
 
-def readline(line):
+def line_to_values(line):
     if (line[0] == '%'):
-        return -1, -1, 0
+        return None
     values = []
     splitString = line.split(" ")
     if(len(splitString) == 1):
@@ -28,11 +30,15 @@ def read_spmatrix(path, readtype=Readtype.Normal):
     f = open(path, "r")
     lines = f.readlines()
     i = -1
-    while (i == -1):
-        i, j, k = readline(lines.pop(0))
+    line = None
+    while (line == None):
+        line = line_to_values(lines.pop(0))
+    i, j, k = line
     mat = lil_matrix((i, j))
     for line in lines:
-        values = readline(line)
+        values = None
+        while (values == None):
+            values = line_to_values(line)
         if len(values) == 3:
             mat[values[0] - 1, values[1] - 1] = values[2]
             if (readtype == Readtype.Symetric and values[1] != values[0]):
@@ -40,3 +46,31 @@ def read_spmatrix(path, readtype=Readtype.Normal):
         else:
             print("Could not read the following line: ", line)
     return mat
+
+
+def read_state(path):
+
+    f = open(path)
+    lines = f.readlines()
+
+    vect_size, n_species = line_to_values(lines.pop(0))
+
+    imp_state = state(vect_size)
+    species_list = {}
+
+    for i in range(0, n_species):
+        species_idx, species_name = line_to_values(lines.pop(0))
+        species_list[species_idx] = species_name
+
+    for i in range(o, n_species):
+        state.add_species(species_list[i])
+
+    for i in range(o, n_species):
+        state.add_species(species_list[i])
+
+    for i in range(o, n_species):
+        vect = lines.pop(0)
+        species = vect.pop(0)
+        vect = np.array(vect)
+        state.get_species().fill(vect)
+    return state

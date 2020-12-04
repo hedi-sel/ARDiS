@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import *
 import matplotlib.tri as tri
 from enum import Enum
-from ..convert import readline
+from ..convert import line_to_values
 
 
 def read_mesh(path):
@@ -10,7 +10,7 @@ def read_mesh(path):
     lines = f.readlines()
     x,  y = [], []
     for line in lines:
-        values = readline(line)
+        values = line_to_values(line)
         if len(values) == 2:
             x.append(values[0])
             y.append(values[1])

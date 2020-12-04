@@ -1,10 +1,12 @@
 #include "zone.hpp"
+#include <math.h>
 
 SimpleZone SimpleZone::all = SimpleZone(true);
 SimpleZone SimpleZone::none = SimpleZone(false);
 
 rect_zone::rect_zone() : rect_zone(0, 0, 0, 0){};
-rect_zone::rect_zone(T x0, T y0, T x1, T y1) : x0(x0), x1(x1), y0(y0), y1(y1){};
+rect_zone::rect_zone(T x0, T y0, T x1, T y1)
+    : x0(min(x0, x1)), x1(max(x0, x1)), y0(min(y0, y1)), y1(max(y0, y1)){};
 rect_zone::rect_zone(point2d p0, point2d p1)
     : rect_zone(p0.x, p0.y, p1.x, p1.y){};
 

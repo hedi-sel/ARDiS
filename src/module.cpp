@@ -26,6 +26,16 @@ PYBIND11_MODULE(ardisLib, m) {
              py::return_value_policy::reference)
         .def("get_species", &state::get_species,
              py::return_value_policy::reference)
+        .def("set_species",
+             [](state &self, std::string name, d_vector &sub_state) {
+                 assert(sub_state.size() == self.size());
+                 self.set_species(name, sub_state.data, true);
+             })
+        .def("set_species",
+             [](state &self, std::string name, py::array_t<T> &sub_state) {
+                 assert(sub_state.size() == self.size());
+                 self.set_species(name, sub_state.data(), false);
+             })
         .def("print", &state::print, py::arg("printCount") = 5)
         .def("list_species",
              [](state &self) {
@@ -41,6 +51,7 @@ PYBIND11_MODULE(ardisLib, m) {
         .def("vector_size", &state::size);
     py::class_<simulation>(m, "simulation")
         .def(py::init<int>())
+        .def(py::init<state &>())
         .def("iterate_diffusion", &simulation::iterate_diffusion)
         .def("iterate_reaction", &simulation::iterate_reaction)
         .def("prune", &simulation::prune, py::arg("value") = 0)
@@ -51,17 +62,12 @@ PYBIND11_MODULE(ardisLib, m) {
         .def("set_species",
              [](simulation &self, std::string name, d_vector &sub_state) {
                  assert(sub_state.size() == self.current_state.size());
-                 gpuErrchk(cudaMemcpy(
-                     self.current_state.get_species(name).data, sub_state.data,
-                     sizeof(T) * sub_state.size(), cudaMemcpyDeviceToDevice));
+                 self.current_state.set_species(name, sub_state.data, true);
              })
         .def("set_species",
              [](simulation &self, std::string name, py::array_t<T> &sub_state) {
                  assert(sub_state.size() == self.current_state.size());
-                 gpuErrchk(cudaMemcpy(self.current_state.get_species(name).data,
-                                      sub_state.data(),
-                                      sizeof(T) * sub_state.size(),
-                                      cudaMemcpyHostToDevice));
+                 self.current_state.set_species(name, sub_state.data(), false);
              })
         .def("add_reaction", static_cast<void (simulation::*)(
                                  std::string, int, std::string, int, T)>(

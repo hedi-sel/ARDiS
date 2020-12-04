@@ -48,6 +48,8 @@ class simulation {
 
     // Give as input the size of the concentration vectors
     simulation(int);
+    simulation(state &);
+    simulation(state &&);
     ~simulation();
 
     // Adds a new reaction

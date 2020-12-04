@@ -1,20 +1,15 @@
 build/*
-matrixSymDefPos/*
-matrixFEM/*
-matrixLabyrinth/*
 output/*
-region.png
-src/pythonScripts/modulePython/dna.so
-src/pythonScripts/modulePython/__pycache__/*
 src/pythonScripts/__pycache__/*
-pythonlib/build/*
-pythonlib/ardis.egg-info/*
-pythonlib/dist/*
-pythonlib/ardis/__pycache__/*
-!pythonlib/setup.py
-!pythonlib/build.sh
+pythonLib/build/*
+pythonLib/ardis.egg-info/*
+pythonLib/dist/*
+pythonLib/ardis/__pycache__/*
 
 *.so
 *.csv
 *.pyc
+*.mtx
+*.dat
+*.png
 null

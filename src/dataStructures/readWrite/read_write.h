@@ -14,7 +14,7 @@
 #include "reactionDiffusionSystem/simulation.hpp"
 
 void write_file(d_vector &array, std::string outputPath,
-                std::string prefix = "", std::string suffix = "") {
+                std::string prefix = "", std::string suffix = "\n") {
     if (array.is_device) { // If device memory, copy to host, and restart the
                            // function
         d_vector h_copy(array, true);
@@ -37,7 +37,11 @@ void write_file(d_vector &array, std::string outputPath,
 void write_file(state &state, std::string outputPath) {
     std::ofstream fout;
     fout.open(outputPath, std::ios_base::app);
-    fout << state.vector_size << "\n";
+    fout << state.vector_size << "\t" << state.n_species() << "\n";
+    for (auto sp : state.names) {
+        fout << sp.second << "\t" << sp.first << "\n";
+    }
+    fout << state.vector_size << "\t" << state.n_species() << "\n";
     fout.close();
     for (auto sp : state.names) {
         write_file(state.vector_holder.at(sp.second), outputPath, sp.first,
