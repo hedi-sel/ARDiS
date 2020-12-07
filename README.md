@@ -16,14 +16,16 @@ Requirements
 Building
 ====================
 
-Build CUDA library
-```c++
 Make directories 'build' and 'output'
+
 Unpack data.rar
+
+Build library:
+```c++
 cd build && cmake ../
 make
 ```
-Build Python library
+Install library with pip:
 ```c++
 cd pythonLib
 python setup.py bdist_wheel
