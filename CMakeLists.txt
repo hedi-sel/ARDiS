@@ -9,10 +9,10 @@ project(PdeSolver LANGUAGES CUDA CXX)
 set(SRC ${CMAKE_SOURCE_DIR}/src)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/pythonLib/ardis)
 # set(BOOST_ROOT $ENV{BOOST_ROOT})
-set(Python_ADDITIONAL_VERSIONS 3.8)
+set(Python_ADDITIONAL_VERSIONS 3.6)
 
 find_package(CUDA REQUIRED)
-find_package(PythonLibs 3.8 REQUIRED)
+find_package(PythonLibs 3.6 REQUIRED)
 find_package(pybind11 REQUIRED)
 
 include_directories($ENV{PYBIND_PATH})
