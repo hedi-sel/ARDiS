@@ -8,7 +8,6 @@ project(PdeSolver LANGUAGES CUDA CXX)
 
 set(SRC ${CMAKE_SOURCE_DIR}/src)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/pythonLib/ardis)
-# set(BOOST_ROOT $ENV{BOOST_ROOT})
 set(Python_ADDITIONAL_VERSIONS 3.6)
 
 find_package(CUDA REQUIRED)
@@ -19,10 +18,8 @@ include_directories($ENV{PYBIND_PATH})
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
 message(${CUDA_INCLUDE_DIRS})
-# include_directories(${BOOST_ROOT})
 include_directories(${SRC})
 include_directories(${SRC}/include)
-# link_directories(${BOOST_ROOT}/stage/lib)
 
 file(GLOB_RECURSE SRC_FILES "${SRC}/*.cu" "${SRC}/*.cpp")
 

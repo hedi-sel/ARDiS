@@ -47,7 +47,8 @@ PYBIND11_MODULE(ardisLib, m) {
                  }
                  return listSpecies;
              })
-        .def("__len__", &state::n_species)
+        .def("__len__", &state::size)
+        .def("n_species", &state::n_species)
         .def("vector_size", &state::size);
     py::class_<simulation>(m, "simulation")
         .def(py::init<int>())

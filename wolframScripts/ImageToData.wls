@@ -6,10 +6,11 @@ Needs["NDSolve`FEM`"]
 
 imagePath = $ScriptCommandLine[[2]]
 If[!StringContainsQ[imagePath, ".png"], Throw["File extension has to be .png"]]
-region = Region@ImageMesh@Import[imagePath]
+region = RegionResize[Region@ImageMesh@Import[imagePath], {{0,100}, {0,100}}]
+
 
 (*Make mesh*)
-nr=ToElementMesh[ BoundaryDiscretizeRegion@region , MaxCellMeasure->20 ]
+nr=ToElementMesh[ BoundaryDiscretizeRegion@region , MaxCellMeasure->1 ]
 
 vd=NDSolve`VariableData[{"DependentVariables"->{u},"Space"->{x,y}}];
 sd=NDSolve`SolutionData[{"Space"->nr}];
@@ -22,9 +23,9 @@ discretePDE=DiscretizePDE[initCoeffs,methodData,sd];
 {load,stiffness,damping,mass}=discretePDE["SystemMatrices"];
 
 (*Export matrices*)
-stiffnessPath = StringReplace(imagePath, ".png"->"_stiffness.mtx")
-dampingPath = StringReplace(imagePath, ".png"->"_damping.mtx")
-meshPath = StringReplace(imagePath, ".png"->"_mesh.dat")
+stiffnessPath = StringReplace[imagePath, ".png"->"_stiffness.mtx"]
+dampingPath = StringReplace[imagePath, ".png"->"_damping.mtx"]
+meshPath = StringReplace[imagePath, ".png"->"_mesh.dat"]
 
 Export[stiffnessPath,stiffness]
 Export[dampingPath,damping]

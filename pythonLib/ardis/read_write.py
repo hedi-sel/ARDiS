@@ -4,6 +4,7 @@ import numpy as np
 from scipy.sparse import *
 import matplotlib.tri as tri
 from enum import Enum
+import json
 
 
 def line_to_values(line):
@@ -62,15 +63,27 @@ def read_state(path):
         species_idx, species_name = line_to_values(lines.pop(0))
         species_list[species_idx] = species_name
 
-    for i in range(o, n_species):
+    for i in range(0, n_species):
         state.add_species(species_list[i])
 
-    for i in range(o, n_species):
-        state.add_species(species_list[i])
-
-    for i in range(o, n_species):
+    for i in range(0, n_species):
         vect = lines.pop(0)
         species = vect.pop(0)
         vect = np.array(vect)
         state.get_species().fill(vect)
     return state
+
+
+def import_crn(simu, path):
+    data = json.load(open(path))
+    simu.add_species("trash")
+    for sp in data['nodes']:
+        simu.add_species(sp['name'])
+        simu.set_species(sp['name'], np.zeros(len(simu.state)))
+        simu.add_reaction(sp['name'] + "-> " + "trash", 0.1)
+        if (sp['name'][0] == 'I' and 'T' in sp['name']):
+            simu.add_reaction(sp['name'] + "-> " + "trash", 1)
+
+    for reac in data['connections']:
+        simu.add_mm_reaction(
+            reac['from']+" -> "+reac['from']+"+"+reac['to'], reac['parameter'], 1)

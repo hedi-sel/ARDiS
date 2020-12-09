@@ -73,9 +73,10 @@ void simulation::add_mm_reaction(std::string reag, std::string prod, int kp,
 }
 void simulation::add_mm_reaction(const std::string &descriptor, T Vm, T Km) {
     reaction_holder reaction = parse_reaction(descriptor);
-    if (reaction.Reagents.size() != 1 || reaction.Reagents.at(0).second != 1)
+    if (reaction.Reagents.size() != 1 || reaction.Reagents.at(0).second != 1) {
         throw std::invalid_argument(
             "A Michaelis-Menten reaction takes only one species as reagent\n");
+    }
     check_reaction(*this, reaction);
     mmreactions.emplace_back(current_state.names, reaction.Reagents.at(0).first,
                              reaction.Products, Vm, Km);

@@ -18,22 +18,26 @@ def plot_state(state, mesh, title="no title", listSpecies=[], excludeSpecies=[],
     if(len(listSpecies) == 0):
         listSpecies = state.list_species()
 
-    if (len(colors) == 0):
-        col_count = 0
-        for species in listSpecies:
-            if species in excludeSpecies:
-                continue
+    col_count = 0
+    for species in listSpecies:
+        if species in excludeSpecies:
+            continue
+        if species not in colors:
             colors[species] = color_list[col_count]
             col_count = (col_count+1) % len(color_list)
+    if "background" in colors:
+        background_color = colors["background"]
+    else:
+        background_color = [[0, 0.1, 0.3]]
 
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
-    plt.scatter(mesh.x, mesh.y, s=5 * scatterSize,
+    plt.scatter(mesh.x, mesh.y, s=4*scatterSize,
                 c=[[0, 0.1, 0.3]], vmin=0, vmax=1)
     for species in listSpecies:
         if species in excludeSpecies:
             continue
         vect = state.get_species(species).toarray()
-        ax.scatter(mesh.x, mesh.y, s=2 * vect *
+        ax.scatter(mesh.x, mesh.y, s=vect *
                    scatterSize, vmin=0, vmax=1, c=colors[species])
     return fig

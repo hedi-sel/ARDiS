@@ -24,7 +24,6 @@ region =Region@ImageMesh@Image@maze
 (*Make mesh*)
 nr=ToElementMesh[ BoundaryDiscretizeRegion@region , MaxCellMeasure->20]
 
-
 vd=NDSolve`VariableData[{"DependentVariables"->{u},"Space"->{x,y}}];
 sd=NDSolve`SolutionData[{"Space"->nr}];
 coefficients={"DiffusionCoefficients"->{{IdentityMatrix[2]}},"DampingCoefficients"->{{1}}};
@@ -36,9 +35,9 @@ discretePDE=DiscretizePDE[initCoeffs,methodData,sd];
 {load,stiffness,damping,mass}=discretePDE["SystemMatrices"];
 
 (*Export matrices*)
-stiffnessPath=StringReplace(imagePath, ".png"->"_stiffness.mtx")
-dampingPath = StringReplace(imagePath, ".png"->"_damping.mtx")
-meshPath = StringReplace(imagePath, ".png"->"_mesh.dat")
+stiffnessPath = StringReplace[imagePath, ".png"->"_stiffness.mtx"]
+dampingPath = StringReplace[imagePath, ".png"->"_damping.mtx"]
+meshPath = StringReplace[imagePath, ".png"->"_mesh.dat"]
 
 Export[stiffnessPath,stiffness]
 Export[dampingPath,damping]

@@ -18,6 +18,11 @@ reaction_holder parse_reaction(const std::string &descriptor) {
     trim(lhs);
     trim(rhs);
 
+    static auto isEmpty = [](const std::string &str) {
+        return str.length() == 0 ||
+               str.find_first_not_of(' ') == std::string::npos;
+    };
+
     static auto treatSideWithPlus = [](const std::string &s,
                                        std::size_t plusPos) {
         auto pType1 = trim_copy(s.substr(0, plusPos));
@@ -36,6 +41,10 @@ reaction_holder parse_reaction(const std::string &descriptor) {
         } catch (const std::exception &e) {
         }
         std::string speciesName = s.substr(sRem);
+        if (isEmpty(speciesName)) {
+            weight = 1;
+            speciesName = s;
+        }
         trim(speciesName);
         return stochCoeff(speciesName, weight);
     };
@@ -46,10 +55,12 @@ reaction_holder parse_reaction(const std::string &descriptor) {
         while (plusPos != std::string::npos) {
             std::string species;
             std::tie(species, s) = treatSideWithPlus(s, plusPos);
-            reactionSide.push_back(getStochCoeff(species));
+            if (!isEmpty(species))
+                reactionSide.push_back(getStochCoeff(species));
             plusPos = s.find('+');
         }
-        reactionSide.push_back(getStochCoeff(s));
+        if (!isEmpty(s))
+            reactionSide.push_back(getStochCoeff(s));
         return reactionSide;
     };
 
