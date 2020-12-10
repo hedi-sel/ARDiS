@@ -66,9 +66,9 @@ class simulation {
     void load_stiffness_matrix(d_spmatrix &stiff_mat);
 
     // Make one iteration of either rection or diffusion, for the given timestep
-    // Note: For optimal speed, try do the diffusion iterations with the same
-    //    time-step
-    void iterate_reaction(T dt, bool degradation = false);
+    // Note: For optimal speed, you need to do the diffusion iterations with the
+    // same time-step
+    void iterate_reaction(T dt);
     bool iterate_diffusion(T dt);
     void prune(T value = 0);
 

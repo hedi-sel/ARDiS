@@ -11,6 +11,7 @@
 #include "geometry/zone.hpp"
 #include "geometry/zone_methods.hpp"
 #include "matrixOperations/basic_operations.hpp"
+#include "reactionDiffusionSystem/parse_reaction.hpp"
 #include "reactionDiffusionSystem/simulation.hpp"
 
 PYBIND11_MODULE(ardisLib, m) {
@@ -22,8 +23,13 @@ PYBIND11_MODULE(ardisLib, m) {
 
     py::class_<state>(m, "state")
         .def(py::init<int>())
-        .def("add_species", &state::add_species,
-             py::return_value_policy::reference)
+        .def(
+            "add_species",
+            [](state &self, std::string name, bool diffusion) {
+                return self.add_species(name, species_options(diffusion));
+            },
+            py::arg("name"), py::arg("diffusion") = true,
+            py::return_value_policy::reference)
         .def("get_species", &state::get_species,
              py::return_value_policy::reference)
         .def("set_species",
@@ -49,17 +55,22 @@ PYBIND11_MODULE(ardisLib, m) {
              })
         .def("__len__", &state::size)
         .def("n_species", &state::n_species)
-        .def("vector_size", &state::size);
+        .def("vector_size", &state::size)
+        .def("copy",
+             [](const state &other) { return std::move(state(other)); });
     py::class_<simulation>(m, "simulation")
         .def(py::init<int>())
         .def(py::init<state &>())
         .def("iterate_diffusion", &simulation::iterate_diffusion)
         .def("iterate_reaction", &simulation::iterate_reaction)
         .def("prune", &simulation::prune, py::arg("value") = 0)
-        .def("add_species",
-             [](simulation &self, std::string name) {
-                 self.current_state.add_species(name);
-             })
+        .def(
+            "add_species",
+            [](simulation &self, std::string name, bool diffusion) {
+                self.current_state.add_species(name,
+                                               species_options(diffusion));
+            },
+            py::arg("name"), py::arg("diffusion") = true)
         .def("set_species",
              [](simulation &self, std::string name, d_vector &sub_state) {
                  assert(sub_state.size() == self.current_state.size());
@@ -76,6 +87,12 @@ PYBIND11_MODULE(ardisLib, m) {
         .def("add_reaction",
              static_cast<void (simulation::*)(const std::string &, T)>(
                  &simulation::add_reaction))
+        .def("add_reversible_reaction",
+             [](simulation &self, const std::string &reaction, T forward,
+                T back) {
+                 self.add_reaction(reaction, forward);
+                 self.add_reaction(reverse_reaction(reaction), back);
+             })
         .def("add_mm_reaction",
              static_cast<void (simulation::*)(const std::string &, T, T)>(
                  &simulation::add_mm_reaction))
@@ -103,8 +120,10 @@ PYBIND11_MODULE(ardisLib, m) {
         .def("load_dampness_matrix", &simulation::load_dampness_matrix)
         .def("load_stiffness_matrix", &simulation::load_stiffness_matrix)
         .def("print", &simulation::print, py::arg("print_count") = 5)
-        .def_readwrite("state", &simulation::current_state,
-                       py::return_value_policy::reference)
+#ifndef NDEBUG_PROFILING
+        .def("print_profiler", [](simulation &self) { self.profiler.print(); })
+#endif
+        .def_readwrite("state", &simulation::current_state)
         .def_property(
             "epsilon",
             [](simulation &self) { // Getter
@@ -242,6 +261,11 @@ PYBIND11_MODULE(ardisLib, m) {
                             cudaMemcpyDeviceToHost);
                  return py::array_t(self.n, data);
              })
+        .def("import_array",
+             [](d_vector &self, py::array_t<T> &x) {
+                 gpuErrchk(cudaMemcpy(self.data, x.data(), sizeof(T) * x.size(),
+                                      cudaMemcpyHostToDevice));
+             })
         .def(
             "__add__",
             [](d_vector &self, d_vector &b) {
@@ -296,7 +320,7 @@ PYBIND11_MODULE(ardisLib, m) {
     py::class_<zone>(geometry, "zone");
     py::class_<rect_zone, zone>(geometry, "rect_zone")
         .def(py::init<>())
-        .def(py::init<float, float, float, float>())
+        .def(py::init<T, T, T, T>())
         .def(py::init<point2d, point2d>())
         .def("is_inside",
              static_cast<bool (rect_zone::*)(T, T)>(&rect_zone::is_inside))
@@ -305,12 +329,20 @@ PYBIND11_MODULE(ardisLib, m) {
              static_cast<bool (rect_zone::*)(point2d)>(&rect_zone::is_inside));
     py::class_<tri_zone, zone>(geometry, "tri_zone")
         .def(py::init<>())
-        .def(py::init<float, float, float, float, float, float>())
+        .def(py::init<T, T, T, T, T, T>())
         .def(py::init<point2d, point2d, point2d>())
         .def("is_inside",
              static_cast<bool (tri_zone::*)(T, T)>(&tri_zone::is_inside))
         .def("is_inside",
              static_cast<bool (tri_zone::*)(point2d)>(&tri_zone::is_inside));
+    py::class_<circle_zone, zone>(geometry, "circle_zone")
+        .def(py::init<>())
+        .def(py::init<T, T, T>())
+        .def(py::init<point2d, T>())
+        .def("is_inside",
+             static_cast<bool (circle_zone::*)(T, T)>(&circle_zone::is_inside))
+        .def("is_inside", static_cast<bool (circle_zone::*)(point2d)>(
+                              &circle_zone::is_inside));
 
     py::class_<point2d>(geometry, "point2d")
         .def(py::init<T, T>())

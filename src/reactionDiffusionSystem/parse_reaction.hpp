@@ -6,3 +6,4 @@
 #include "reaction.hpp"
 
 reaction_holder parse_reaction(const std::string &descriptor);
+std::string reverse_reaction(const std::string &descriptor);

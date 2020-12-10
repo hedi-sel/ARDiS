@@ -1,8 +1,8 @@
 #include "zone.hpp"
 #include <math.h>
 
-SimpleZone SimpleZone::all = SimpleZone(true);
-SimpleZone SimpleZone::none = SimpleZone(false);
+simple_zone simple_zone::all = simple_zone(true);
+simple_zone simple_zone::none = simple_zone(false);
 
 rect_zone::rect_zone() : rect_zone(0, 0, 0, 0){};
 rect_zone::rect_zone(T x0, T y0, T x1, T y1)
@@ -35,5 +35,18 @@ __device__ __host__ bool tri_zone::is_inside(T x, T y) {
 }
 
 __device__ __host__ bool tri_zone::is_inside(point2d p) {
+    return is_inside(p.x, p.y);
+}
+
+circle_zone::circle_zone() : circle_zone(0, 0, 0){};
+circle_zone::circle_zone(T x0, T y0, T r) : x0(x0), y0(y0), r(r){};
+circle_zone::circle_zone(point2d center, T r)
+    : circle_zone(center.x, center.y, r){};
+
+__device__ __host__ bool circle_zone::is_inside(T x, T y) {
+    return (x - x0) * (x - x0) + (y - y0) * (y - y0) <= r * r;
+}
+
+__device__ __host__ bool circle_zone::is_inside(point2d p) {
     return is_inside(p.x, p.y);
 }

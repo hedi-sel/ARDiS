@@ -5,12 +5,14 @@ std::string arrowStr = "->";
 reaction_holder parse_reaction(const std::string &descriptor) {
     auto arrowPos = descriptor.find(arrowStr);
     if (arrowPos == std::string::npos) {
-        throw std::invalid_argument("the descriptor must contain an arrow "
+        throw std::invalid_argument(descriptor +
+                                    " : the descriptor must contain an arrow "
                                     "-> to indicate lhs and rhs.");
     }
     if (descriptor.find(arrowStr, arrowPos + 1) != std::string::npos) {
         throw std::invalid_argument(
-            "the descriptor must not contain more than one arrow ->");
+            descriptor +
+            " : the descriptor must not contain more than one arrow ->");
     }
     auto lhs = descriptor.substr(0, arrowPos);
     auto rhs = descriptor.substr(arrowPos + 2, std::string::npos);
@@ -70,4 +72,22 @@ reaction_holder parse_reaction(const std::string &descriptor) {
     getReactionSide(rhs, output);
 
     return reaction_holder(input, output);
+}
+
+std::string reverse_reaction(const std::string &descriptor) {
+    auto arrowPos = descriptor.find(arrowStr);
+    if (arrowPos == std::string::npos) {
+        throw std::invalid_argument(descriptor +
+                                    " : the descriptor must contain an arrow "
+                                    "-> to indicate lhs and rhs.");
+    }
+    if (descriptor.find(arrowStr, arrowPos + 1) != std::string::npos) {
+        throw std::invalid_argument(
+            descriptor +
+            "the descriptor must not contain more than one arrow ->");
+    }
+    auto lhs = descriptor.substr(0, arrowPos);
+    auto rhs = descriptor.substr(arrowPos + 2, std::string::npos);
+
+    return rhs + "->" + lhs;
 }

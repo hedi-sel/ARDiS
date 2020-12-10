@@ -15,10 +15,15 @@ def line_to_values(line):
     if(len(splitString) == 1):
         splitString = line.split("\t")
     for str in splitString:
-        if "." in str or "e" in str:
-            values.append(float(str))
-        elif len(str) > 0:
+        if str == "":
+            continue
+        try:
             values.append(int(str))
+        except ValueError:
+            try:
+                values.append(float(str))
+            except ValueError:
+                values.append(str.replace("\n", ""))
     return values
 
 
@@ -45,6 +50,7 @@ def read_spmatrix(path, readtype=Readtype.Normal):
             if (readtype == Readtype.Symetric and values[1] != values[0]):
                 mat[values[1] - 1, values[0] - 1] = values[2]
         else:
+            print(values)
             print("Could not read the following line: ", line)
     return mat
 
@@ -64,26 +70,69 @@ def read_state(path):
         species_list[species_idx] = species_name
 
     for i in range(0, n_species):
-        state.add_species(species_list[i])
+        imp_state.add_species(str(species_list[i]))
 
     for i in range(0, n_species):
-        vect = lines.pop(0)
+        vect = lines.pop(0).split("\t")
         species = vect.pop(0)
         vect = np.array(vect)
-        state.get_species().fill(vect)
-    return state
+        imp_state.get_species(species).import_array(vect)
+    return imp_state
 
 
 def import_crn(simu, path):
     data = json.load(open(path))
-    simu.add_species("trash")
+    simu.add_species("trash", diffusion=False)
+    inhibitors = []
     for sp in data['nodes']:
         simu.add_species(sp['name'])
         simu.set_species(sp['name'], np.zeros(len(simu.state)))
-        simu.add_reaction(sp['name'] + "-> " + "trash", 0.1)
+
+        # simu.add_mm_reaction(sp['name'] + "-> " + "trash", 0, 1)
+
         if (sp['name'][0] == 'I' and 'T' in sp['name']):
-            simu.add_reaction(sp['name'] + "-> " + "trash", 1)
+            inhibitors.append(sp['name'])
 
     for reac in data['connections']:
+        sp_from = reac['from']
+        sp_to = reac['to']
+        template = "template_" + sp_from + "-" + sp_to
+        template_bind_from = template + "~" + sp_from
+        template_bind_to = template+"~" + sp_to
+        template_bind_from_to = template + "~"+sp_from+"|"+sp_to
+        template_bind_fromto = template + "~" + sp_from + "-" + sp_to
+
+        simu.add_species(template, diffusion=False)
+        simu.add_species(template_bind_from, diffusion=False)
+        simu.add_species(template_bind_to, diffusion=False)
+        simu.add_species(template_bind_from_to, diffusion=False)
+        simu.add_species(template_bind_fromto, diffusion=False)
+
+        simu.set_species(template, np.ones(len(simu.state))*0.1)
+        simu.set_species(template_bind_from, np.zeros(len(simu.state)))
+        simu.set_species(template_bind_to, np.zeros(len(simu.state)))
+        simu.set_species(template_bind_from_to, np.zeros(len(simu.state)))
+        simu.set_species(template_bind_fromto, np.zeros(len(simu.state)))
+
+        simu.add_reversible_reaction(
+            template+"+"+sp_from+"->"+template_bind_from, 1, 1)
+        simu.add_reversible_reaction(
+            template+"+"+sp_to+"->"+template_bind_to, 1, 1)
+        simu.add_reversible_reaction(
+            template_bind_to+"+"+sp_from+"->"+template_bind_from_to, 1, 1)
+        simu.add_reversible_reaction(
+            template_bind_from+"+"+sp_to+"->"+template_bind_from_to, 1, 1)
+        simu.add_reversible_reaction(
+            template_bind_from+"+"+sp_to+"->"+template_bind_fromto, 1, 1)
         simu.add_mm_reaction(
-            reac['from']+" -> "+reac['from']+"+"+reac['to'], reac['parameter'], 1)
+            template_bind_from+" -> "+template_bind_fromto, reac['parameter'], 1)
+        simu.add_mm_reaction(
+            template_bind_from_to+" -> "+template_bind_fromto + "+" + sp_to, reac['parameter'], 1)
+        simu.add_mm_reaction(
+            template_bind_fromto+" -> "+template_bind_from_to, 1, 1)
+
+        if "I"+sp_from+"T"+sp_to in inhibitors:
+            inhib = "I"+sp_from+"T"+sp_to
+            # simu.add_reaction(template+"+"+inhib+"->"+"trash", 0.1)
+            # simu.add_reaction(template_bind_to+"+"+inhib+"->"+"trash", 0.1)
+            # simu.add_reaction(template_bind_from+"+"+inhib+"->"+"trash", 0.1)

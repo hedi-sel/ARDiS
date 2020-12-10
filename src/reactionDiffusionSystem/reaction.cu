@@ -11,7 +11,7 @@ reaction::reaction(std::map<std::string, int> &names, reaction_holder holder,
                    long unsigned size)
     : Holder(holder), Reagents(holder.Reagents.size()),
       ReagentsCoeff(holder.Reagents.size()), Products(holder.Products.size()),
-      ProductsCoeff(holder.Products.size()) {
+      ProductsCoeff(holder.Products.size()), Inhibitor(1) {
     int reag_size = holder.Reagents.size();
     int reagents[reag_size];
     int reagents_coeff[reag_size];
@@ -35,6 +35,9 @@ reaction::reaction(std::map<std::string, int> &names, reaction_holder holder,
                cudaMemcpyHostToDevice);
     cudaMemcpy(ProductsCoeff.data, products_coeff, sizeof(int) * prod_size,
                cudaMemcpyHostToDevice);
+
+    int def_value = -1;
+    cudaMemcpy(Inhibitor.data, &def_value, sizeof(int), cudaMemcpyHostToDevice);
 
     // gpuErrchk(cudaMalloc(&_device, size));
     // gpuErrchk(cudaMemcpy(_device, this, size, cudaMemcpyHostToDevice));
@@ -62,7 +65,8 @@ reaction::reaction(reaction &&other)
     : Holder(other.Holder), Reagents(std::move(other.Reagents)),
       ReagentsCoeff(std::move(other.ReagentsCoeff)),
       Products(std::move(other.Products)),
-      ProductsCoeff(std::move(other.ProductsCoeff)) {}
+      ProductsCoeff(std::move(other.ProductsCoeff)),
+      Inhibitor(std::move(other.Inhibitor)) {}
 
 /////// Mass Action
 
@@ -87,6 +91,11 @@ __host__ __device__ void reaction_mass_action::print() const {
 #else
     printBody(*this);
 #endif
+}
+
+void reaction::add_inhibitor(int index) {
+    gpuErrchk(cudaMemcpy(Inhibitor.data, &index, sizeof(int),
+                         cudaMemcpyHostToDevice));
 }
 
 /////// Michaleis Menten

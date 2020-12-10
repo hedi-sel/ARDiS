@@ -104,7 +104,7 @@ void simulation::prune(T value) {
         vect.prune(value);
 }
 
-void simulation::iterate_reaction(T dt, bool degradation) {
+void simulation::iterate_reaction(T dt) {
 #ifndef NDEBUG_PROFILING
     profiler.start("Reaction");
 #endif
@@ -114,11 +114,14 @@ void simulation::iterate_reaction(T dt, bool degradation) {
         apply_func(species, drainLambda);
         species.prune();
     }
+    auto tb = make1DThreadBlock(current_state.size());
     for (auto &reaction : reactions) {
-        compute_reaction<decltype(reaction)>(current_state, reaction, dt);
+        compute_reactionK<<<tb.block, tb.thread>>>(
+            *current_state.get_device_data()._device, dt, *reaction._device);
     }
     for (auto &reaction : this->mmreactions) {
-        compute_reaction<decltype(reaction)>(current_state, reaction, dt);
+        compute_reactionK<<<tb.block, tb.thread>>>(
+            *current_state.get_device_data()._device, dt, *reaction._device);
     }
 #ifndef NDEBUG_PROFILING
     profiler.end();
@@ -140,7 +143,12 @@ bool simulation::iterate_diffusion(T dt) {
         printf("Done!\n");
         last_used_dt = dt;
     }
-    for (auto &species : current_state.vector_holder) {
+    for (int i = 0; i < current_state.n_species(); i++) {
+        auto &species = current_state.vector_holder.at(i);
+        auto &option = current_state.options_holder.at(i);
+        if (!option.diffusion)
+            continue;
+
 #ifndef NDEBUG_PROFILING
         profiler.start("Diffusion Initialization");
 #endif

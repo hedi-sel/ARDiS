@@ -41,7 +41,6 @@ void write_file(state &state, std::string outputPath) {
     for (auto sp : state.names) {
         fout << sp.second << "\t" << sp.first << "\n";
     }
-    fout << state.vector_size << "\t" << state.n_species() << "\n";
     fout.close();
     for (auto sp : state.names) {
         write_file(state.vector_holder.at(sp.second), outputPath, sp.first,

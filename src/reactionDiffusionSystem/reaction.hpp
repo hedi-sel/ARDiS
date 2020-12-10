@@ -27,6 +27,7 @@ class reaction {
     d_array<int> ReagentsCoeff;
     d_array<int> Products;
     d_array<int> ProductsCoeff;
+    d_array<int> Inhibitor;
 
     // reaction *_device;
 
@@ -35,6 +36,8 @@ class reaction {
     reaction(std::map<std::string, int> &names, reaction_holder,
              long unsigned size);
     reaction(reaction &&);
+
+    void add_inhibitor(int);
 
     __host__ __device__ void print() const;
 
@@ -54,6 +57,9 @@ class reaction_mass_action : public reaction {
     inline __device__ void ApplyReaction(d_array<d_vector *> &state, int i,
                                          float dt) {
         T progress = K * dt;
+        if (Inhibitor.at(0) != -1)
+            progress *= 1 / (1 + state.at(Inhibitor.at(0))->at(i));
+
         for (int k = 0; k < Reagents.size(); k++)
             progress *=
                 pow(state.at(Reagents.at(k))->at(i), ReagentsCoeff.at(k));
@@ -80,11 +86,12 @@ class reaction_michaelis_menten : public reaction {
     __device__ void inline ApplyReaction(d_array<d_vector *> &state, int i,
                                          float dt) {
         T progress = Km * dt / (Vm + state.at(Reagents.at(0))->at(i));
-        for (int k = 0; k < Reagents.size(); k++)
-            progress *=
-                pow(state.at(Reagents.at(k))->at(i), ReagentsCoeff.at(k));
-        for (int k = 0; k < Reagents.size(); k++)
-            state.at(Reagents.at(k))->at(i) -= progress * ReagentsCoeff.at(k);
+        auto &val = state.at(Reagents.at(0))->at(i);
+        if (Inhibitor.at(0) != -1)
+            progress *= val / (val + state.at(Inhibitor.at(0))->at(i));
+
+        progress *= val;
+        val -= progress;
         for (int k = 0; k < Products.size(); k++)
             state.at(Products.at(k))->at(i) += progress * ProductsCoeff.at(k);
         return;

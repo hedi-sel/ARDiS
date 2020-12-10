@@ -11,7 +11,7 @@ outputFolder = "output"
 
 reaction, drain, epsilon = 1,  1e-8, 1e-3
 
-dt, max_time = 0.1, 100
+dt, max_time = 0.1, 10
 
 plot_dt = 1
 
@@ -72,6 +72,10 @@ for i in range(0, Nit):
     simu.iterate_diffusion(dt)
     simu.prune()
     simu.iterate_reaction(dt, True)
+
+    os.system("rm -f test")
+    write_file(simu.state, "test")
+    print(simu.state == read_state("test"))
 
     if (i * dt > plot_dt * plotcount):
         plotcount += 1

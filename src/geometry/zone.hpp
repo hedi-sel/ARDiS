@@ -10,14 +10,14 @@ struct zone {
     // __device__ __host__ virtual bool is_inside(point2d p) = 0;
 };
 
-struct SimpleZone : zone {
+struct simple_zone : zone {
     bool always_return;
-    SimpleZone(bool b) : always_return(b){};
+    simple_zone(bool b) : always_return(b){};
     __device__ __host__ bool is_inside(T x, T y) { return always_return; }
     __device__ __host__ bool is_inside(point2d p) { return always_return; }
 
-    static SimpleZone all;
-    static SimpleZone none;
+    static simple_zone all;
+    static simple_zone none;
 };
 
 struct rect_zone : zone {
@@ -44,5 +44,20 @@ struct tri_zone : zone {
     void print() {
         printf("tri_zone: P0(%f,%f) P1(%f,%f) P2(%f,%f) \n", x0, y0, x1, y1, x2,
                y2);
+    }
+};
+
+struct circle_zone : zone {
+    T x0, y0, r;
+
+    circle_zone();
+    circle_zone(T x0, T y0, T r);
+    circle_zone(point2d center, T radius);
+
+    __device__ __host__ bool is_inside(T x, T y);
+    __device__ __host__ bool is_inside(point2d p);
+
+    void print() {
+        printf("circle_zone: Center(%f,%f) Radius(%f) \n", x0, y0, r);
     }
 };

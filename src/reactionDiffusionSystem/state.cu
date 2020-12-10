@@ -7,6 +7,11 @@ state::state(int size) : vector_size(size) {}
 state::state(state &&other)
     : vector_size(other.size()), vector_holder(std::move(other.vector_holder)),
       names(std::move(other.names)) {}
+
+state::state(const state &other)
+    : vector_size(other.size()), vector_holder(other.vector_holder),
+      names(other.names) {}
+
 void state::operator=(const state &other) {
     names = other.names;
     vector_size = other.vector_size;
@@ -30,9 +35,10 @@ d_array<d_vector *> &state::get_device_data() {
     return device_data;
 }
 
-d_vector &state::add_species(std::string name) {
+d_vector &state::add_species(std::string name, species_options options) {
     names[name] = n_species();
-    vector_holder.push_back(d_vector(vector_size));
+    vector_holder.emplace_back(vector_size);
+    options_holder.push_back(options);
     return vector_holder.at(n_species() - 1);
 }
 
@@ -51,8 +57,8 @@ void state::set_species(std::string name, const T *data, bool is_device) {
                                      : cudaMemcpyHostToDevice));
 }
 
-int state::size() { return vector_size; }
-int state::n_species() { return vector_holder.size(); }
+int state::size() const { return vector_size; }
+int state::n_species() const { return vector_holder.size(); }
 
 void state::print(int i) {
     for (auto name : names) {
@@ -62,3 +68,5 @@ void state::print(int i) {
 }
 
 state::~state() {}
+
+species_options::species_options(bool diffusion) : diffusion(diffusion) {}
