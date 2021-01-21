@@ -88,7 +88,7 @@ def import_crn(simu, path):
         simu.add_species(sp['name'])
         simu.set_species(sp['name'], np.zeros(len(simu.state)))
 
-        # simu.add_mm_reaction(sp['name'] + "-> " + "trash", 0, 1)
+        simu.add_mm_reaction(sp['name'] + "-> " + "trash", 300, 10)
 
         if (sp['name'][0] == 'I' and 'T' in sp['name']):
             inhibitors.append(sp['name'])
@@ -115,21 +115,21 @@ def import_crn(simu, path):
         simu.set_species(template_bind_fromto, np.zeros(len(simu.state)))
 
         simu.add_reversible_reaction(
-            template+"+"+sp_from+"->"+template_bind_from, 1, 1)
+            template+"+"+sp_from+"->"+template_bind_from, 0.2, 0.2)
         simu.add_reversible_reaction(
-            template+"+"+sp_to+"->"+template_bind_to, 1, 1)
+            template+"+"+sp_to+"->"+template_bind_to, 0.2, 0.2)
         simu.add_reversible_reaction(
-            template_bind_to+"+"+sp_from+"->"+template_bind_from_to, 1, 1)
+            template_bind_to+"+"+sp_from+"->"+template_bind_from_to, 0.2, 0.2)
         simu.add_reversible_reaction(
-            template_bind_from+"+"+sp_to+"->"+template_bind_from_to, 1, 1)
+            template_bind_from+"+"+sp_to+"->"+template_bind_from_to, 0.2, 0.2)
         simu.add_reversible_reaction(
-            template_bind_from+"+"+sp_to+"->"+template_bind_fromto, 1, 1)
+            template_bind_from+"+"+sp_to+"->"+template_bind_fromto, 0.2, 0.2)
         simu.add_mm_reaction(
-            template_bind_from+" -> "+template_bind_fromto, reac['parameter'], 1)
+            template_bind_from+" -> "+template_bind_fromto, 1050, 80)  # reac['parameter']
         simu.add_mm_reaction(
-            template_bind_from_to+" -> "+template_bind_fromto + "+" + sp_to, reac['parameter'], 1)
+            template_bind_from_to+" -> "+template_bind_fromto + "+" + sp_to, 1050, 80)
         simu.add_mm_reaction(
-            template_bind_fromto+" -> "+template_bind_from_to, 1, 1)
+            template_bind_fromto+" -> "+template_bind_from_to, 80, 30)
 
         if "I"+sp_from+"T"+sp_to in inhibitors:
             inhib = "I"+sp_from+"T"+sp_to
