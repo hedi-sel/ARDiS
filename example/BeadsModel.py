@@ -14,9 +14,10 @@ print("Starting exploration on experiment :", name)
 
 drain, epsilon = 0, 1e-3
 diffusion = 1
+production = 100
 
-dt, max_time = 0.1, 100
-plot_dt = 1
+dt, max_time = 0.1, 120
+plot_dt = 2
 
 
 dampingPath = matrixFolder+"/"+name+"_damping.mtx"
@@ -43,7 +44,7 @@ uprightcorner = dg.rect_zone(dg.point2d(9, 9), dg.point2d(10, 10))
 
 
 simu = simulation(d_D.shape[0])
-import_crn(simu, "chemicalReactionNetworks/t_approx.json")
+import_crn(simu, "chemicalReactionNetworks/bottomMETI.json")
 
 simu.drain = drain
 simu.epsilon = epsilon
@@ -58,24 +59,28 @@ plotcount = 0
 os.system("rm -rf " + outputFolder + "/" + name)
 os.system("mkdir " + outputFolder + "/" + name)
 
-dg.fill_zone(simu.get_species("0"), d_Mesh, upleftcorner, 1)
-dg.fill_zone(simu.get_species("1"), d_Mesh, uprightcorner, 1)
+dg.fill_zone(simu.get_species("0"), d_Mesh, upleftcorner, production)
+dg.fill_zone(simu.get_species("1"), d_Mesh, uprightcorner, production)
 
 for i in range(0, Nit):
 
-    dg.fill_zone(simu.get_species("0"), d_Mesh, upleftcorner, 1)
-    dg.fill_zone(simu.get_species("1"), d_Mesh, uprightcorner, 1)
+    dg.fill_zone(simu.get_species("0"), d_Mesh, upleftcorner, production)
+    dg.fill_zone(simu.get_species("1"), d_Mesh, uprightcorner, production)
 
     if (i * dt >= plot_dt * plotcount):
-        fig = plot_state(simu.state, Mesh, title=str(plotcount), listSpecies=[
-            "2"], colors={"background": (0, 0, 0)})
+        fig = plot_state(simu.state, Mesh, title=str(plotcount), listSpecies=["0", "1",
+                                                                              "2"], colors={"background": (0, 0, 0)})
         fig.savefig(
             outputFolder + "/"+name+"/" + str(i) + ".png")
         plt.close(fig)
         plotcount += 1
 
     simu.iterate_reaction(dt)
+    simu.prune(0)
+    # simu.prune_under(1)
     simu.iterate_diffusion(diffusion * dt)
+
+    # simu.get_species("2").print(10000)
 
     if Nit >= 100 and i >= verboseCount * Nit / 10 and i < verboseCount * Nit / 10 + 1:
         print(str(verboseCount * 10) + "% completed")

@@ -64,6 +64,7 @@ PYBIND11_MODULE(ardisLib, m) {
         .def("iterate_diffusion", &simulation::iterate_diffusion)
         .def("iterate_reaction", &simulation::iterate_reaction)
         .def("prune", &simulation::prune, py::arg("value") = 0)
+        .def("prune_under", &simulation::prune_under, py::arg("value") = 1)
         .def(
             "add_species",
             [](simulation &self, std::string name, bool diffusion) {

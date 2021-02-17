@@ -85,11 +85,10 @@ class reaction_michaelis_menten : public reaction {
                               std::vector<stochCoeff>, T, T);
     __device__ void inline ApplyReaction(d_array<d_vector *> &state, int i,
                                          float dt) {
-        T progress = Km * dt / (Vm + state.at(Reagents.at(0))->at(i));
         auto &val = state.at(Reagents.at(0))->at(i);
+        T progress = Vm * dt / (Km + val);
         if (Inhibitor.at(0) != -1)
             progress *= val / (val + state.at(Inhibitor.at(0))->at(i));
-
         progress *= val;
         val -= progress;
         for (int k = 0; k < Products.size(); k++)

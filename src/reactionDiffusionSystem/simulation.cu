@@ -104,6 +104,11 @@ void simulation::prune(T value) {
         vect.prune(value);
 }
 
+void simulation::prune_under(T value) {
+    for (auto &vect : current_state.vector_holder)
+        vect.prune_under(value);
+}
+
 void simulation::iterate_reaction(T dt) {
 #ifndef NDEBUG_PROFILING
     profiler.start("Reaction");

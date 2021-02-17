@@ -6,10 +6,7 @@ import math
 from matplotlib.colors import ListedColormap
 
 color_list = [
-    (0.8, 0.1, 0.2, 1),
-    (0.2, 0.4, 0.6, 1),
-    (0.2, 0.6, 0.2, 1),
-    (0.8, 0.8, 0.8, 1)
+    'Reds', 'Blues', 'Greens', 'Purples', 'Oranges'
 ]
 
 
@@ -35,14 +32,21 @@ def plot_state(state, mesh, title="no title", listSpecies=[], excludeSpecies=[],
     ax.set_aspect('equal')
     # plt.tripcolor(mesh, np.ones(mesh.x.size),
     #               cmap=background_color, vmin=0, vmax=1)
-    plt.scatter(mesh.x, mesh.y, s=2*scatterSize, marker='o',
-                c=[background_color], vmin=0, vmax=1)
+    # plt.scatter(mesh.x, mesh.y, s=2*scatterSize, marker='o',
+    #             c=[background_color], vmin=0, vmax=1)
     for species in listSpecies:
         if species in excludeSpecies:
             continue
         vect = state.get_species(species).toarray()
-        col_map = ListedColormap(np.linspace(
-            (0, 0, 0, 0), colors[species], 20))
+        if type(colors[species]) == str:
+            N = 100
+            col_map = plt.get_cmap(colors[species], N)
+            col_map = col_map(np.arange(N))
+            col_map[:, -1] = np.linspace(0, 1, N)**2
+            col_map = ListedColormap(col_map)
+        else:
+            col_map = ListedColormap(np.linspace(
+                (0, 0, 0, 0), colors[species], 20))
         ax.scatter(mesh.x, mesh.y, s=scatterSize, marker='o',
-                   c=vect, vmin=0, vmax=1, cmap=col_map)  # vect
+                   c=vect, vmin=0, vmax=0.01+np.max(vect), cmap=col_map)  # vect
     return fig

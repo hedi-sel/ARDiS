@@ -71,6 +71,7 @@ class simulation {
     void iterate_reaction(T dt);
     bool iterate_diffusion(T dt);
     void prune(T value = 0);
+    void prune_under(T value = 1);
 
     // Set the convergence threshold for the conjugae gradient method
     void SetEpsilon(T epsilon);

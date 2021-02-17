@@ -1,0 +1,12 @@
+Welcome to ARDiS's documentation!
+*********************************
+
+
+Indices and tables
+******************
+
+* Index
+
+* Module Index
+
+* Search Page
