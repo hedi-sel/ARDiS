@@ -3,15 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to ARDiS's documentation!
-=================================
+Documentation and tutorial for ARDiS
+==========================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   installation
-   quickstart
+   content/installation
+   content/license
 
 
 Indices and tables
