@@ -1,5 +1,7 @@
 build/*
 output/*
+data/*
+docs/_build/*
 src/pythonScripts/__pycache__/*
 pythonLib/build/*
 pythonLib/ardis.egg-info/*
@@ -12,5 +14,4 @@ pythonLib/ardis/__pycache__/*
 *.pyc
 *.mtx
 *.dat
-*.png
 null
