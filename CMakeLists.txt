@@ -14,16 +14,13 @@ find_package(CUDA REQUIRED)
 find_package(PythonLibs 3.6 REQUIRED)
 find_package(pybind11 REQUIRED)
 
-include_directories($ENV{PYBIND_PATH})
+include_directories(${PYBIND_PATH})
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
-message(${CUDA_INCLUDE_DIRS})
 include_directories(${SRC})
 include_directories(${SRC}/include)
 
 file(GLOB_RECURSE SRC_FILES "${SRC}/*.cu" "${SRC}/*.cpp")
-
-message(${SRC_FILES})
 
 add_library(ardisLib SHARED ${SRC_FILES})
 set_target_properties(ardisLib PROPERTIES PREFIX "")

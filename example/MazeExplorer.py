@@ -26,10 +26,10 @@ meshPath = matrixFolder + "/" + name + "_mesh.dat"
 Mesh = dg.read_mesh(meshPath)
 
 d_S = to_d_spmatrix(read_spmatrix(
-    stiffnessPath, Readtype.Symetric), matrix_type.CSR)
+    stiffnessPath, read_type.Symetric), matrix_type.CSR)
 print("Stiffness matrix loaded ...")
 d_D = to_d_spmatrix(read_spmatrix(
-    dampingPath, Readtype.Symetric), matrix_type.CSR)
+    dampingPath, read_type.Symetric), matrix_type.CSR)
 print("Dampness matrix loaded ...")
 
 st = state(d_D.shape[0])

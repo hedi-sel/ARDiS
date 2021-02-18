@@ -49,7 +49,7 @@ Run a minimum working example::
 Contact
 =======================
 
-For any questions or inquiries, e-mail me at:
+For any questions or inquiries, e-mail the author at:
     hedi@sellami.dev
     
 License

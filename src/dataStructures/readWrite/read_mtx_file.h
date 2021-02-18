@@ -9,11 +9,11 @@
 /// Deprecated code
 //
 
-enum Readtype { Normal, Symetric };
+enum read_type { Normal, Symetric };
 
-Readtype readtype = Symetric;
+read_type readtype = Symetric;
 __host__ d_spmatrix read_file(const std::string filepath/* ,
-                                   Readtype readtype = Normal */) {
+                                   read_type readtype = Normal */) {
     int i, j;
     int n_elts = 0;
     int n_lines = 0;

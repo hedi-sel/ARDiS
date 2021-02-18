@@ -10,8 +10,9 @@ Requirements
   * CMake (3.10+), g++-7 (C++ 11 standard)
   * CUDA Compatible Graphics card, and CUDA toolkit (10.2+).
   * Python 3.6+, with the following modules: 
-    * Numpy 
-    * Matplotlib
+    * wheel
+    * setuptools
+    * pybind11[global]
 
 Optional
 -------------
@@ -49,7 +50,7 @@ Run a minimum working example::
 Contact
 =======================
 
-For any questions or inquiries, e-mail me at:
+For any questions or inquiries, e-mail the author at:
     hedi@sellami.dev
     
 License

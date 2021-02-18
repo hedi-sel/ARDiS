@@ -27,12 +27,12 @@ def line_to_values(line):
     return values
 
 
-class Readtype(Enum):
+class read_type(Enum):
     Normal = 0
     Symetric = 1
 
 
-def read_spmatrix(path, readtype=Readtype.Normal):
+def read_spmatrix(path, readtype=read_type.Normal):
     f = open(path, "r")
     lines = f.readlines()
     i = -1
@@ -47,7 +47,7 @@ def read_spmatrix(path, readtype=Readtype.Normal):
             values = line_to_values(line)
         if len(values) == 3:
             mat[values[0] - 1, values[1] - 1] = values[2]
-            if (readtype == Readtype.Symetric and values[1] != values[0]):
+            if (readtype == read_type.Symetric and values[1] != values[0]):
                 mat[values[1] - 1, values[0] - 1] = values[2]
         else:
             print(values)
