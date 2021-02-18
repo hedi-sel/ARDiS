@@ -2,6 +2,7 @@ build/*
 output/*
 data/*
 docs/_build/*
+docs/git-lfs/*
 src/pythonScripts/__pycache__/*
 pythonLib/build/*
 pythonLib/ardis.egg-info/*

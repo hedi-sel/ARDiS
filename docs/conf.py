@@ -16,6 +16,15 @@
 
 import sphinx_rtd_theme
 
+import os
+if not os.path.exists('./git-lfs'):
+    os.mkdir("git-lfs")
+    os.system('cd git-lfs && wget https://github.com/git-lfs/git-lfs/releases/download/v2.7.1/git-lfs-linux-amd64-v2.7.1.tar.gz')
+    os.system('cd git-lfs && tar xvfz git-lfs-linux-amd64-v2.7.1.tar.gz')
+    os.system('./git-lfs/git-lfs install')  # make lfs available in current repository
+    os.system('./git-lfs/git-lfs fetch')  # download content from remote
+    os.system('./git-lfs/git-lfs checkout')  # make local files to have the real content on them
+
 # -- Project information -----------------------------------------------------
 
 project = 'ARDiS'
