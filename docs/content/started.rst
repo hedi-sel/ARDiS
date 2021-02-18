@@ -19,6 +19,8 @@ Optional
 
   * WolframScript (1.3.0+)
     * (for building your own reactor shape)
+  * ImageMagick
+    * (to make gif clips)
 
 Building
 **************

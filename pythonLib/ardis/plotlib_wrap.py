@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
-import matplotlib.colors as colors
+import matplotlib.colors as clr
 import numpy as np
 import math
 from matplotlib.colors import ListedColormap
@@ -11,7 +11,7 @@ color_list = [
 
 
 def plot_state(state, mesh, title="no title", listSpecies=[], excludeSpecies=[], colors={}):
-    scatterSize = 4000 * (np.max(mesh.x) - np.min(mesh.x)) * \
+    scatterSize = 3000 * (np.max(mesh.x) - np.min(mesh.x)) * \
         (np.max(mesh.y) - np.min(mesh.y)) * 1.0 / state.vector_size()
     if(len(listSpecies) == 0):
         listSpecies = state.list_species()
@@ -30,10 +30,8 @@ def plot_state(state, mesh, title="no title", listSpecies=[], excludeSpecies=[],
 
     fig, ax = plt.subplots()
     ax.set_aspect('equal')
-    # plt.tripcolor(mesh, np.ones(mesh.x.size),
-    #               cmap=background_color, vmin=0, vmax=1)
-    # plt.scatter(mesh.x, mesh.y, s=2*scatterSize, marker='o',
-    #             c=[background_color], vmin=0, vmax=1)
+    ax.scatter(mesh.x, mesh.y, s=2*scatterSize, marker='s',
+                c=[background_color], vmin=0, vmax=1)
     for species in listSpecies:
         if species in excludeSpecies:
             continue
@@ -46,7 +44,6 @@ def plot_state(state, mesh, title="no title", listSpecies=[], excludeSpecies=[],
             col_map = ListedColormap(col_map)
         else:
             col_map = ListedColormap(np.linspace(
-                (0, 0, 0, 0), colors[species], 20))
-        ax.scatter(mesh.x, mesh.y, s=scatterSize, marker='o',
-                   c=vect, vmin=0, vmax=0.01+np.max(vect), cmap=col_map)  # vect
+               (0,0,0,0), clr.to_rgba(colors[species]), 20))
+        ax.scatter(mesh.x, mesh.y, s=scatterSize, marker='o', c=vect, vmin=0, vmax=max(vect), cmap=col_map) 
     return fig

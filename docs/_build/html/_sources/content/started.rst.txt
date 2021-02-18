@@ -10,14 +10,17 @@ Requirements
   * CMake (3.10+), g++-7 (C++ 11 standard)
   * CUDA Compatible Graphics card, and CUDA toolkit (10.2+).
   * Python 3.6+, with the following modules: 
-    * Numpy 
-    * Matplotlib
+    * wheel
+    * setuptools
+    * pybind11[global]
 
 Optional
 -------------
 
   * WolframScript (1.3.0+)
     * (for building your own reactor shape)
+  * ImageMagick
+    * (to make gif clips)
 
 Building
 **************

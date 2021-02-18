@@ -33,7 +33,6 @@ d_D = to_d_spmatrix(read_spmatrix(
     dampingPath, read_type.Symetric), matrix_type.CSR)
 print("Dampness matrix loaded ...")
 
-st = state(d_D.shape[0])
 n = len(Mesh.x)
 
 
@@ -43,7 +42,7 @@ upleftcorner = dg.rect_zone(dg.point2d(0, 9), dg.point2d(1, 10))
 uprightcorner = dg.rect_zone(dg.point2d(9, 9), dg.point2d(10, 10))
 
 
-simu = simulation(d_D.shape[0])
+simu = simulation(n)
 import_crn(simu, "chemicalReactionNetworks/bottomMETI.json")
 
 simu.drain = drain

@@ -142,10 +142,11 @@ bool simulation::iterate_diffusion(T dt) {
         return false;
     }
     if (last_used_dt != dt) {
-        printf("Building a diffusion matrix for dt = %f ... ", dt);
+        if (last_used_dt != 0)
+            printf(
+                "Warning! dt should be kept constant when iterating diffusion");
         hd_data<T> m(-dt);
         matrix_sum(*damp_mat, *stiff_mat, m(true), diffusion_matrix);
-        printf("Done!\n");
         last_used_dt = dt;
     }
     for (int i = 0; i < current_state.n_species(); i++) {
