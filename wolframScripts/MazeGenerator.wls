@@ -2,7 +2,7 @@
 
 Needs["NDSolve`FEM`"]
 
-name = $ScriptCommandLine[[2]]
+outputPath = $ScriptCommandLine[[2]]
 size = ToExpression[$ScriptCommandLine[[3]]]
 
 X = size; Y = size;
@@ -18,8 +18,6 @@ tree = FindSpanningTree[{g, 1}];
 maze = Graph[tree, VertexCoordinates -> embedding, style];
 
 region =Region@ImageMesh@Image@maze
-(* Export["region.png",RegionImage[region]] *)
-
 
 (*Make mesh*)
 nr=ToElementMesh[ BoundaryDiscretizeRegion@region , MaxCellMeasure->20]
@@ -35,15 +33,18 @@ discretePDE=DiscretizePDE[initCoeffs,methodData,sd];
 {load,stiffness,damping,mass}=discretePDE["SystemMatrices"];
 
 (*Export matrices*)
-stiffnessPath = StringReplace[imagePath, ".png"->"_stiffness.mtx"]
-dampingPath = StringReplace[imagePath, ".png"->"_damping.mtx"]
-meshPath = StringReplace[imagePath, ".png"->"_mesh.dat"]
+imagePath = outputPath <> ".png"
+stiffnessPath = outputPath <> "_stiffness.mtx"
+dampingPath =  outputPath <> "_damping.mtx"
+meshPath =  outputPath <> "_mesh.dat"
 
+Export[imagePath, region]
 Export[stiffnessPath,stiffness]
 Export[dampingPath,damping]
 Export[meshPath,nr["Coordinates"]]
 
-Print["Data has been created for the given image:"]
+Print["A maze has been generated and data has been created at:"]
+Print[imagePath]
 Print[stiffnessPath]
 Print[dampingPath]
 Print[meshPath]
