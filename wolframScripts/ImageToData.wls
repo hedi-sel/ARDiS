@@ -6,7 +6,7 @@ Needs["NDSolve`FEM`"]
 
 imagePath = $ScriptCommandLine[[2]]
 If[!StringContainsQ[imagePath, ".png"], Throw["File extension has to be .png"]]
-region = RegionResize[Region@ImageMesh@Import[imagePath], {{0,100}, {0,100}}]
+region = RegionResize[Region@ImageMesh@Import[imagePath], {{0,10}, {0,10}}]
 
 
 (*Make mesh*)

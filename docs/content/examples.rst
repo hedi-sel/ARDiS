@@ -21,7 +21,7 @@ Use WolframScript to create new reactor shapes
 ================================================
 
 WolframScript is a free tool for developpers. It allows you to use the Wolfram Engine via the command line.
-Once installed, you should have access to the ``` wolframscript ``` command.
+Once installed, you should have access to the ``wolframscript`` command.
 
 Two scripts are provided in the wolframScripts folder:
 
